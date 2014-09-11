@@ -100,3 +100,48 @@ module AdderHoldReg(phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes,
 	inout [7:0] ADL, SB;
 	
 endmodule
+
+module ALU(DAA, I_ADDC, SRS, SUMS, ANDS, EORS, ORS, Ain, Bin,
+			AVR, ACR, HC,adderOut);
+	
+	input DAA,I_ADDC, SRS, SUMS, ANDS, EORS, ORS;
+	input [7:0] Ain, Bin;
+	output AVR, ACR, HC;
+	output [7:0] adderOut;
+
+endmodule
+
+module decimalAdjust(SBin, DSA, DAA, ACR, HC, phi2,
+					dataOut);
+
+	input [7:0] SBin;
+	input DSA, DAA, ACR, HC, phi2;
+	output [7:0] dataOut;
+	
+	//refer to http://imrannazar.com/Binary-Coded-Decimal-Addition-on-Atmel-AVR
+	// for the function of this. basically i think this converts the input, and a harry carry, into BCD format.
+endmodule
+
+module accum(inFromDecAdder, SB_AC, AC_DB, AC_SB,
+			DB,SB);
+		
+	input [7:0] inFromDecAdder;
+	input SB_AC, AC_DB, AC_SB;
+	inout DB, SB;
+	
+endmodule
+			
+module ABreg(load, dataOut);
+
+	input load;
+	output [7:0] dataOut;
+
+endmodule
+
+module register(load, bus_en,
+			SB);
+	
+	input load, bus_en;
+	inout [7:0] SB;
+	
+endmodule
