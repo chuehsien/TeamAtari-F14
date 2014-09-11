@@ -119,7 +119,7 @@ module decimalAdjust(SBin, DSA, DAA, ACR, HC, phi2,
 	output [7:0] dataOut;
 	
 	//refer to http://imrannazar.com/Binary-Coded-Decimal-Addition-on-Atmel-AVR
-	// for the function of this. basically i think this converts the input, and a harry carry, into BCD format.
+	// for the function of this. basically i think this converts the input, into BCD format.
 endmodule
 
 module accum(inFromDecAdder, SB_AC, AC_DB, AC_SB,
@@ -143,5 +143,27 @@ module register(load, bus_en,
 	
 	input load, bus_en;
 	inout [7:0] SB;
+	
+endmodule
+
+module statusReg(P_DB, DBZ, IR5, ACR ,AVR ,
+					DBO_C , IR5_C, ACR_C, 
+					DBI_Z, DBZ_Z, 
+					DB2_I, IR5_I, 
+					DB3_D, IR5_D, 
+					DB6_V, AVR_V, I_V, 
+					DB7_N, DBin,
+					DBinout);
+	
+	input P_DB, DBZ, IR5, ACR ,AVR ,
+					DBO_C , IR5_C, ACR_C, 
+					DBI_Z, DBZ_Z, 
+					DB2_I, IR5_I, 
+					DB3_D, IR5_D, 
+					DB6_V, AVR_V, I_V, 
+					DB7_N;
+	input [7:0] DBin;
+					
+	inout [7:0] Binout;
 	
 endmodule
