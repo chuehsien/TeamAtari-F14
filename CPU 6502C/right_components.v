@@ -1,5 +1,108 @@
-// this module contains all contains that are driven by clocks and the right side of the block diagram
-// last updated: 09/11/2014 1534H
+/****************************************************
+ * Project: Atari 5200                              *
+ *                                                  *
+ * Top Module: 6502C CPU                            *
+ * Sub-module: Right-side of diagram (re-org?)      *
+ *                                                  *
+ * Team Atari                                       *
+ *    Alvin Goh     (chuehsig)                      *
+ *    Benjamin Hong (bhong)                         *
+ *    Jonathan Ong  (jonathao)                      *
+ ****************************************************/
+ 
+/* Changelog:
+    11 Sept 2014, 2300hrs: Updated ALU, AdderHoldReg, Areg, Breg modules (jong)
+    11 Sept 2014, 1534hrs: Created modules (chue)
+*/
+
+// Note: Decimal Enable (DAA) not yet understood or implemented
+module ALU(ALU_out, AVR, ACR, HC, A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS);
+
+  output reg [7:0] ALU_out;
+  output reg AVR, ACR, HC;
+  input [7:0] A, B;
+  input DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS;
+  
+  always @ (*) begin
+    // Addition operation: A + B + Cin
+    // Perform in two steps to produce half-carry value
+    // Overflow if (A[7]==B[7]) && (ALU_out[7]!=A[7]) 
+    if (SUMS) begin
+      {HC, ALU_out[3:0]} <= A[3:0] + B[3:0] + I_ADDC;
+      {ACR, ALU_out[7:4]} <= A[7:4] + B[7:4] + HC;
+      AVR <= ((A[7]==B[7])!=ALU_out[7]);
+    end
+    else if (ANDS)
+      ALU_out <= A & B;
+    else if (EORS)
+      ALU_out <= A ^ B;
+    else if (ORS)
+      ALU_out <= A | B;
+    else if (SRS)
+      ALU_out <= {1'b0, ALU_out[7:1]};
+  end
+  
+endmodule
+
+
+module AdderHoldReg(phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes,	ADL,SB);
+
+	input phi2, ADD_ADL, ADD_SB0to6, ADD_SB7;
+	input [7:0] addRes;
+	inout [7:0] ADL, SB;
+	
+  reg [7:0] adderReg;
+  
+  always @ (phi2) begin
+    adderReg <= addRes;
+  end
+  
+  assign ADL = ADD_ADL ? adderReg : 8'hZZ;
+  assign SB[6:0] = ADD_SB0to6 ? adderReg[6:0] : 7'bZZZZZZZ;
+  assign SB[7] = ADD_SB7 ? adderReg[7] : 1'bZ;
+  
+endmodule
+
+
+module Areg(O_ADD, SB_ADD, SB,
+			outToALU);
+			
+	input O_ADD, SB_ADD;
+	input [7:0] SB;
+	output reg [7:0] outToALU;
+  
+  always @ (*) begin
+    if (SB_ADD)
+      outToALU <= SB;
+    else if (O_ADD)
+      outToALU <= 8'h00;
+  end
+	
+endmodule
+
+
+module Breg(DB_L_AD, DB_ADD, ADL_ADD, dataIn, INVdataIn, ADL,
+			outToALU);
+			
+	input DB_L_AD, DB_ADD, ADL_ADD;
+	input [7:0] dataIn, INVdataIn;
+	input [7:0] ADL;
+	output reg [7:0] outToALU;
+  
+  always @ (*) begin
+    if (DB_L_AD)
+      outToALU <= INVdataIn;
+    else if (DB_ADD)
+      outToALU <= dataIn;
+    else if (ADL_ADD)
+      outToALU <= ADL;
+  end
+	
+endmodule
+
+
+/* -------------------- */
+
 
 module dataBusTristate(en, dataIn,
 						extDataBus);
@@ -71,44 +174,6 @@ module SPreg(S_S, SB_S, S_ADL, S_SB, SBin,
 	input [7:0] SBin;
 	inout [7:0] ADL, SB;
 	
-endmodule
-
-module Breg(DB_L_AD, DB_ADD, ADL_ADD, dataIn, INVdataIn, ADL,
-			outToALU);
-			
-	input DB_L_AD, DB_ADD, ADL_ADD;
-	input [7:0] dataIn, INVdataIn;
-	input [7:0] ADL;
-	output [7:0] outToALU;
-	
-endmodule
-
-module Areg(ground, O_ADD, SB_ADD, SB,
-			outToALU);
-			
-	input ground, O_ADD, SB_ADD;
-	input [7:0] SB;
-	output [7:0] outToALU;
-	
-endmodule
-
-module AdderHoldReg(phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes,
-					ADL,SB);
-
-	input phi2, ADD_ADL, ADD_SB0to6, ADD_SB7;
-	input [7:0] addRes;
-	inout [7:0] ADL, SB;
-	
-endmodule
-
-module ALU(DAA, I_ADDC, SRS, SUMS, ANDS, EORS, ORS, Ain, Bin,
-			AVR, ACR, HC,adderOut);
-	
-	input DAA,I_ADDC, SRS, SUMS, ANDS, EORS, ORS;
-	input [7:0] Ain, Bin;
-	output AVR, ACR, HC;
-	output [7:0] adderOut;
-
 endmodule
 
 module decimalAdjust(SBin, DSA, DAA, ACR, HC, phi2,
