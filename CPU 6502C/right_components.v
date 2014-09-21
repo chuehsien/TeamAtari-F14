@@ -60,6 +60,7 @@ module AdderHoldReg(phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes,	ADL,SB);
 	input [7:0] addRes;
 	inout [7:0] ADL, SB;
 	
+	wire phi2;
   reg [7:0] adderReg;
   
   always @ (phi2) begin
@@ -130,39 +131,56 @@ module dataBusTristate(en, dataIn,
 	
 endmodule
 
-module dataOutReg(ld, dataIn,
+// latched on phi1, driven onto data pins in phi2(if write is done).
+module dataOutReg(phi1, phi2, dataIn,
 				dataOut);
 				
-	input ld;
+	input phi1, phi2;
 	input [7:0] dataIn;
 	output [7:0] dataOut;
 	
-	always @(*) begin
-		if (ld)
-			dataOut = dataIn;
-		else	
-			dataOut = 8'bZZZZZZZZ;
+	wire phi1,phi2;
+	wire [7:0] dataIn;
+	reg [7:0] dataOut;
+	
+	reg [7:0] data;
+	
+	always @(posedge phi1) begin
+		data <= dataIn;
+	end
+	
+	always @(posedge phi2) begin
+		dataOut <= data;
 	end
 
 endmodule
 
-module inputDataLatch(phi2_in, DL_DB, DL_ADL, DL_ADH,extDataBus,
+module inputDataLatch(phi1, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
 						DB,ADL,ADH);
 	
-	input phi2_in, DL_DB, DL_ADL, DL_ADH;
+	input phi1, phi2, DL_DB, DL_ADL, DL_ADH;
 	input [7:0] extDataBus;
 	inout [7:0] DB, ADL, ADH;
 	
-	reg [7:0] dataInLatch;
+	wire phi1,phi2,DL_DB, DL_ADL, DL_ADH;
+	wire [7:0] extDataBus;
 	
-	always @ (posedge phi2_in) begin
-			dataInLatch <= extDataBus;
+	reg [7:0] DB, ADL, ADH; 
+	
+	reg [7:0] data;
+	
+	always @ (posedge phi2) begin
+			DB <= (DL_DB) ? data : 8'bZZZZZZZZ;
+			ADL <= (ADL_DB) ? data : 8'bZZZZZZZZ;
+			ADH <= (ADH_DB) ? data : 8'bZZZZZZZZ;
+			data <= extDataBus;
 	end
 	
-	always @ (DL_DB, DL_ADL, DL_ADH, dataInLatch) begin
-		DB = (DL_DB) ? dataInLatch : 8'bZZZZZZZZ;
-		ADL = (ADL_DB) ? dataInLatch : 8'bZZZZZZZZ;
-		ADH = (ADH_DB) ? dataInLatch : 8'bZZZZZZZZ;
+	always @ (posedge phi1) begin
+
+		DB <= (DL_DB) ? data : 8'bZZZZZZZZ;
+		ADL <= (ADL_DB) ? data : 8'bZZZZZZZZ;
+		ADH <= (ADH_DB) ? data : 8'bZZZZZZZZ;
 			
 	end
 	
@@ -213,26 +231,27 @@ module increment(inc, inAdd,
 	
 endmodule
 
-module PC(ld, PCL_DB, PCL_ADL,
-			DB, ADL, inFromIncre,
+module PC(phi2, PCL_DB, PCL_ADL,inFromIncre,
+			DB, ADL,
 			PCout);
 			
-	input ld, PCL_DB, PCL_ADL;
-	input [7:0] DB, ADL, inFromIncre;
+	input phi2, PCL_DB, PCL_ADL;
+	input [7:0] inFromIncre;
+	inout [7:0] DB, ADL;
 	output [7:0] PCout;
 	
-	wire ld, PCL_DB, PCL_ADL;
+	wire phi2, PCL_DB, PCL_ADL;
 	wire [7:0] DB, ADL, inFromIncre;
 	reg [7:0] PCout;
 	
-	always @ (posedge ld) begin
-	if (PCL_DB)
-		PCout <= DB;
-	else if (PCL_ADL)
-		PCout <= ADL;
-	else 
-		PCout <= inFromIncre;
-		
+	reg [7:0] currPC;
+	
+	assign DB = (PCL_DB) ? currPC : 8'bzzzzzzzz;
+	assign ADL = (PCL_ADL) ? currPC : 8'bzzzzzzzz
+	assign PCout = currPC;
+	
+	always @ (posedge phi2) begin
+		currPC <= inFromIncre;	
 	end
 
 endmodule
@@ -250,27 +269,30 @@ module inverter(DB,
 	
 endmodule
 
-module SPreg(S_S, SB_S, S_ADL, S_SB, SBin,
+module SPreg(phi2, S_S, SB_S, S_ADL, S_SB, SBin,
 			ADL, SB);
 			
-	input S_S, SB_S, S_ADL, S_SB;
+	input phi2, S_S, SB_S, S_ADL, S_SB;
 	input [7:0] SBin;
 	inout [7:0] ADL, SB;
 	
-	wire S_S, SB_S, S_ADL, S_SB;
+	wire phi2, S_S, SB_S, S_ADL, S_SB;
 	wire [7:0] SBin;
 	reg [7:0] ADL, SB;
 	
-	reg [7:0] currSP;
+	reg [7:0] latchIn, latchOut;
 	
-	always @ (*) begin
+	assign ADL = (S_ADL) ? latchOut : 8'bzzzzzzzz;
+	assign SB = (S_SB) ? latchOut : 8'bzzzzzzzz;
+	
+	always @ (posedge phi2) begin
 	if (S_S) begin
-		ADL = (S_ADL) ? currSP : 8'bzzzzzzzz;
-		SB = (S_SB) ? currSP : 8'bzzzzzzzz;
+		
 	end
 	else if (SB_S) begin
-		currSP = (S_ADL) ? ADL : SB;
-		if (S_ADL == S_SB) currSP = 8'bzzzzzzzz; //should not reach here!
+		latchOut <= latchIn;
+		latchIn <= (S_ADL) ? ADL : SB;
+		if (S_ADL == S_SB) latchOut <= 8'bzzzzzzzz; //should not reach here!
 	end
 	
 	end
@@ -337,42 +359,45 @@ module accum(inFromDecAdder, SB_AC, AC_DB, AC_SB,
 	
 endmodule
 			
-module AdressBusReg(load, dataIn,
+module AddressBusReg(phi1, dataIn,
 				dataOut);
 
-	input load;
+	input phi1;
 	input [7:0] dataIn;
 	output [7:0] dataOut;
 
-	wire load;
-	reg [7:0] dataOut;
+	wire phi1;
+	wire [7:0] dataOut;
+	reg [7:0] data;
 	
-	always @ (posedge load) begin
-		dataOut = dataIn;
+	assign dataOut = data;
+	always @ (posedge phi1) begin
+		data <= dataIn;
 	end
 	
 	
 endmodule
 
 //used for x and y registers
-module register(load, bus_en,
+module register(phi2, load, bus_en,
 			SB);
 	
-	input load, bus_en;
+	input phi2, bus_en;
 	inout [7:0] SB;
 	
+	wire phi2;
 	reg [7:0] currVal;
 	
 	
-	always @(*) begin
-		if (load) currVal = SB;
-		SB = (bus_en) ? currVal : 8'bzzzzzzzz;
+	always @(posedge phi2) begin
+		if (load) currVal <= SB;
+		SB <= (bus_en) ? currVal : 8'bzzzzzzzz;
 	
 	end
 	
 endmodule
 
-module statusReg(P_DB, DBZ, IR5, ACR ,AVR,
+module statusReg(phi1, phi2, P_DB, DBZ, IR5, ACR ,AVR,
 					DBO_C , IR5_C, ACR_C, 
 					DBI_Z, DBZ_Z, 
 					DB2_I, IR5_I, 
@@ -381,7 +406,7 @@ module statusReg(P_DB, DBZ, IR5, ACR ,AVR,
 					DB7_N, DBin,
 					DBinout);
 	
-	input P_DB, DBZ, IR5, ACR ,AVR ,
+	input phi1, phi2, P_DB, DBZ, IR5, ACR ,AVR ,
 					DBO_C , IR5_C, ACR_C, 
 					DBI_Z, DBZ_Z, 
 					DB2_I, IR5_I, 
@@ -392,11 +417,16 @@ module statusReg(P_DB, DBZ, IR5, ACR ,AVR,
 					
 	inout [7:0] DBinout;
 	
-	reg [7:0] currVal;
+	reg [7:0] cusrrVal;
+	
+	assign DBinout = (P_DB) ? currVal:8'bzzzzzzzz;
 	
 	// bit arrangement: (bit 7) NV_BDIZC (bit 0) - bit 2 has no purpose.
+	always @(posedge phi2) begin
+		currVal <= DBin;
+	end
+	
 	always @(*) begin
-		
 		
 		currVal[0] = DBO_C | IR5_C | ACR_C;
 		currVal[1] = DBI_Z | DBZ_Z;
