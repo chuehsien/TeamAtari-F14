@@ -1,0 +1,8 @@
+		`BPL_rel: BPL_rel(currT,phi1,phi2,statusReg[`status_C],statusReg[]dummy_control,dummy_T);
+		`BMI_rel: BMI_rel(currT,phi1,phi2,statusReg[`status_C],statusReg[]dummy_control,dummy_T);
+		`BVC_rel: BVC_rel(currT,phi1,phi2,statusReg[`status_C],statusReg[]dummy_control,dummy_T);
+		`BVS_rel: BVS_rel(currT,phi1,phi2,statusReg[`status_C],statusReg[]dummy_control,dummy_T);
+		`BCC_rel: BCC_rel(currT,phi1,phi2,statusReg[`status_C],statusReg[]dummy_control,dummy_T);
+		`BCS_rel: BCS_rel(currT,phi1,phi2,statusReg[`status_C],statusReg[]dummy_control,dummy_T);
+		`BNE_rel: BNE_rel(currT,phi1,phi2,statusReg[`status_C],statusReg[]dummy_control,dummy_T);
+		`BEQ_rel: BEQ_rel(currT,phi1,phi2,statusReg[`status_C],statusReg[]dummy_control,dummy_T);

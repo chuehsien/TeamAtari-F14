@@ -17,6 +17,14 @@
     11 Sept 2014, 1534hrs: Created modules (chue)
 */
 
+`define status_C 3'd0
+`define status_Z 3'd1
+`define status_I 3'd2
+`define status_D 3'd3
+`define status_V 3'd6
+`define status_N 3'd7
+
+
 //chue verified
 // Note: Decimal Enable (DAA) not yet understood or implemented
 module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC);
@@ -428,16 +436,17 @@ module statusReg(phi1, phi2, P_DB, DBZ, IR5, ACR ,AVR,
 	
 	always @(*) begin
 		
-		currVal[0] = DBO_C | IR5_C | ACR_C;
-		currVal[1] = DBI_Z | DBZ_Z;
-		currVal[2] = DB2_I | IR5_I;
-		currVal[3] = DB3_D | IR5_D;
+		currVal[`status_C] = DBO_C | IR5_C | ACR_C;
+		currVal[`status_Z] = DBI_Z | DBZ_Z;
+		currVal[`status_I] = DB2_I | IR5_I;
+		currVal[`status_D] = DB3_D | IR5_D;
 		currVal[4] = 1'b0; //read documents, but dont undestand what this bit does...
 		currVal[5] = 1'b0;
-		currVal[6] = DB6_V | AVR_V | I_V;
-		currVal[7] = DB7_N;
+		currVal[`status_V] = DB6_V | AVR_V | I_V;
+		currVal[`status_N] = DB7_N;
 		
 		DBinout = (P_DB) ? currVal : 8'bzzzzzzzz;
 	end
-	
+
+
 endmodule
