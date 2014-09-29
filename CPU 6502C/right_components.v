@@ -65,11 +65,12 @@ module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC)
       ALU_out = A ^ B;
     else if (ORS)
       ALU_out = A | B;
-    else if (SRS) // which to shift? A or B? can we just default to A.
+    else if (SRS) begin// which to shift? A or B? can we just default to A.
       //ALU_out = {1'b0, ALU_out[7:1]};
       ALU_out = {1'b0, A[7:1]};
       // need to shift out the carry i thk.
       ACR = A[0];
+
   end
   
 endmodule
