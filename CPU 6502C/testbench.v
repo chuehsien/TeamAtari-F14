@@ -1,6 +1,6 @@
 `define G1ANDG2 2'd0
 
-module testPLA;
+/* module testPLA;
 	reg [7:0] instruction;
 	reg [2:0] timing;
 	reg clock;
@@ -28,7 +28,7 @@ module testPLA;
 	end
 
 
-endmodule
+endmodule */
 
 //created 28 Sept 2014
 module testALU;
@@ -128,12 +128,12 @@ module testALU;
     
     
     
-    for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
-      for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
-        #100;
-        printLines();
-      end    
-    end
+    // for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
+      // for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
+        // #100;
+        // printLines();
+      // end    
+    // end
     #100;
     printLines();
     $display("end of testing SUMS");
@@ -195,12 +195,12 @@ module testALU;
     #100;
     printLines();
     
-    for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
-      for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
-        #100;
-        printLines();
-      end    
-    end
+    // for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
+      // for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
+        // #100;
+        // printLines();
+      // end    
+    // end
     #100;
     printLines();
     $display("end of testing ANDS");
@@ -262,12 +262,12 @@ module testALU;
     #100;
     printLines();
     
-    for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
-      for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
-        #100;
-        printLines();
-      end    
-    end
+    // for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
+      // for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
+        // #100;
+        // printLines();
+      // end    
+    // end
     #100;
     printLines();
     $display("end of testing EORS");
@@ -329,12 +329,12 @@ module testALU;
     #100;
     printLines();
     
-    for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
-      for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
-        #100;
-        printLines();
-      end    
-    end
+    // for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
+      // for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
+        // #100;
+        // printLines();
+      // end    
+    // end
     #100;
     printLines();
     $display("end of testing ORS");
@@ -396,19 +396,19 @@ module testALU;
     #100;
     printLines();
     
-    for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
-      for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
-        #100;
-        printLines();
-      end    
-    end
+    // for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
+      // for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
+        // #100;
+        // printLines();
+      // end    
+    // end
     #100;
     printLines();
     $display("end of testing SRS");
     $display("====================");
-    $finish
+    $finish;
 
-
+  end
 
 endmodule
 
@@ -416,7 +416,7 @@ endmodule
 // need to test if outputs are right on the right timing
 // 
 
-
+/* 
 module decodeROM(in, timing,
 				out);
 				
@@ -425,7 +425,9 @@ module decodeROM(in, timing,
 	input clock;
 	output [129:0] out;
 	
+  wire [129:0] out;
 	reg [1:0] G;
+  
 	case ({in[1],in[0]}) begin
 		2'd0: G = 2'd3;
 		2'd1: G = 2'd1;
@@ -565,4 +567,4 @@ module decodeROM(in, timing,
 	assign out[128] = (in == 8'b0XXXXXXX) & (G==2'dx) & (T==3'dx); // NI7P
 	assign out[129] = (in == 8'bX0XXXXXX) & (G==2'dx) & (T==3'dx); // NI6P
 	
-endmodule
+endmodule */
