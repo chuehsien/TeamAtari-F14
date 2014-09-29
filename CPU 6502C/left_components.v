@@ -1,7 +1,14 @@
 // this module contains all contains that are driven by clocks and the left side of the block diagram
-// last updated: 17 Sept 2014 1709H; added control signals into decodeROM module (bhong)
 
 `define G1ANDG2 2'd0
+`include "Controls/plaFSM.v"
+
+module BUF (Y,A);
+	output Y;
+	input A;
+	buf #(0.5, 0.5) g(Y,A);
+endmodule
+
 
 module clockGen(phi0_in,
 				phi1_out,phi2_out,phi1_extout,phi2_extout);
@@ -9,26 +16,56 @@ module clockGen(phi0_in,
 	input phi0_in;
 	output phi1_out,phi2_out,phi1_extout,phi2_extout;
 
-endmodule
-
-module predecodeRegister(phi2_in,
-						extDataBus,
-						outToIR);
-						
-	input phi2_in;
-	inout extDataBus;
-	output outToIR;
-						
-endmodule
-						
-module instructionRegister(inFromPredecode, 
-						outToDecodeRom);
-						
-	input inFromPredecode; //sigIn - (T1)(phi2)(RDY)(phi1)
-	output outToDecodeRom;
+	wire phi0_in;
+	reg phi1_out,phi2_out,phi1_extout,phi2_extout;
+	
+	buf a(phi1_out,phi0_in);
+	not b(phi2_out,phi1_out);
+	
+	assign phi1_extout = phi1_out;
+	assign phi2_extout = phi2_out;
 	
 endmodule
 
+module predecodeRegister(phi2_in,extDataBus,
+						outToIR);
+						
+	input phi2_in;
+	input [7:0] extDataBus;
+	output outToIR;
+	
+	always @ (posedge phi2) begin
+		outToIR <= extDataBus;
+	end
+						
+endmodule
+
+module predecodeLogic(irIn, interrupt,
+						irOut);
+						
+	input [7:0] irIn;
+	input interrupt;
+	output [7:0] irOut;
+	
+	assign irOut = (~interrupt) irIn : 8'd0;
+	
+endmodule
+						
+module instructionRegister(en, inFromPredecode, 
+						outToDecodeRom);
+				
+	input en; //en - (T2)(phi1)(RDY) not sure!
+	input [7:0] inFromPredecode; 
+	output [7:0] outToDecodeRom;
+	
+	always @ (posedge en) begin
+		outToDecodeRom <= inFromPredecode;
+	end
+	
+endmodule
+
+
+/*
 module timingGeneration(TZPRE, clockFromControl,
 						SYNC, clockToDecode, clockToControl);
 						
@@ -179,11 +216,43 @@ module decodeROM(in, T,
 	assign out[128] = 1  &~in[7] &     1 &     1 &     1 &     1 &     1 &     1 &     1; //NI7P
 	assign out[129] = 1  &     1 &~in[6] &     1 &     1 &     1 &     1 &     1 &     1; //NI6P
 endmodule
+*/
 
-module interruptResetControl(NMI_L, IRQ_L, RES_L,
-							outToControl);
+module interruptResetControl(phi2,NMI_L, IRQ_L, RES_L,nmiHandled, irqHandled, resHandled,
+							nmi,irq,res);
 	input NMI_L,IRQ_L,RES_L;
-	output outToControl;
+	input nmiHandled, irqHandled, resHandled;
+	output nmi,irq,res;
+	
+	wire NMI_L,IRQ_L,RES_L;
+	
+	wire nmiHandled, irqHandled, resHandled;
+	reg nmi,irq,res;
+	
+	reg nmiPending, irqPending, resPending;
+	
+	always @ (posedge NMI_L) begin //NMI is captured on negedge.
+		nmiPending <= NMI_L;
+	end
+	always (IRQ_L or RES_L) begin
+		irqPending = ~IRQ_L;
+		resPending = ~RES_L;
+	end
+	
+	always @(negedge phi2) begin
+		
+		intg = nmiPending & irqPending; //if nmi and irq both asserted, nmi takes priority.
+		nmi = intg | nmiPending;
+		irq = ~intg & irqPending;
+		res = resPending;
+		
+	end
+	
+	always @ (nmiHandled or irqHandled or resHandled)
+		if (nmiHandled) nmiPending = 1'b0;
+		if (irqHandled) irqPending = 1'b0;
+		if (resHandled) resPending = 1'b0;
+	end
 	
 endmodule
 
