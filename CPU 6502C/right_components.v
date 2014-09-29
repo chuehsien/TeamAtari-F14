@@ -27,9 +27,9 @@ module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC)
   output reg AVR, ACR, HC;
   
   always @ (*) begin
-	AVR = 1'b1;
-	ACR = 1'b1;
-	HC = 1'b1;
+    AVR = 1'b1;
+    ACR = 1'b1;
+    HC = 1'b1;
     // Addition operation: A + B + Cin
     // Perform in two steps to produce half-carry value
     // Overflow if (A[7]==B[7]) && (ALU_out[7]!=A[7]) 
@@ -44,11 +44,12 @@ module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC)
       ALU_out = A ^ B;
     else if (ORS)
       ALU_out = A | B;
-    else if (SRS) // which to shift? A or B? can we just default to A.
+    else if (SRS) begin// which to shift? A or B? can we just default to A.
       //ALU_out = {1'b0, ALU_out[7:1]};
-	  ALU_out = {1'b0, A[7:1]};
-	  // need to shift out the carry i thk.
-	  ACR = A[0];
+      ALU_out = {1'b0, A[7:1]};
+      // need to shift out the carry i thk.
+      ACR = A[0];
+    end
   end
   
 endmodule

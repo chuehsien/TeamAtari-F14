@@ -7,7 +7,7 @@ module testPLA;
 	
 	wire [129:0] out;
 	
-	decodeROM(.in(instruction), .timing(clock), .out(out));
+	decodeROM decodeROM_mod(.in(instruction), .timing(clock), .out(out));
 	
 	task printLines;
 		begin
@@ -29,6 +29,392 @@ module testPLA;
 
 
 endmodule
+
+//created 28 Sept 2014
+module testALU;
+  reg [7:0] A, B;
+  reg DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS;
+  
+  wire [7:0] ALU_out;
+  wire AVR, ACR, HC;
+  
+  ALU alu_mod(.A(A), .B(B), .DAA(DAA), .I_ADDC(I_ADDC), .SUMS(SUMS), 
+              .ANDS(ANDS), .EORS(EORS), .ORS(ORS), .SRS(SRS), .ALU_out(ALU_out), .AVR(AVR), .ACR(ACR), .HC(HC));
+              
+  task printLines;
+  begin
+    if (SUMS) begin
+      $display("\t%b \t+ \t%b \t-> \t%b; AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
+    end
+    else if (ANDS) begin
+      $display("\t%b \t& \t%b \t-> \t%b; AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
+    end
+    else if (EORS) begin
+      $display("\t%b \t^ \t%b \t-> \t%b; AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
+    end
+    else if (ORS) begin
+      $display("\t%b \t| \t%b \t-> \t%b; AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
+    end
+    else if (SRS) begin
+      $display("\t%b \t>> \t%b \t-> \t%b; AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
+    end
+    else begin
+      $display("invalid input");
+    end
+    //$display("%A -> %b", instruction, out);
+    
+  end
+	endtask
+  
+  //this displays the result, not compare it against a golden version
+  initial begin
+  
+    SUMS = 1'b1;
+    ANDS = 1'b0;
+    EORS = 1'b0;
+    ORS = 1'b0;
+    SRS = 1'b0;
+    
+    $display("start of testing SUMS");
+    
+    A = 8'd255;
+    B = 8'd255;
+    I_ADDC = 1'b1;
+    #100;
+    printLines();
+    
+    A = 8'd0;
+    B = 8'd255;
+    I_ADDC = 1'b1;
+    #100;
+    printLines();
+    
+    A = 8'd0;
+    B = 8'd0;
+    I_ADDC = 1'b1;
+    #100;
+    printLines();
+    
+    A = 8'd1;
+    B = 8'd3;
+    I_ADDC = 1'b1;
+    #100;
+    printLines();
+    
+    A = 8'd255;
+    B = 8'd255;
+    I_ADDC = 1'b0;
+    #100;
+    printLines();
+    
+    A = 8'd0;
+    B = 8'd255;
+    I_ADDC = 1'b0;
+    #100;
+    printLines();
+    
+    A = 8'd0;
+    B = 8'd0;
+    I_ADDC = 1'b0;
+    #100;
+    printLines();
+    
+    A = 8'd1;
+    B = 8'd3;
+    I_ADDC = 1'b0;
+    #100;
+    printLines();
+    
+    
+    
+    
+    for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
+      for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
+        #100;
+        printLines();
+      end    
+    end
+    #100;
+    printLines();
+    $display("end of testing SUMS");
+    $display("====================");
+    
+    SUMS = 1'b0;
+    ANDS = 1'b1;
+    EORS = 1'b0;
+    ORS = 1'b0;
+    SRS = 1'b0;
+    
+    $display("start of testing ANDS");
+    
+    A = 8'd255;
+    B = 8'd255;
+    I_ADDC = 1'b1;
+    #100;
+    printLines();
+    
+    A = 8'd0;
+    B = 8'd255;
+    I_ADDC = 1'b1;
+    #100;
+    printLines();
+    
+    A = 8'd0;
+    B = 8'd0;
+    I_ADDC = 1'b1;
+    #100;
+    printLines();
+    
+    A = 8'd1;
+    B = 8'd3;
+    I_ADDC = 1'b1;
+    #100;
+    printLines();
+    
+    A = 8'd255;
+    B = 8'd255;
+    I_ADDC = 1'b0;
+    #100;
+    printLines();
+    
+    A = 8'd0;
+    B = 8'd255;
+    I_ADDC = 1'b0;
+    #100;
+    printLines();
+    
+    A = 8'd0;
+    B = 8'd0;
+    I_ADDC = 1'b0;
+    #100;
+    printLines();
+    
+    A = 8'd1;
+    B = 8'd3;
+    I_ADDC = 1'b0;
+    #100;
+    printLines();
+    
+    for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
+      for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
+        #100;
+        printLines();
+      end    
+    end
+    #100;
+    printLines();
+    $display("end of testing ANDS");
+    $display("====================");
+    
+    SUMS = 1'b0;
+    ANDS = 1'b0;
+    EORS = 1'b1;
+    ORS = 1'b0;
+    SRS = 1'b0;
+    
+    $display("start of testing EORS");
+    
+    A = 8'd255;
+    B = 8'd255;
+    I_ADDC = 1'b1;
+    #100;
+    printLines();
+    
+    A = 8'd0;
+    B = 8'd255;
+    I_ADDC = 1'b1;
+    #100;
+    printLines();
+    
+    A = 8'd0;
+    B = 8'd0;
+    I_ADDC = 1'b1;
+    #100;
+    printLines();
+    
+    A = 8'd1;
+    B = 8'd3;
+    I_ADDC = 1'b1;
+    #100;
+    printLines();
+    
+    A = 8'd255;
+    B = 8'd255;
+    I_ADDC = 1'b0;
+    #100;
+    printLines();
+    
+    A = 8'd0;
+    B = 8'd255;
+    I_ADDC = 1'b0;
+    #100;
+    printLines();
+    
+    A = 8'd0;
+    B = 8'd0;
+    I_ADDC = 1'b0;
+    #100;
+    printLines();
+    
+    A = 8'd1;
+    B = 8'd3;
+    I_ADDC = 1'b0;
+    #100;
+    printLines();
+    
+    for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
+      for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
+        #100;
+        printLines();
+      end    
+    end
+    #100;
+    printLines();
+    $display("end of testing EORS");
+    $display("====================");
+    
+    SUMS = 1'b0;
+    ANDS = 1'b0;
+    EORS = 1'b0;
+    ORS = 1'b1;
+    SRS = 1'b0;
+    
+    $display("start of testing ORS");
+    
+    A = 8'd255;
+    B = 8'd255;
+    I_ADDC = 1'b1;
+    #100;
+    printLines();
+    
+    A = 8'd0;
+    B = 8'd255;
+    I_ADDC = 1'b1;
+    #100;
+    printLines();
+    
+    A = 8'd0;
+    B = 8'd0;
+    I_ADDC = 1'b1;
+    #100;
+    printLines();
+    
+    A = 8'd1;
+    B = 8'd3;
+    I_ADDC = 1'b1;
+    #100;
+    printLines();
+    
+    A = 8'd255;
+    B = 8'd255;
+    I_ADDC = 1'b0;
+    #100;
+    printLines();
+    
+    A = 8'd0;
+    B = 8'd255;
+    I_ADDC = 1'b0;
+    #100;
+    printLines();
+    
+    A = 8'd0;
+    B = 8'd0;
+    I_ADDC = 1'b0;
+    #100;
+    printLines();
+    
+    A = 8'd1;
+    B = 8'd3;
+    I_ADDC = 1'b0;
+    #100;
+    printLines();
+    
+    for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
+      for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
+        #100;
+        printLines();
+      end    
+    end
+    #100;
+    printLines();
+    $display("end of testing ORS");
+    $display("====================");
+  
+    SUMS = 1'b0;
+    ANDS = 1'b0;
+    EORS = 1'b0;
+    ORS = 1'b0;
+    SRS = 1'b1;
+    
+    $display("start of testing SRS");
+    
+    A = 8'd255;
+    B = 8'd255;
+    I_ADDC = 1'b1;
+    #100;
+    printLines();
+    
+    A = 8'd0;
+    B = 8'd255;
+    I_ADDC = 1'b1;
+    #100;
+    printLines();
+    
+    A = 8'd0;
+    B = 8'd0;
+    I_ADDC = 1'b1;
+    #100;
+    printLines();
+    
+    A = 8'd1;
+    B = 8'd3;
+    I_ADDC = 1'b1;
+    #100;
+    printLines();
+    
+    A = 8'd255;
+    B = 8'd255;
+    I_ADDC = 1'b0;
+    #100;
+    printLines();
+    
+    A = 8'd0;
+    B = 8'd255;
+    I_ADDC = 1'b0;
+    #100;
+    printLines();
+    
+    A = 8'd0;
+    B = 8'd0;
+    I_ADDC = 1'b0;
+    #100;
+    printLines();
+    
+    A = 8'd1;
+    B = 8'd3;
+    I_ADDC = 1'b0;
+    #100;
+    printLines();
+    
+    for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
+      for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
+        #100;
+        printLines();
+      end    
+    end
+    #100;
+    printLines();
+    $display("end of testing SRS");
+    $display("====================");
+    $finish
+
+
+
+endmodule
+
+//Testing registers:
+// need to test if outputs are right on the right timing
+// 
 
 
 module decodeROM(in, timing,
