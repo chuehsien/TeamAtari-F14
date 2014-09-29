@@ -30,7 +30,7 @@
 
 endmodule */
 
-//created 28 Sept 2014
+//created 28 Sept 2014, bhong
 module testALU;
   reg [7:0] A, B;
   reg DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS;
@@ -44,19 +44,19 @@ module testALU;
   task printLines;
   begin
     if (SUMS) begin
-      $display("\t%b \t+ \t%b \t-> \t%b; AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
+      $display("\t%b \t+ \t%b \t-> \t%b; I_ADDC: \t%b, AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
     end
     else if (ANDS) begin
-      $display("\t%b \t& \t%b \t-> \t%b; AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
+      $display("\t%b \t& \t%b \t-> \t%b; I_ADDC: \t%b, AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
     end
     else if (EORS) begin
-      $display("\t%b \t^ \t%b \t-> \t%b; AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
+      $display("\t%b \t^ \t%b \t-> \t%b; I_ADDC: \t%b, AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
     end
     else if (ORS) begin
-      $display("\t%b \t| \t%b \t-> \t%b; AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
+      $display("\t%b \t| \t%b \t-> \t%b; I_ADDC: \t%b, AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
     end
     else if (SRS) begin
-      $display("\t%b \t>> \t%b \t-> \t%b; AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
+      $display("\t%b \t>> \t%b \t-> \t%b; I_ADDC: \t%b, AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
     end
     else begin
       $display("invalid input");
