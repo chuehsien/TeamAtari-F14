@@ -44,7 +44,7 @@ module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC)
     if (SUMS) begin
       {HC, ALU_out[3:0]} = A[3:0] + B[3:0] + I_ADDC;
       {ACR, ALU_out[7:4]} = A[7:4] + B[7:4] + HC;
-      AVR = ((A[7]==B[7]) & (A[7]!=ALU_out[7]); //jong double-check. ALU is not sync. use = instead of <=
+      AVR = ((A[7]==B[7]) & (A[7]!=ALU_out[7])); //jong double-check. ALU is not sync. use = instead of <=
     end
     else if (ANDS)
       ALU_out = A & B;
