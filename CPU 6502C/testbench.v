@@ -30,6 +30,55 @@
 
 endmodule */
 
+module testMem256x256;
+
+  reg clock, enable, we_L, re_L;
+  reg [15:0] address;
+  //reg [7:0] data;
+  
+  wire [7:0] data;
+  
+  always begin
+    #10 clock = ~clock;
+  end
+  
+  memory256x256 mem256x256_module(.clock(clock), .enable(enable), .we_L(we_L), .re_L(re_L), .address(address), .data(data));
+  
+  
+  task printMem;
+    begin
+      $display("Memory at %h: \t%h", address, data);
+    end
+  endtask
+  
+  
+  initial begin
+    
+    enable = 1'b1;
+    we_L = 1'b1;
+    re_L = 1'b0;
+    
+    #50;
+    $display("printing from memory...");
+    $display("=======================");
+    for (address = 16'd0; address < 16'hFFFF; address = address + 16'd1) begin
+      #50;
+      printMem;   
+    end
+    #50;
+    printMem;
+    $display("=======================");
+    $display("done printing from memory...");
+    $finish;
+  
+  
+  
+  end
+  
+  
+  
+endmodule
+
 //created 28 Sept 2014, bhong
 module testALU;
   reg [7:0] A, B;
