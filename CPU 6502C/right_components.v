@@ -48,29 +48,32 @@ module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC)
   output reg AVR, ACR, HC;
   
   always @ (*) begin
-    AVR = 1'b1;
-    ACR = 1'b1;
-    HC = 1'b1;
-    // Addition operation: A + B + Cin
-    // Perform in two steps to produce half-carry value
-    // Overflow if (A[7]==B[7]) && (ALU_out[7]!=A[7]) 
-    if (SUMS) begin
-      {HC, ALU_out[3:0]} = A[3:0] + B[3:0] + I_ADDC;
-      {ACR, ALU_out[7:4]} = A[7:4] + B[7:4] + HC;
-      AVR = ((A[7]==B[7]) & (A[7]!=ALU_out[7])); //jong double-check. ALU is not sync. use = instead of <=
-    end
-    else if (ANDS)
-      ALU_out = A & B;
-    else if (EORS)
-      ALU_out = A ^ B;
-    else if (ORS)
-      ALU_out = A | B;
-    else if (SRS) begin// which to shift? A or B? can we just default to A.
-      //ALU_out = {1'b0, ALU_out[7:1]};
-      ALU_out = {1'b0, A[7:1]};
-      // need to shift out the carry i thk.
-      ACR = A[0];
 
+    AVR = 1'b0;
+    ACR = 1'b0;
+    HC = 1'b0;
+
+        // Addition operation: A + B + Cin
+        // Perform in two steps to produce half-carry value
+        // Overflow if (A[7]==B[7]) && (ALU_out[7]!=A[7]) 
+        if (SUMS) begin
+          {HC, ALU_out[3:0]} = A[3:0] + B[3:0] + I_ADDC;
+          {ACR, ALU_out[7:4]} = A[7:4] + B[7:4] + HC;
+          AVR = ((A[7]==B[7]) & (A[7]!=ALU_out[7]); 
+        end
+        else if (ANDS)
+          ALU_out = A & B;
+        else if (EORS)
+          ALU_out = A ^ B;
+        else if (ORS)
+          ALU_out = A | B;
+        else if (SRS) begin// which to shift? A or B? can we just default to A.
+          //ALU_out = {1'b0, ALU_out[7:1]};
+          ALU_out = {1'b0, A[7:1]};
+          // need to shift out the carry i thk.
+          ACR = A[0];
+
+    
   end
   
 endmodule
@@ -82,11 +85,11 @@ module AdderHoldReg(phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes, ADL,SB);
     inout [7:0] ADL, SB;
     
     wire phi2;
-  reg [7:0] adderReg;
+    reg [7:0] adderReg;
   
-  always @ (phi2) begin
-    adderReg <= addRes;
-  end
+    always @ (posedge phi2) begin
+        adderReg <= addRes;
+    end
   
   TRIBUF adl[7:0](adderReg, ADD_ADL, ADL);
   TRIBUF sb1[6:0](adderReg[6:0], ADD_ADL0to6, SB[6:0]);
@@ -100,8 +103,12 @@ module Areg(O_ADD, SB_ADD, SB,
             
     input O_ADD, SB_ADD;
     input [7:0] SB;
-    output reg [7:0] outToALU;
+    output [7:0] outToALU;
   
+    wire O_ADD, SB_ADD;
+    wire [7:0] SB;
+    reg [7:0] outToALU;
+    
   always @ (*) begin
   // which case should take priority
     if (SB_ADD)
@@ -119,7 +126,11 @@ module Breg(DB_L_AD, DB_ADD, ADL_ADD, dataIn, INVdataIn, ADL,
     input DB_L_AD, DB_ADD, ADL_ADD;
     input [7:0] dataIn, INVdataIn;
     input [7:0] ADL;
-    output reg [7:0] outToALU;
+    output [7:0] outToALU;
+    
+    wire DB_L_AD, DB_ADD, ADL_ADD;
+    wire [7:0] dataIn, INVdataIn, ADL;
+    reg [7:0] outToALU;
   
   always @ (*) begin
     if (DB_L_AD)
@@ -180,23 +191,24 @@ module inputDataLatch(phi1, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
     
     wire phi1,phi2,DL_DB, DL_ADL, DL_ADH;
     wire [7:0] extDataBus;
+    wire [7:0] DB, ADL, ADH; 
     
-    reg [7:0] DB, ADL, ADH; 
-    
+    // internal
+    reg [7:0] DBreg, ADLreg, ADHreg; 
     reg [7:0] data;
   
+    TRIBUF db(DBreg,en,DB);
+    TRIBUF adl(ADLreg,en,ADL);
+    TRIBUF adh(ADHreg,en,ADH);
+  
     always @ (posedge phi2) begin
-            DB <= (DL_DB) ? data : 8'bZZZZZZZZ;
-            ADL <= (ADL_DB) ? data : 8'bZZZZZZZZ;
-            ADH <= (ADH_DB) ? data : 8'bZZZZZZZZ;
             data <= extDataBus;
     end
     
     always @ (posedge phi1) begin
-
-        DB <= (DL_DB) ? data : 8'bZZZZZZZZ;
-        ADL <= (ADL_DB) ? data : 8'bZZZZZZZZ;
-        ADH <= (ADH_DB) ? data : 8'bZZZZZZZZ;
+        DBreg <= (DL_DB) ? data : 8'bZZZZZZZZ;
+        ADLreg <= (ADL_DB) ? data : 8'bZZZZZZZZ;
+        ADHreg <= (ADH_DB) ? data : 8'bZZZZZZZZ;
             
     end
     
@@ -231,6 +243,12 @@ module increment(inc, inAdd,
     output carry;
     output [7:0] outAdd;
     
+    wire inc;
+    wire [7:0] inAdd;
+    reg carry;
+    reg [7:0] outAdd;
+
+    //internal    
     reg [8:0] result;
     
     always @(*)begin
@@ -264,7 +282,6 @@ module PC(phi2, PCL_DB, PCL_ADL,inFromIncre,
     TRIBUF db[7:0](currPC, PCL_DB, DB);
     TRIBUF adl[7:0](currPC, PCL_ADL, ADL);
 
-
     assign PCout = currPC;
     
     always @ (posedge phi2) begin
@@ -295,28 +312,22 @@ module SPreg(phi2, S_S, SB_S, S_ADL, S_SB, SBin,
     
     wire phi2, S_S, SB_S, S_ADL, S_SB;
     wire [7:0] SBin;
-    reg [7:0] ADL, SB;
+    wire [7:0] ADL, SB;
     
-    reg [7:0] latchIn, latchOut;
+    reg [7:0] latchOut;
     
     TRIBUF adl[7:0](latchOut, S_ADL, ADL);
     TRIBUF sb[7:0](latchOut, S_SB, SB);
     
     always @ (posedge phi2) begin
-    if (S_S) begin
-        
-    end
-    else if (SB_S) begin
-        latchOut <= latchIn;
-        latchIn <= (S_ADL) ? ADL : SB;
-        if (S_ADL == S_SB) latchOut <= 8'bzzzzzzzz; //should not reach here!
-    end
-    
+        if (SB_S) latchOut <= SBin;
     end
     
     
 endmodule
 
+//DSA - Decimal subtract adjust
+//DAA - Decimal add adjust
 module decimalAdjust(SBin, DSA, DAA, ACR, HC, phi2,
                     dataOut);
 
@@ -325,32 +336,39 @@ module decimalAdjust(SBin, DSA, DAA, ACR, HC, phi2,
     output [7:0] dataOut;
     
     reg [7:0] dataOut;
+    
+    //internal
+    reg [7:0] data;
+    
+    
     //refer to http://imrannazar.com/Binary-Coded-Decimal-Addition-on-Atmel-AVR
-    // for the function of this. basically i think this converts the input, into BCD format.
-    
-    // I DO NOT UNDERSTAND THE BLOCK DIAGRAM. WHY GOT WIRES AND GATES ON THE OUTSIDE OF THE ADJUSTERS.
-    // there seems to be 8 decimal adjusters???? lol.
-    // AND WHAT DO I DO WITH THE CLOCK INPUT -.-
-    // and what is DSA?
-    
-    // implementation based on website above:
-
+    //tada. settled. refer to webstie for more details
     always @ (*) begin
-    
         if (DAA) begin
             if (SBin[3:0] > 4'd9 || HC) begin
-                dataOut = SBin + 8'h6;
+                data = SBin + 8'h06;
             end
                 
             if (ACR || (SBin > 8'h99)) begin
-                dataOut = SBin + 8'h60;
+                data = data + 8'h60;
                 // BCD carry has occurred. Do anything??
             end 
         
         end
         
-        else dataOut = SBin;
+        else if (DSA)//decimal mode
+        begin
+            if (SBin[3:0] > 4'd9) begin
+                data = SBin - 8'h06;
+            end
+            if (SBin[7:4] > 4'd9) begin
+                data = data - 8'h60;
+            end
+        end    
+    end
     
+    always @ (posedge phi2) begin
+        dataOut <= data;
     end
     
     // this module is a mess!
@@ -364,6 +382,7 @@ module accum(inFromDecAdder, SB_AC, AC_DB, AC_SB,
     input SB_AC, AC_DB, AC_SB;
     inout DB, SB;
     
+    wire S
     reg [7:0] currAccum;
     
     always @ (*) begin
@@ -392,8 +411,32 @@ module AddressBusReg(phi1, dataIn,
         data <= dataIn;
     end
     
-    
 endmodule
+
+/*
+//used to force an address to a vector
+module AddressBusForce(phi2,dataIn,bus);
+
+    input phi2;
+    input [7:0] dataIn;
+    output [7:0] bus;
+    
+    wire phi2;
+    wire [7:0] dataIn;
+    reg [7:0] bus;
+    
+    always @ (posedge phi2) begin
+        if (dataIn !== `NO_INTERRUPTS) begin
+            bus <= dataIn;
+        end
+        else begin
+            bus <= 8'bzzzzzzzz;
+        end
+        
+    end
+endmodule
+*/
+
 
 //used for x and y registers
 module register(phi2, load, bus_en,
@@ -402,62 +445,74 @@ module register(phi2, load, bus_en,
     input phi2, bus_en;
     inout [7:0] SB;
     
-    wire phi2;
+    wire phi2, bus_en;
+    wire [7:0] SB;
+    
+    
+    assign SB = (bus_en) ? currVal : 8'bzzzzzzzz;
+    
+    
     reg [7:0] currVal;
     
     
     always @(posedge phi2) begin
         if (load) currVal <= SB;
-        SB <= (bus_en) ? currVal : 8'bzzzzzzzz;
-    
+        else currVal <= currVal;
     end
     
 endmodule
 
-module statusReg(phi1, phi2, P_DB, DBZ, IR5, ACR ,AVR,
+//this needs to push out B bit when its a BRK.
+module statusReg(phi2, P_DB, DBZ, IR5, ACR ,AVR,
                     DBO_C , IR5_C, ACR_C, 
                     DBI_Z, DBZ_Z, 
                     DB2_I, IR5_I, 
                     DB3_D, IR5_D, 
                     DB6_V, AVR_V, I_V, 
                     DB7_N, DBin,
+                    opcode,
                     DBinout);
     
-    input phi1, phi2, P_DB, DBZ, IR5, ACR ,AVR ,
+    input phi2, P_DB, DBZ, IR5, ACR ,AVR ,
                     DBO_C , IR5_C, ACR_C, 
                     DBI_Z, DBZ_Z, 
                     DB2_I, IR5_I, 
                     DB3_D, IR5_D, 
                     DB6_V, AVR_V, I_V, 
                     DB7_N;
-    input [7:0] DBin;
-                    
+    input [7:0] DBin, opcode;
     inout [7:0] DBinout;
     
-    reg [7:0] cusrrVal;
-    
-    assign DBinout = (P_DB) ? currVal:8'bzzzzzzzz;
+    wire phi2, P_DB, DBZ, IR5, ACR ,AVR ,
+                    DBO_C , IR5_C, ACR_C, 
+                    DBI_Z, DBZ_Z, 
+                    DB2_I, IR5_I, 
+                    DB3_D, IR5_D, 
+                    DB6_V, AVR_V, I_V, 
+                    DB7_N;
+                    
+    wire [7:0] DBin, opcode, DBinout;
+
+    // internal
+    reg [7:0] currVal;
     
     // bit arrangement: (bit 7) NV_BDIZC (bit 0) - bit 2 has no purpose.
+        
     always @(posedge phi2) begin
-        currVal <= DBin;
+        
+        currVal[`status_C] <= DBO_C | IR5_C | ACR_C;
+        currVal[`status_Z] <= DBI_Z | DBZ_Z;
+        currVal[`status_I] <= DB2_I | IR5_I;
+        currVal[`status_D] <= DB3_D | IR5_D;
+        currVal[4] <= (opcode == `BRK || opcode == `PHP) ? 1'b1 : 1'b0; //trying to inject B in..
+        currVal[5] <= 1'b1; //default
+        currVal[`status_V] <= DB6_V | AVR_V | I_V;
+        currVal[`status_N] <= DB7_N;
+        
     end
     
-    always @(*) begin
-        
-        currVal[`status_C] = DBO_C | IR5_C | ACR_C;
-        currVal[`status_Z] = DBI_Z | DBZ_Z;
-        currVal[`status_I] = DB2_I | IR5_I;
-        currVal[`status_D] = DB3_D | IR5_D;
-        currVal[4] = 1'b0; //read documents, but dont undestand what this bit does...
-        currVal[5] = 1'b0;
-        currVal[`status_V] = DB6_V | AVR_V | I_V;
-        currVal[`status_N] = DB7_N;
-        
-        DBinout = (P_DB) ? currVal : 8'bzzzzzzzz;
-    end
-
-
+    assign DBinout = (P_DB) ? currVal : 8'bzzzzzzzz;
+    
 endmodule
 
 module prechargeMos(phi2,
@@ -467,8 +522,11 @@ module prechargeMos(phi2,
     inout bus;
     
     wire phi2;
-    reg bus;
+    wire bus;
     
+    bufif0 (pull1, highz0) a[7:0](bus,8'hff,phi2);
+    
+    /*
     always @(posedge phi2) begin
         if (bus[7] !== 1'd0 && bus[7] !== 1'd1) bus[7] <= 1'd1;
         else bus[7] <= 1'bz;
@@ -498,11 +556,25 @@ module prechargeMos(phi2,
     always @(phi2) begin
         bus = 8'bZZZZZZZZ;
     end
-   
+   */
 endmodule
 
-module opendrainMos(O_ADL0, O_ADL1, O_ADL2,
+module opendrainMosADL(O_ADL0, O_ADL1, O_ADL2,
                     bus)
     
-    assign bus = (O_ADL0 || O_ADL1 || O_ADL2) ? 8'd0 : 8'bZZZZZZZZ;
+    bufif0 (highz1, strong0) a(bus[0],1'b0,O_ADL0);
+    bufif0 (highz1, strong0) b(bus[1],1'b0,O_ADL1);
+    bufif0 (highz1, strong0) c(bus[2],1'b0,O_ADL2);
+    
 endmodule
+
+
+module opendrainMosADH(O_ADH0, O_ADL17,
+                    bus)
+    
+    bufif0 (highz1, strong0) a(bus[0],1'b0,O_ADH0);
+    bufif0 (highz1, strong0) b(bus[7:1],7'b111_1111,O_ADL17);
+    
+endmodule
+
+

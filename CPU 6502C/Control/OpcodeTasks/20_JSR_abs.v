@@ -22,10 +22,10 @@ task JSR_abs;
 					controlSigs[`DB_L_ADD] = 1'b1;
 					controlSigs[`SB_ADD] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
-					controlSigs[`DAA] = 1'b1;
+					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_SB7] = 1'b1;
 					controlSigs[`ADD_SB0to6] = 1'b1;
-					controlSigs[`DSA] = 1'b1;
+					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`PCH_PCH] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
@@ -35,10 +35,10 @@ task JSR_abs;
 				//SADL,SUMS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,DL/ADH,DL/DB
 					controlSigs[`S_ADL] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
-					controlSigs[`DAA] = 1'b1;
+					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_SB7] = 1'b1;
 					controlSigs[`ADD_SB0to6] = 1'b1;
-					controlSigs[`DSA] = 1'b1;
+					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`DL_ADH] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
 				end
@@ -54,10 +54,10 @@ task JSR_abs;
 					controlSigs[`DB_ADD] = 1'b1;
 					controlSigs[`O_ADD] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
-					controlSigs[`DAA] = 1'b1;
+					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_SB7] = 1'b1;
 					controlSigs[`ADD_SB0to6] = 1'b1;
-					controlSigs[`DSA] = 1'b1;
+					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`ADH_PCH] = 1'b1;
 					controlSigs[`ADL_PCL] = 1'b1;
 					controlSigs[`DL_ADH] = 1'b1;
@@ -66,10 +66,10 @@ task JSR_abs;
 				else if (phi2) begin
 				//SUMS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBDB,PCHADH,PCLADL
 					controlSigs[`SUMS] = 1'b1;
-					controlSigs[`DAA] = 1'b1;
+					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_SB7] = 1'b1;
 					controlSigs[`ADD_SB0to6] = 1'b1;
-					controlSigs[`DSA] = 1'b1;
+					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
@@ -85,10 +85,10 @@ task JSR_abs;
 					controlSigs[`DB_ADD] = 1'b1;
 					controlSigs[`SB_ADD] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
-					controlSigs[`DAA] = 1'b1;
+					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_SB7] = 1'b1;
 					controlSigs[`ADD_SB0to6] = 1'b1;
-					controlSigs[`DSA] = 1'b1;
+					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`ADH_PCH] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
@@ -99,8 +99,8 @@ task JSR_abs;
 					//SADL,SUMS,#DAA,~DAA,#DSA,~DSA,SBDB,0ADH17,DL/DB
 					controlSigs[`S_ADL] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
-					controlSigs[`DAA] = 1'b1;
-					controlSigs[`DSA] = 1'b1;
+					controlSigs[`nDAA] = 1'b1;
+					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`O_ADH1to7] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
@@ -116,76 +116,78 @@ task JSR_abs;
 					controlSigs[`ADL_ADD] = 1'b1;
 					controlSigs[`O_ADD] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
-					controlSigs[`DAA] = 1'b1;
-					controlSigs[`DSA] = 1'b1;
+					controlSigs[`nDAA] = 1'b1;
+					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`O_ADH1to7] = 1'b1;
 					controlSigs[`PCH_PCH] = 1'b1;
-					controlSigs[`I_PC] = 1'b1;
+					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_PCL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
 			end
 			else if (phi2) begin
 				//SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,PCHDB,#IPC,~IPC
 					controlSigs[`SUMS] = 1'b1;
-					controlSigs[`DAA] = 1'b1;
+					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_ADL] = 1'b1;
-					controlSigs[`DSA] = 1'b1;
+					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`PCH_DB] = 1'b1;
-					controlSigs[`I_PC] = 1'b1;
+					controlSigs[`nI_PC] = 1'b1;
 			end
 	
 			`Tfour:begin
-		newT = `Tfive;
+            newT = `Tfive;
+            controlSigs[`nRW] = 1'b1;
 			if (phi1) begin
 				//SS,ADLADD,SBADD,SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,PCHPCH,PCHDB,#IPC,~IPC,PCLPCL
 					controlSigs[`S_S] = 1'b1;
 					controlSigs[`ADL_ADD] = 1'b1;
 					controlSigs[`SB_ADD] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
-					controlSigs[`DAA] = 1'b1;
+					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_ADL] = 1'b1;
-					controlSigs[`DSA] = 1'b1;
+					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`PCH_PCH] = 1'b1;
 					controlSigs[`PCH_DB] = 1'b1;
-					controlSigs[`I_PC] = 1'b1;
+					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_PCL] = 1'b1;
 			end
 			else if (phi2) begin
 				//SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,#IPC,~IPC,PCLDB
 					controlSigs[`SUMS] = 1'b1;
-					controlSigs[`DAA] = 1'b1;
+					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_ADL] = 1'b1;
-					controlSigs[`DSA] = 1'b1;
-					controlSigs[`I_PC] = 1'b1;
+					controlSigs[`nDSA] = 1'b1;
+					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_DB] = 1'b1;
 			end
 			
 			`Tfive:begin
-		newT = `Tzero;
+            newT = `Tzero;
+            controlSigs[`nRW] = 1'b1;
 			if (phi1) begin
 				//SS,ADLADD,SBADD,SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,PCHPCH,#IPC,~IPC,PCLDB,PCLPCL
 					controlSigs[`S_S] = 1'b1;
 					controlSigs[`ADL_ADD] = 1'b1;
 					controlSigs[`SB_ADD] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
-					controlSigs[`DAA] = 1'b1;
+					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_ADL] = 1'b1;
-					controlSigs[`DSA] = 1'b1;
+					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`PCH_PCH] = 1'b1;
-					controlSigs[`I_PC] = 1'b1;
+					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_DB] = 1'b1;
 					controlSigs[`PCL_PCL] = 1'b1;
 			end
 			else if (phi2) begin
 				//SUMS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,PCHADH,#IPC,~IPC,PCLADL
 					controlSigs[`SUMS] = 1'b1;
-					controlSigs[`DAA] = 1'b1;
+					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_SB7] = 1'b1;
 					controlSigs[`ADD_SB0to6] = 1'b1;
-					controlSigs[`DSA] = 1'b1;
+					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
-					controlSigs[`I_PC] = 1'b1;
+					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
 			end
 		endcase

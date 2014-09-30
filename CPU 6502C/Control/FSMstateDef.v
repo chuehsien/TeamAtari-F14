@@ -4,3 +4,4 @@
 `define execNorm		3'b011
 `define execRMW			3'b100
 `define execBranch		3'b101
+`define execBrk         3'b110

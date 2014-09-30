@@ -15,7 +15,7 @@
 
 
 // differentiates between the 3 kinds of instructions
-module instructionType(opcode, dummy_state);
+task instructionType(opcode, dummy_state);
 	input [7:0] opcode;
 	output [2:0] dummy_state;
 	
@@ -23,7 +23,7 @@ module instructionType(opcode, dummy_state);
 	reg [2:0] dummy_state;
 	always @(*) begin
 	if (
-		opcode == `BRK     ||opcode == `ORA_izx ||opcode == `ORA_zp  ||opcode == `ASL_zp  ||opcode == `PHP     ||opcode == `ORA_imm ||
+		opcode == `ORA_izx ||opcode == `ORA_zp  ||opcode == `ASL_zp  ||opcode == `PHP     ||opcode == `ORA_imm ||
 		opcode == `ASL     ||opcode == `ORA_abs ||opcode == `ASL_abs ||opcode == `ORA_zpx ||opcode == `ASL_zpx ||
 		opcode == `CLC     ||opcode == `ASL_abx ||opcode == `JSR_abs ||opcode == `AND_izx ||opcode == `BIT_zp  ||
 		opcode == `AND_zp  ||opcode == `ROL_zp  ||opcode == `PLP     ||opcode == `AND_imm ||opcode == `ROL     ||
@@ -62,15 +62,44 @@ module instructionType(opcode, dummy_state);
 		opcode == `BCS_rel ||opcode == `BNE_rel ||opcode == `BEQ_rel)
 		dummy_state = `execBranch;
 		
-	else dummy_state = 3'bxxx;
+	else if (opcode == `BRK)
+        dummy_state = `execBrk;
+    
+    else dummy_state = 3'bxxx;
 	
 	end
 	
-endmodule
+endtask
 
+//handles the interrupts
+task getControlsBrk(phi1,phi2,opcode,interruptArray,currT,
+                    dummy_T, dummy_control);
+                    				
+	input phi1,phi2;
+	input [7:0] opcode;
+    input [3:0] interruptArray;
+	input [6:0] currT;
+	output [6:0] dummy_T;
+	output [61:0] dummy_control;
+	
+	wire phi1,phi2;
+	wire [7:0] opcode;
+    wire [3:0] interruptArray;
+	wire [6:0] currT;
+	reg [6:0] dummy_T;
+	reg [61:0] dummy_control;
+	
+	always @ (*) begin
+		dummy_control = 62'd0;
+		dummy_T = 7'dx;
+        BRK(currT,phi1,phi2,interruptArray,dummy_control,dummy_T);
+        
+    end
+        
+endtask
 
 // take charge of the control signals for normal instructions.
-module getControlsNorm(phi1,phi2,opcode, currT, 
+task getControlsNorm(phi1,phi2,opcode, currT, 
 				dummy_T, dummy_control);
 				
 	input phi1,phi2;
@@ -89,7 +118,6 @@ module getControlsNorm(phi1,phi2,opcode, currT,
 		dummy_control = 62'd0;
 		dummy_T = 7'dx;
 		case (opcode)
-		`BRK    : BRK    (currT,phi1,phi2,dummy_control,dummy_T);
 		`ORA_izx: ORA_izx(currT,phi1,phi2,dummy_control,dummy_T);
 		`ORA_zp : ORA_zp (currT,phi1,phi2,dummy_control,dummy_T);
 		`ASL_zp : ASL_zp (currT,phi1,phi2,dummy_control,dummy_T);
@@ -211,10 +239,10 @@ module getControlsNorm(phi1,phi2,opcode, currT,
 
 		endcase
 	end
-endmodule
+endtask
 	
 // take charge of the control signals for RMW instructions.
-module getControlsRMW(phi1,phi2,statusReg, opcode, currT, 
+task getControlsRMW(phi1,phi2,statusReg, opcode, currT, 
 				dummy_T, dummy_control);
 
 	input phi1,phi2;
@@ -262,10 +290,10 @@ module getControlsRMW(phi1,phi2,statusReg, opcode, currT,
 	
 	end
 	
-endmodule
+endtask
 
 // take charge of the control signals for branch instructions.
-module getControlsBranch(phi1,phi2,statusReg, opcode, currT, 
+task getControlsBranch(phi1,phi2,statusReg, opcode, currT, 
 				dummy_T, dummy_control);
 	input phi1,phi2;
 	input [7:0] statusReg,opcode;
@@ -297,4 +325,28 @@ module getControlsBranch(phi1,phi2,statusReg, opcode, currT,
 		
 		endcase
 	end
-endmodule
+endtask
+
+task findLeftOverSig;
+    input [7:0] opcode;
+    input [6:0] currT;
+    output [7:0] leftOverSigNum;
+    
+    always @ (*) begin
+    leftOverSigNum = 8'd0;
+    
+        if (currT == `Tone) && 
+            (opcode == `ADC_abs || opcode == `ADC_abx || opcode == `ADC_aby || opcode == `ADC_imm || 
+             opcode == `ADC_izx || opcode == `ADC_izy || opcode == `ADC_zp  || opcode == `ADC_zpx ||
+             opcode == `SBC_abs || opcode == `SBC_abx || opcode == `SBC_aby || opcode == `SBC_imm || 
+             opcode == `SBC_izx || opcode == `SBC_izy || opcode == `SBC_zp  || opcode == `SBC_zpx ||
+             opcode == `ASL     || opcode == `LSR     || opcode == `ROL     || opcode == `ROR     ) begin
+                leftOverSigNum = `SBAC
+             end
+             
+             
+        else if (opcode == `INX || opcode == `DEX) leftOverSigNum = `SBX;
+        else if (opcode == `INY || opcode == `DEY) leftOverSigNum = `SBY;
+             
+    end
+endtask
