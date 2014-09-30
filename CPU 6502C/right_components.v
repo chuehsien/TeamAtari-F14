@@ -48,6 +48,7 @@ module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC)
   output reg AVR, ACR, HC;
   
   always @ (*) begin
+
     AVR = 1'b0;
     ACR = 1'b0;
     HC = 1'b0;

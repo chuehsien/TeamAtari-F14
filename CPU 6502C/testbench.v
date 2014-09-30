@@ -1,6 +1,6 @@
 `define G1ANDG2 2'd0
 
-module testPLA;
+/* module testPLA;
 	reg [7:0] instruction;
 	reg [2:0] timing;
 	reg clock;
@@ -28,9 +28,58 @@ module testPLA;
 	end
 
 
+endmodule */
+
+module testMem256x256;
+
+  reg clock, enable, we_L, re_L;
+  reg [15:0] address;
+  //reg [7:0] data;
+  
+  wire [7:0] data;
+  
+  always begin
+    #10 clock = ~clock;
+  end
+  
+  memory256x256 mem256x256_module(.clock(clock), .enable(enable), .we_L(we_L), .re_L(re_L), .address(address), .data(data));
+  
+  
+  task printMem;
+    begin
+      $display("Memory at %h: \t%h", address, data);
+    end
+  endtask
+  
+  
+  initial begin
+    
+    enable = 1'b1;
+    we_L = 1'b1;
+    re_L = 1'b0;
+    
+    #50;
+    $display("printing from memory...");
+    $display("=======================");
+    for (address = 16'd0; address < 16'hFFFF; address = address + 16'd1) begin
+      #50;
+      printMem;   
+    end
+    #50;
+    printMem;
+    $display("=======================");
+    $display("done printing from memory...");
+    $finish;
+  
+  
+  
+  end
+  
+  
+  
 endmodule
 
-//created 28 Sept 2014
+//created 28 Sept 2014, bhong
 module testALU;
   reg [7:0] A, B;
   reg DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS;
@@ -44,19 +93,19 @@ module testALU;
   task printLines;
   begin
     if (SUMS) begin
-      $display("\t%b \t+ \t%b \t-> \t%b; AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
+      $display("\t%b \t+ \t%b \t-> \t%b; I_ADDC: \t%b, AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
     end
     else if (ANDS) begin
-      $display("\t%b \t& \t%b \t-> \t%b; AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
+      $display("\t%b \t& \t%b \t-> \t%b; I_ADDC: \t%b, AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
     end
     else if (EORS) begin
-      $display("\t%b \t^ \t%b \t-> \t%b; AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
+      $display("\t%b \t^ \t%b \t-> \t%b; I_ADDC: \t%b, AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
     end
     else if (ORS) begin
-      $display("\t%b \t| \t%b \t-> \t%b; AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
+      $display("\t%b \t| \t%b \t-> \t%b; I_ADDC: \t%b, AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
     end
     else if (SRS) begin
-      $display("\t%b \t>> \t%b \t-> \t%b; AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
+      $display("\t%b \t>> \t%b \t-> \t%b; I_ADDC: \t%b, AVR: \t%b, ACR: \t%b, HC: \t%b", A, B, ALU_out, AVR, ACR, HC);
     end
     else begin
       $display("invalid input");
@@ -128,12 +177,12 @@ module testALU;
     
     
     
-    for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
-      for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
-        #100;
-        printLines();
-      end    
-    end
+    // for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
+      // for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
+        // #100;
+        // printLines();
+      // end    
+    // end
     #100;
     printLines();
     $display("end of testing SUMS");
@@ -195,12 +244,12 @@ module testALU;
     #100;
     printLines();
     
-    for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
-      for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
-        #100;
-        printLines();
-      end    
-    end
+    // for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
+      // for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
+        // #100;
+        // printLines();
+      // end    
+    // end
     #100;
     printLines();
     $display("end of testing ANDS");
@@ -262,12 +311,12 @@ module testALU;
     #100;
     printLines();
     
-    for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
-      for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
-        #100;
-        printLines();
-      end    
-    end
+    // for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
+      // for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
+        // #100;
+        // printLines();
+      // end    
+    // end
     #100;
     printLines();
     $display("end of testing EORS");
@@ -329,12 +378,12 @@ module testALU;
     #100;
     printLines();
     
-    for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
-      for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
-        #100;
-        printLines();
-      end    
-    end
+    // for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
+      // for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
+        // #100;
+        // printLines();
+      // end    
+    // end
     #100;
     printLines();
     $display("end of testing ORS");
@@ -396,19 +445,19 @@ module testALU;
     #100;
     printLines();
     
-    for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
-      for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
-        #100;
-        printLines();
-      end    
-    end
+    // for (A = 8'd0; A != 8'd255; A = A + 8'd1) begin
+      // for (B = 8'd0; B != 8'd255; B = B + 8'd1) begin
+        // #100;
+        // printLines();
+      // end    
+    // end
     #100;
     printLines();
     $display("end of testing SRS");
     $display("====================");
-    $finish
+    $finish;
 
-
+  end
 
 endmodule
 
@@ -416,7 +465,7 @@ endmodule
 // need to test if outputs are right on the right timing
 // 
 
-
+/* 
 module decodeROM(in, timing,
 				out);
 				
@@ -425,7 +474,9 @@ module decodeROM(in, timing,
 	input clock;
 	output [129:0] out;
 	
+  wire [129:0] out;
 	reg [1:0] G;
+  
 	case ({in[1],in[0]}) begin
 		2'd0: G = 2'd3;
 		2'd1: G = 2'd1;
@@ -565,4 +616,4 @@ module decodeROM(in, timing,
 	assign out[128] = (in == 8'b0XXXXXXX) & (G==2'dx) & (T==3'dx); // NI7P
 	assign out[129] = (in == 8'bX0XXXXXX) & (G==2'dx) & (T==3'dx); // NI6P
 	
-endmodule
+endmodule */

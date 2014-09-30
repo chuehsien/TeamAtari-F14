@@ -1,0 +1,8 @@
+//Comments are allowed 
+// Byte addressable memory list
+AA   //
+BB   // This is first address i.e 16'h0000
+CC   // This is second address i.e 16'h0001
+@5555        // Jump to new address 16'h5555
+DD   // This is address 16'h5555
+EE   // This is address 16'h5556
