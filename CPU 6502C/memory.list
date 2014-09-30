@@ -1,7 +1,8 @@
 //Comments are allowed 
-AA
-1100_1100   // This is first address i.e 8'h00
-1010_1010   // This is second address i.e 8'h01
-@ 55        // Jump to new address 8'h55
-0101_1010   // This is address 8'h55
-0110_1001   // This is address 8'h56
+// Byte addressable memory list
+AA   //
+BB   // This is first address i.e 16'h0000
+CC   // This is second address i.e 16'h0001
+@5555        // Jump to new address 16'h5555
+DD   // This is address 16'h5555
+EE   // This is address 16'h5556
