@@ -23,8 +23,8 @@ task EOR_imm;
 					controlSigs[`DB_ADD] = 1'b1;
 					controlSigs[`SB_ADD] = 1'b1;
 					controlSigs[`EORS] = 1'b1;
-					controlSigs[`DAA] = 1'b1;
-					controlSigs[`DSA] = 1'b1;
+					controlSigs[`nDAA] = 1'b1;
+					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`AC_SB] = 1'b1;
 					controlSigs[`ADH_PCH] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
@@ -35,10 +35,10 @@ task EOR_imm;
 				else if (phi2) begin
 				//EORS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBDB,PCHADH,PCLADL
 					controlSigs[`EORS] = 1'b1;
-					controlSigs[`DAA] = 1'b1;
+					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_SB7] = 1'b1;
 					controlSigs[`ADD_SB0to6] = 1'b1;
-					controlSigs[`DSA] = 1'b1;
+					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
@@ -54,10 +54,10 @@ task EOR_imm;
 					controlSigs[`DB_ADD] = 1'b1;
 					controlSigs[`SB_ADD] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
-					controlSigs[`DAA] = 1'b1;
+					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_SB7] = 1'b1;
 					controlSigs[`ADD_SB0to6] = 1'b1;
-					controlSigs[`DSA] = 1'b1;
+					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`ADH_PCH] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
@@ -67,8 +67,8 @@ task EOR_imm;
 				else if (phi2) begin
 				//SUMS,#DAA,~DAA,#DSA,~DSA,PCHADH,PCLADL,DL/DB
 					controlSigs[`SUMS] = 1'b1;
-					controlSigs[`DAA] = 1'b1;
-					controlSigs[`DSA] = 1'b1;
+					controlSigs[`nDAA] = 1'b1;
+					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;

@@ -9,7 +9,7 @@
 `define ADL_ABL 6'd6
 `define PCL_PCL 6'd7
 `define ADL_PCL 6'd8
-`define I_PC 6'd9
+`define nI_PC 6'd9
 `define PCL_DB 6'd10
 `define PCL_ADL 6'd11
 `define PCH_PCH 6'd12
@@ -29,8 +29,8 @@
 `define DB_ADD 6'd26
 `define ADL_ADD 6'd27
 `define I_ADDC 6'd28
-`define DAA 6'd29
-`define DSA 6'd30
+`define nDAA 6'd29
+`define nDSA 6'd30
 
 `define SUMS 6'd31
 `define ANDS 6'd32
@@ -66,4 +66,21 @@
 `define I_V 6'd60
 `define DB7_N 6'd61
 
+`define nRW 6'd62
+
+
 `define controlStall 61'd0
+
+`define RST_i 2'd0
+`define NMI_i 2'd1
+`define IRQ_i 2'd2
+`define BRK_i 2'd3
+
+`define IRQ_i 8'hfffe
+`define RST_i 8'hfffc
+`define NMI_i 8'hfffa
+`define BRK_i 8'hfffe
+
+`define NO_INTERRUPTS 8'hxx //value to force bus to (to force address onto the line)
+
+
