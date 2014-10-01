@@ -9,9 +9,6 @@ task ADC_izy;
 	reg [6:0] newT;
 
 	
-	wire [6:0] T;
-	wire phi1,phi2;
-	wire carry;
 	reg [62:0] controlSigs;
 	
 	begin

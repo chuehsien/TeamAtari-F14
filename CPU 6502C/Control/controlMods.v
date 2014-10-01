@@ -19,9 +19,8 @@ task instructionType;
 	input [7:0] opcode;
 	output [2:0] dummy_state;
 	
-	wire [7:0] opcode;
 	reg [2:0] dummy_state;
-	always @(*) begin
+	begin
 	if (
 		opcode == `ORA_izx ||opcode == `ORA_zp  ||opcode == `ASL_zp  ||opcode == `PHP     ||opcode == `ORA_imm ||
 		opcode == `ASL     ||opcode == `ORA_abs ||opcode == `ASL_abs ||opcode == `ORA_zpx ||opcode == `ASL_zpx ||
@@ -80,13 +79,10 @@ task getControlsBrk;
 	output [6:0] dummy_T;
 	output [61:0] dummy_control;
 	
-	wire phi1,phi2;
-    wire [3:0] interruptArray;
-	wire [6:0] currT;
 	reg [6:0] dummy_T;
 	reg [61:0] dummy_control;
 	
-	always @ (*) begin
+	begin
 		dummy_control = 62'd0;
 		dummy_T = 7'dx;
         BRK(currT,phi1,phi2,interruptArray,dummy_control,dummy_T);
@@ -104,13 +100,10 @@ task getControlsNorm;
 	output [6:0] dummy_T;
 	output [61:0] dummy_control;
 	
-	wire phi1,phi2;
-	wire [7:0] opcode;
-	wire [6:0] currT;
 	reg [6:0] dummy_T;
 	reg [61:0] dummy_control;
 	
-	always @ (*) begin
+	begin
 		dummy_control = 62'd0;
 		dummy_T = 7'dx;
 		case (opcode)
@@ -246,13 +239,10 @@ task getControlsRMW;
 	output [6:0] dummy_T;
 	output [61:0] dummy_control;
 	
-	wire phi1,phi2;
-	wire [7:0] statusReg,opcode;
-	wire [6:0] currT;
 	reg [6:0] dummy_T;
 	reg [61:0] dummy_control;
 	
-	always @ (*) begin
+	begin
 		dummy_control = 62'd0;
 		dummy_T = 7'dx;
 		case (opcode)
@@ -295,14 +285,11 @@ task getControlsBranch;
 	output [6:0] dummy_T;
 	output [61:0] dummy_control;
 	
-	wire phi1,phi2;
-	wire [7:0] statusReg,opcode;
-	wire [6:0] currT;
 	reg [6:0] dummy_T;
 	reg [61:0] dummy_control;
 	
 	
-	always @ (*) begin
+	begin
 		dummy_control = 62'd0;
 		dummy_T = 7'dx;
 		case (opcode)
@@ -326,7 +313,7 @@ task findLeftOverSig;
     input [6:0] currT;
     output [7:0] leftOverSigNum;
     
-    always @ (*) begin
+    begin
     leftOverSigNum = 8'd0;
     
         if ((currT == `Tone) && 

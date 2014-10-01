@@ -8,8 +8,6 @@ task ORA_izx;
 	reg [6:0] newT;
 
 	
-	wire [6:0] T;
-	wire phi1,phi2;
 	reg [62:0] controlSigs;
 	
 	begin
