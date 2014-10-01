@@ -1,8 +1,8 @@
 
-`include "opcodeDef.v"
-`include "opcodeTasks.v"
-`include "controlDef.v"
-`include "TDef.v"
+`include "Control/opcodeDef.v"
+`include "Control/opcodeTasks.v"
+`include "Control/controlDef.v"
+`include "Control/TDef.v"
 
 
 `define status_C 3'd0
@@ -15,7 +15,7 @@
 
 
 // differentiates between the 3 kinds of instructions
-task instructionType(opcode, dummy_state);
+task instructionType;
 	input [7:0] opcode;
 	output [2:0] dummy_state;
 	
@@ -72,8 +72,7 @@ task instructionType(opcode, dummy_state);
 endtask
 
 //handles the interrupts
-task getControlsBrk(phi1,phi2,interruptArray,currT,
-                    dummy_T, dummy_control);
+task getControlsBrk;
                     				
 	input phi1,phi2;
     input [3:0] interruptArray;
@@ -97,8 +96,7 @@ task getControlsBrk(phi1,phi2,interruptArray,currT,
 endtask
 
 // take charge of the control signals for normal instructions.
-task getControlsNorm(phi1,phi2,opcode, currT, 
-				dummy_T, dummy_control);
+task getControlsNorm;
 				
 	input phi1,phi2;
 	input [7:0] opcode;
@@ -240,8 +238,7 @@ task getControlsNorm(phi1,phi2,opcode, currT,
 endtask
 	
 // take charge of the control signals for RMW instructions.
-task getControlsRMW(phi1,phi2,statusReg, opcode, currT, 
-				dummy_T, dummy_control);
+task getControlsRMW;
 
 	input phi1,phi2;
 	input [7:0] statusReg,opcode;
@@ -291,8 +288,7 @@ task getControlsRMW(phi1,phi2,statusReg, opcode, currT,
 endtask
 
 // take charge of the control signals for branch instructions.
-task getControlsBranch(phi1,phi2,statusReg, opcode, currT, 
-				dummy_T, dummy_control);
+task getControlsBranch;
 	input phi1,phi2;
 	input [7:0] statusReg,opcode;
 	input [6:0] currT;

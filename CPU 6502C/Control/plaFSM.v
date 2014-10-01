@@ -6,11 +6,12 @@ This is the top FSM modules which implements the opcode -> controlSignal state m
 `include "Control/FSMstateDef.v"
 `include "Control/controlDef.v"
 `include "Control/TDef.v"
-`include "Control/controlMods.v"
+
 
 module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg, 
                 controlSigs, SYNC);
-                    
+     
+`include "Control/controlMods.v"               
     input phi1,phi2,nmi,irq,rst,RDY; //RDY is external input
     input [7:0] statusReg, opcodeIn;
     output [62:0] controlSigs;
