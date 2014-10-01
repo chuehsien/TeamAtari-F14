@@ -3,7 +3,7 @@
 `include "Control/opcodeTasks.v"
 `include "Control/controlDef.v"
 `include "Control/TDef.v"
-
+`include "Control/FSMstateDef.v"
 
 `define status_C 3'd0
 `define status_Z 3'd1
