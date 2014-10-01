@@ -42,7 +42,7 @@ module testCPU_FSM;
   reg [18:0] vectors [NUM_VECTORS-1:0];
   reg [18:0] vec;
   
-  integer i;
+  integer i, j;
   
   wire [62:0] controlSigs;
   wire SYNC;
@@ -58,7 +58,8 @@ module testCPU_FSM;
   
   
   task run_vector;
-  input [7:0] A, B, C;
+  input [7:0] A, B;
+  input [2:0] C;
   begin
     statusReg = A;
     opcodeIn = B;
@@ -66,8 +67,20 @@ module testCPU_FSM;
     //clock the number of cycles, after this, the result should be ready on controlSigs already.
     //@(posedge clock) x 30
     
+    $display("======================");
+    
+    $display("\tstatusReg is: \t%b, \topcodeIn is: \t%b, \tnumCycles is: \t%d", statusReg, opcodeIn, numCycles);
+    
+    
+    for (j = 3'd0; j < numCycles; j=j+1) begin
+      @(posedge phi1);
+      @(posedge phi2);
+    end
+    
     
     $display("\tcontrolSigs: \t%b, \tSYNC: \t%b, \tsetBflag: \t%b, \tclrBflag: \t%b", controlSigs, SYNC, setBflag, clrBflag);
+    
+    $display("======================");
     
     
     
@@ -82,7 +95,8 @@ module testCPU_FSM;
   $readmemh("fsm_test_vectors.vm", vectors);
   for (i=0; i<NUM_VECTORS; i=i+1) begin
     vec = vectors[i];
-    // run_vector(statusReg, opcodes, numcycles);
+    run_vector(vec[18:11], vec[10:3], vec[2:0]);
+    //run_vector(statusReg, opcodeIn, numCycles);
   end
   
   $finish;
