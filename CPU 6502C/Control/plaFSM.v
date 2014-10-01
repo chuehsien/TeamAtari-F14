@@ -2,9 +2,9 @@
 This is the top FSM modules which implements the opcode -> controlSignal state machine.
 */
  
-`include "FSMstateDef.v"
-`include "controlDef.v"
-`include "TDef.v"
+`include "Control/FSMstateDef.v"
+`include "Control/controlDef.v"
+`include "Control/TDef.v"
 
 module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg, 
                 controlSigs, SYNC);
@@ -13,27 +13,26 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
     input [7:0] statusReg, opcodeIn;
     output [62:0] controlSigs;
     output SYNC;
-    output setBflag, clrBflag;
     
     wire phi1,phi2,nmi,irq,rst,RDY;
     wire [7:0] opcode,opcodeIn;
     reg [62:0] controlSigs, next_controlSigs;
     reg SYNC;
-    reg  setBflag, clrBflag;
     
-    //internal variables
+    //internal variables. open_T and open_control are just holders, since u cant leave task outputs empty
     reg [2:0]       curr_state,next_state;
-    reg [6:0]       curr_T,next_T;
+    reg [6:0]       curr_T,next_T,open_T;
     reg [7:0]       currOpcode;
 
     reg [2:0]       dummy_state; //just to hold intermediate values;
-    reg [62:0]      dummy_control;
+    reg [62:0]      dummy_control, open_control;
     reg [6:0]       dummy_T;
     reg [7:0]      leftOverSig; //to perform last SBAC/SBX/SBY controls in T2 of next instruction.
     reg [3:0]      interruptArray; //from bit 0-3 : rst,nmi,irq,brk.
     
-    reg interruptPending;
+    wire interruptPending;
     
+
     assign interruptPending = nmi|irq;
     /*
     //may not need this chunk if predecode logic handled it.
@@ -42,8 +41,9 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
     end
     */
     always @ ( phi1 or phi2 or opcodeIn or RDY)
-        interruptArray = 4'd0;
-        begin
+        
+    begin
+	interruptArray = 4'd0;
 
         if (RDY) begin
             case(curr_state)
@@ -76,8 +76,8 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
 
                     interruptArray[`RST_i] = 1'b1;
 
-                    getControlsBrk(phi1,phi2,interruptArray,curr_T, dummy_T,);
-                    getControlsBrk(phi1,phi2,interruptArray,dummy_T, ,dummy_control);
+                    getControlsBrk(phi1,phi2,interruptArray,curr_T, dummy_T,open_control);
+                    getControlsBrk(phi1,phi2,interruptArray,dummy_T,open_T ,dummy_control);
                         
                     if (curr_T == `Tone) SYNC <= 1'd1;
                     else SYNC <= 1'd0;
@@ -90,21 +90,21 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
                     
                     next_T <= dummy_T;
                     next_controlSigs <= dummy_control;      
-                end  
                     
                 end
+
                 `FSMfetch: begin
                     if (phi1) SYNC <= 1'd1;
                     //figure out which kind of instruction it is.
                     instructionType(opcode, dummy_state); //timing issues. new opcode havent clock in.
                     
 
-                        next_state <= dummy_state; //will go to either norm, rmw, or branch.
-                        //get controlSigs for newstate;
-                        getControls(phi1,phi2,dummy_state, opcode, curr_T, dummy_T, );
-                        getControls(phi1,phi2,dummy_state, opcode, dummy_T, ,dummy_control);
-                        next_T <= dummy_T;
-                        next_controlSigs <= dummy_control;
+                    next_state <= dummy_state; //will go to either norm, rmw, or branch.
+                    //get controlSigs for newstate;
+                    getControls(phi1,phi2,dummy_state, opcode, curr_T, dummy_T,open_control );
+                    getControls(phi1,phi2,dummy_state, opcode, dummy_T, open_T ,dummy_control);
+                    next_T <= dummy_T;
+                    next_controlSigs <= dummy_control;
                     
                     /*
                     else begin
@@ -122,8 +122,8 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
                     if (RDY) begin
                         next_state <= dummy_state; //will go to either norm, rmw, or branch.
                         //get controlSigs for newstate;
-                        getControls(phi1,phi2,dummy_state, opcode, curr_T, dummy_T,); //get next state
-                        getControls(phi1,phi2,dummy_state, opcode, dummy_T,, dummy_control); //get controls for the next state
+                        getControls(phi1,phi2,dummy_state, opcode, curr_T, dummy_T,open_control); //get next state
+                        getControls(phi1,phi2,dummy_state, opcode, dummy_T,open_T , dummy_control); //get controls for the next state
                         next_T <= dummy_T;
                         next_controlSigs <= dummy_control;
                     end
@@ -138,8 +138,8 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
                 
                 `execNorm: begin //all fixed cycle instructions except BRK
                     if (phi1) SYNC <= 1'd0;
-                    getControlsNorm(phi1,phi2,opcode, curr_T, dummy_T, );
-                    getControlsNorm(phi1,phi2,opcode, dummy_T, , dummy_control);
+                    getControlsNorm(phi1,phi2,opcode, curr_T, dummy_T, open_control);
+                    getControlsNorm(phi1,phi2,opcode, dummy_T, open_T , dummy_control);
                     
                     if (dummy_T == `Tone || dummy_T == `T1NoBranch ||
                         dummy_T == `T1BranchNoCross || dummy_T == `T1BranchCross)
@@ -159,8 +159,8 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
                     else     interruptArray[`BRK_i] = 1'b1;
                     
                     
-                    getControlsBrk(phi1,phi2,interruptArray,curr_T,dummy_T, );
-                    getControlsBrk(phi1,phi2,interruptArray,dummy_T,, dummy_control);
+                    getControlsBrk(phi1,phi2,interruptArray,curr_T,dummy_T,open_control );
+                    getControlsBrk(phi1,phi2,interruptArray,dummy_T,open_T , dummy_control);
                     
                     
                     if (dummy_T == `Tone)
@@ -174,8 +174,8 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
                 
                 `execRMW: begin
                     if (phi1) SYNC <= 1'd0;
-                    getControlsRMW(phi1,phi2,statusReg, opcode, curr_T, dummy_T, );
-                    getControlsRMW(phi1,phi2,statusReg, opcode, dummy_T, , dummy_control);
+                    getControlsRMW(phi1,phi2,statusReg, opcode, curr_T, dummy_T, open_control);
+                    getControlsRMW(phi1,phi2,statusReg, opcode, dummy_T,open_T  , dummy_control);
                     if (dummy_T == `Tone || dummy_T == `T1NoBranch ||
                         dummy_T == `T1BranchNoCross || dummy_T == `T1BranchCross)
                         next_state <= `FSMfetch;
@@ -183,10 +183,11 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
                     next_T <= dummy_T;
                     next_controlSigs <= dummy_control;
                 end 
+
                 `execBranch: begin
                     if (phi1) SYNC <= 1'd0;
-                    getControlsBranch(phi1,phi2,statusReg, opcode, curr_T, dummy_T, );
-                    getControlsBranch(phi1,phi2,statusReg, opcode, dummy_T, , dummy_control);
+                    getControlsBranch(phi1,phi2,statusReg, opcode, curr_T, dummy_T, open_control);
+                    getControlsBranch(phi1,phi2,statusReg, opcode, dummy_T,open_T  , dummy_control);
                     if (dummy_T == `Tone || dummy_T == `T1NoBranch ||
                         dummy_T == `T1BranchNoCross || dummy_T == `T1BranchCross)
                         next_state <= `FSMfetch;
@@ -210,7 +211,7 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
             next_T <= curr_T;
             next_controlSigs <= controlSigs;
             
-        end
+    end
         
     //registers state variables
     always @ (posedge phi1) begin
@@ -222,7 +223,7 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
             interruptArray = 4'd0;
             interruptArray[`RST_i] = 1'b1;                   
             //get controls for the first state (T1) of the reset cycle.
-             getControlsBrk(phi1,phi2,interruptArray,`Tone, ,dummy_control);
+             getControlsBrk(phi1,phi2,interruptArray,`Tone,open_T  ,dummy_control);
             
             controlSigs <= dummy_control;
             curr_T <= `Tone;
@@ -240,12 +241,12 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
             curr_state <= `FSMinit;
             curr_T <= `Tzero;
             controlSigs <= `controlStall;
-            SYNC < 1'b1;
+            SYNC <= 1'b1;
         end
-        else begin
+        else begin	
             curr_state <= curr_state;       // no state transitions on phi2 
             curr_T <= curr_T;
             controlSigs <= next_controlSigs;
         end
-    end // always 
+    end  
 endmodule
