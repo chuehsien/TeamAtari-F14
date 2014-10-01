@@ -16,7 +16,7 @@ task CMP_izy;
 	begin
 		controlSigs = 63'd0;
 		case (T)
-			 `TzeroPgCross: begin
+			 `TzeroCrossPg: begin
 			newT = `Tone;
 				if (phi1) begin
 				//SS,DBADD,SBADD,SUMS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBADH,PCHPCH,#IPC,~IPC,PCLPCL
@@ -45,7 +45,7 @@ task CMP_izy;
 				end
 			end 
 			
-			`TzeroNoPgCross: begin
+			`TzeroNoCrossPg: begin
 			newT = `Tone;
 				if (phi1) begin
 				//SS,DBADD,0ADD,SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,PCHPCH,#IPC,~IPC,PCLPCL,DL/ADH,DL/DB
@@ -153,6 +153,7 @@ task CMP_izy;
 					controlSigs[`DL_ADL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
 			end
+            
 			else if (phi2) begin
 				//SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,#IPC,~IPC,DL/DB
 					controlSigs[`SUMS] = 1'b1;
@@ -162,7 +163,7 @@ task CMP_izy;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
 			end
-			
+			end
 			`Tfour:begin
 			if (carry) newT = `Tfive;
 			else newT = `TzeroNoCrossPg;
@@ -191,7 +192,7 @@ task CMP_izy;
 					controlSigs[`DL_ADH] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
 			end	
-			
+			end
 			`Tfive:begin
 			newT = `TzeroPgCross;
 			if (phi1) begin
@@ -219,7 +220,7 @@ task CMP_izy;
 					controlSigs[`SB_ADH] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 			end	
-			
+			end
 		endcase
 
 	end

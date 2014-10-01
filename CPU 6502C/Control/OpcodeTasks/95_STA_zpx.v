@@ -130,7 +130,7 @@ task STA_zpx;
 					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 			end
-	
+            end
 		endcase
 
 	end

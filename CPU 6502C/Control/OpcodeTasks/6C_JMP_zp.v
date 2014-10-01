@@ -126,7 +126,7 @@ task JMP_zp;
 					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`DL_ADH] = 1'b1;
 			end
-			
+			end
 			`Tfour:begin
 		newT = `Tzero;
 			if (phi1) begin
@@ -152,7 +152,7 @@ task JMP_zp;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
 			end
-	
+            end
 		endcase
 
 	end

@@ -1,7 +1,7 @@
 `include "Control/opcodeDef.v"
 `include "Control/controlDef.v"
 `include "Control/TDef.v"
-task AND_izx;
+task ORA_izy;
 
 	input [6:0] T;
 	input phi1,phi2;
@@ -163,7 +163,7 @@ task AND_izx;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
 			end
-	
+            end
 			`Tfour:begin
 			if (carry) newT = `Tfive;
 			else newT = `TzeroNoCrossPg;
@@ -192,7 +192,7 @@ task AND_izx;
 					controlSigs[`DL_ADH] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
 			end
-			
+			end
 			`Tfive:begin
 			newT = `TzeroCrossPg;
 			if (phi1) begin
@@ -220,6 +220,7 @@ task AND_izx;
 					controlSigs[`SB_ADH] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 			end
+            end
 		endcase
 
 	end

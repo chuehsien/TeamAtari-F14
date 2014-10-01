@@ -73,7 +73,7 @@ task ORA_aby;
 					controlSigs[`DL_DB] = 1'b1;
 			end		
 			
-			
+			end
 			`Tone: begin
 			newT = `Ttwo;
 				if (phi1) begin
@@ -161,7 +161,7 @@ task ORA_aby;
 					controlSigs[`DL_ADH] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
 			end
-			
+			end
 			`Tfour:begin
 			newT = `TzeroCrossPg;
 			if (phi1) begin
@@ -191,7 +191,7 @@ task ORA_aby;
 			end	
 					
 			
-			
+			end
 		endcase
 
 	end

@@ -131,7 +131,7 @@ task STY_zpx;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 			end
-	
+            end
 		endcase
 
 	end

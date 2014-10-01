@@ -103,7 +103,7 @@ task ROR_zp;
 					controlSigs[`O_ADH1to7] = 1'b1;
 					controlSigs[`DL_ADL] = 1'b1;
 				end
-			
+                end
 			`Tthree: begin
 		newT = `Tfour;
 				if (phi1) begin

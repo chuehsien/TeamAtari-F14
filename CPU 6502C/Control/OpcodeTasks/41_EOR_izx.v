@@ -166,7 +166,7 @@ task EOR_izx;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
         end
-        
+        end
 		(`Tfive) : begin 
 		newT = `Tzero;
       

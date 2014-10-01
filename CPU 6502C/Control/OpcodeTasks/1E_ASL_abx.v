@@ -131,7 +131,7 @@ task ASL_abx;
 					controlSigs[`DL_ADH] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
 			end
-	
+            end
 			`Tfour:begin
 		newT = `Tfive;
 			if (phi1) begin
@@ -159,7 +159,7 @@ task ASL_abx;
 					controlSigs[`SB_ADH] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 			end
-			
+			end
 			`Tfive:begin
 		newT = `Tsix;
 			if (phi1) begin
@@ -186,7 +186,7 @@ task ASL_abx;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
 			end
-			
+			end
 			`Tsix:begin
             newT = `Tzero;
             controlSigs[`nRW] = 1'b1;
@@ -214,6 +214,7 @@ task ASL_abx;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 			end
+            end
 		endcase
 
 	end

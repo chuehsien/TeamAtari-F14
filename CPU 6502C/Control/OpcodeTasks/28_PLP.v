@@ -108,7 +108,7 @@ task PLP;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
         end
-        
+        end
 	(`Tthree) : begin
 		newT = `Tzero;
       
@@ -145,8 +145,6 @@ task PLP;
       end
       
       
-      
-    
     
     endcase
 

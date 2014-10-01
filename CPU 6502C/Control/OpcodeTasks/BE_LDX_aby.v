@@ -74,7 +74,7 @@ task LDX_aby;
 					controlSigs[`PCL_ADL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
 			end		
-			
+			end
 			
 			`Tone: begin
 			newT = `Ttwo;
@@ -164,7 +164,7 @@ task LDX_aby;
 					controlSigs[`DL_ADH] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
 			end
-			
+			end
 			`Tfour:begin
 			newT = `TzeroCrossPg;
 			if (phi1) begin
@@ -193,7 +193,7 @@ task LDX_aby;
 					controlSigs[`nI_PC] = 1'b1;
 			end	
 					
-			
+			end
 			
 		endcase
 

@@ -15,7 +15,7 @@ task BCS_rel;
 	
 	begin
 		controlSigs = 63'd0;
-		case (T)s
+		case (T)
  			`Tzero:begin
 			newT = `T1BranchCross;
 				if (phi1) begin
