@@ -79,7 +79,7 @@ task BCS_rel;
 			end
 			`Tthree: begin
 			if (carry) newT = `Tzero;
-			else newT = T1BranchNoCross;
+			else newT = `T1BranchNoCross;
 				if(phi1) begin
 				//SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,SBADH,PCHADH,#IPC,~IPC
 					controlSigs[`SUMS] = 1'b1;
