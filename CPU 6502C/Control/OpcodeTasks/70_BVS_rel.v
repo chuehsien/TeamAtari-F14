@@ -81,7 +81,7 @@ task BVS_rel;
 			end
 			`Tthree: begin
 			if (carry) newT = `Tzero;
-			else newT = T1BranchNoCross
+			else newT = T1BranchNoCross;
 				if(phi1) begin
 				//SS,ADLADD,SBADD,SUMS,#DAA,~DAA,#DSA,~DSA,SBDB,ADHPCH,PCHADH,#IPC,~IPC,PCLADL,ADLPCL,DL/DB
 					controlSigs[`S_S] = 1'b1;
