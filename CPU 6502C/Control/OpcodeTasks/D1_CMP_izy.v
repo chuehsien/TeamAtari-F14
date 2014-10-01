@@ -194,7 +194,7 @@ task CMP_izy;
 			end	
 			end
 			`Tfive:begin
-			newT = `TzeroPgCross;
+			newT = `TzeroCrossPg;
 			if (phi1) begin
 				//SS,DBADD,0ADD,SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,PCHPCH,#IPC,~IPC,PCLPCL,DL/ADH,DL/DB
 					controlSigs[`S_S] = 1'b1;
