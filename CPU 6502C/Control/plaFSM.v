@@ -2,9 +2,11 @@
 This is the top FSM modules which implements the opcode -> controlSignal state machine.
 */
  
+
 `include "Control/FSMstateDef.v"
 `include "Control/controlDef.v"
 `include "Control/TDef.v"
+`include "Control/controlMods.v"
 
 module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg, 
                 controlSigs, SYNC);
