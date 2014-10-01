@@ -395,19 +395,19 @@ module accum(inFromDecAdder, SB_AC, AC_DB, AC_SB,
     
 endmodule
             
-module AddressBusReg(phi1, dataIn,
+module AddressBusReg(ld, dataIn,
                 dataOut);
 
-    input phi1;
+    input ld;
     input [7:0] dataIn;
     output [7:0] dataOut;
 
-    wire phi1;
+    wire ld;
     wire [7:0] dataOut;
     reg [7:0] data;
     
     assign dataOut = data;
-    always @ (posedge phi1) begin
+    always @ (posedge ld) begin
         data <= dataIn;
     end
     
@@ -463,36 +463,18 @@ module register(phi2, load, bus_en,
 endmodule
 
 //this needs to push out B bit when its a BRK.
-module statusReg(phi2, P_DB, DBZ, IR5, ACR ,AVR,
-                    DBO_C , IR5_C, ACR_C, 
-                    DBI_Z, DBZ_Z, 
-                    DB2_I, IR5_I, 
-                    DB3_D, IR5_D, 
-                    DB6_V, AVR_V, I_V, 
-                    DB7_N, DBin,
-                    opcode,
-                    DBinout);
+module statusReg(phi2, P_DB, DBZ, IR5, DAA, ACR ,AVR, DB_N, DBin, opcode,
+                    DBinout,status);
     
-    input phi2, P_DB, DBZ, IR5, ACR ,AVR ,
-                    DBO_C , IR5_C, ACR_C, 
-                    DBI_Z, DBZ_Z, 
-                    DB2_I, IR5_I, 
-                    DB3_D, IR5_D, 
-                    DB6_V, AVR_V, I_V, 
-                    DB7_N;
+    input phi2, P_DB, DBZ, IR5, DAA, ACR ,AVR, DB_N;
     input [7:0] DBin, opcode;
     inout [7:0] DBinout;
+    output status; //used by the FSM
     
-    wire phi2, P_DB, DBZ, IR5, ACR ,AVR ,
-                    DBO_C , IR5_C, ACR_C, 
-                    DBI_Z, DBZ_Z, 
-                    DB2_I, IR5_I, 
-                    DB3_D, IR5_D, 
-                    DB6_V, AVR_V, I_V, 
-                    DB7_N;
-                    
-    wire [7:0] DBin, opcode, DBinout;
-
+    wire phi2, P_DB, DBZ, IR5, DAA, ACR ,AVR, DB_N;
+    wire [7:0] DBin, opcode;
+    wire [7:0] DBinout;
+    wire [7:0] status;
     // internal
     reg [7:0] currVal;
     
@@ -500,19 +482,19 @@ module statusReg(phi2, P_DB, DBZ, IR5, ACR ,AVR,
         
     always @(posedge phi2) begin
         
-        currVal[`status_C] <= DBO_C | IR5_C | ACR_C;
-        currVal[`status_Z] <= DBI_Z | DBZ_Z;
-        currVal[`status_I] <= DB2_I | IR5_I;
-        currVal[`status_D] <= DB3_D | IR5_D;
+        currVal[`status_C] <= ACR;
+        currVal[`status_Z] <= DBZ;
+        currVal[`status_I] <= IR5;
+        currVal[`status_D] <= DAA
         currVal[4] <= (opcode == `BRK || opcode == `PHP) ? 1'b1 : 1'b0; //trying to inject B in..
         currVal[5] <= 1'b1; //default
-        currVal[`status_V] <= DB6_V | AVR_V | I_V;
-        currVal[`status_N] <= DB7_N;
+        currVal[`status_V] <= AVR;
+        currVal[`status_N] <= DB_N;
         
     end
     
     assign DBinout = (P_DB) ? currVal : 8'bzzzzzzzz;
-    
+    assign status = currVal;
 endmodule
 
 module prechargeMos(phi2,
@@ -524,7 +506,7 @@ module prechargeMos(phi2,
     wire phi2;
     wire bus;
     
-    bufif0 (pull1, highz0) a[7:0](bus,8'hff,phi2);
+    bufif0 (medium1, highz0) a[7:0](bus,8'hff,phi2);
     
     /*
     always @(posedge phi2) begin
@@ -569,11 +551,11 @@ module opendrainMosADL(O_ADL0, O_ADL1, O_ADL2,
 endmodule
 
 
-module opendrainMosADH(O_ADH0, O_ADL17,
+module opendrainMosADH(O_ADH0, O_ADH17,
                     bus)
     
     bufif0 (highz1, strong0) a(bus[0],1'b0,O_ADH0);
-    bufif0 (highz1, strong0) b(bus[7:1],7'b111_1111,O_ADL17);
+    bufif0 (highz1, strong0) b(bus[7:1],7'b111_1111,O_ADH17);
     
 endmodule
 

@@ -233,14 +233,13 @@ module decodeROM(in, T,
 endmodule
 */
 
-module interruptResetControl(phi2,NMI_L, IRQ_L, RES_L,nmiHandled, irqHandled, resHandled,
+module interruptResetControl(phi2,NMI_L, IRQ_L, RES_L, nmiHandled, irqHandled, resHandled,
                             nmi,irq,res);
     input NMI_L,IRQ_L,RES_L;
     input nmiHandled, irqHandled, resHandled;
     output nmi,irq,res;
     
     wire NMI_L,IRQ_L,RES_L;
-    
     wire nmiHandled, irqHandled, resHandled;
     reg nmi,irq,res;
     
@@ -271,19 +270,18 @@ module interruptResetControl(phi2,NMI_L, IRQ_L, RES_L,nmiHandled, irqHandled, re
     
 endmodule
 
-module readyControl(phi2, RDY,RW,
+//nRW - reading, ~nRW - writing
+module readyControl(phi2, RDY,nRW,
                     RDYout)
     input phi2;
-    input RDY, RW;
+    input RDY, nRW;
     output RDYout;
     
     wire phi2;
-    wire RDY,RW;
-    reg RDYout;
+    wire RDY,nRW;
+    wire RDYout;
     
-    always @ (posedge phi2) begin
-        RDYout <= RDY & RW;
-    end
+    assign RDYout = ~nRW | RDY; //processor is RDY (running) when writing, and when RDY assert.
     
 endmodule
 
@@ -295,3 +293,4 @@ module randomControl(clock, decoded, interrupt, rdyControl, SV,
     output controlSig_t;
 
 endmodule
+

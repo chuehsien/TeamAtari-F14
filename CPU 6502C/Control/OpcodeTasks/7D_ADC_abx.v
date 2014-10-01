@@ -3,7 +3,7 @@ task ADC_abx;
 	input [6:0] T;
 	input phi1,phi2;
 	input carry;
-	output [61:0] controlSigs;
+	output [62:0] controlSigs;
 	output [6:0] newT;
 	reg [6:0] newT;
 
@@ -11,10 +11,10 @@ task ADC_abx;
 	wire [6:0] T;
 	wire phi1,phi2;
 	wire carry;
-	reg [61:0] controlSigs;
+	reg [62:0] controlSigs;
 	
 	always @ (*) begin
-		controlSigs = 62'd0;
+		controlSigs = 63'd0;
 		case (T)
 			 `TzeroNoCrossPg: begin
 			newT = `Tone;

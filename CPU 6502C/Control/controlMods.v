@@ -72,18 +72,16 @@ task instructionType(opcode, dummy_state);
 endtask
 
 //handles the interrupts
-task getControlsBrk(phi1,phi2,opcode,interruptArray,currT,
+task getControlsBrk(phi1,phi2,interruptArray,currT,
                     dummy_T, dummy_control);
                     				
 	input phi1,phi2;
-	input [7:0] opcode;
     input [3:0] interruptArray;
 	input [6:0] currT;
 	output [6:0] dummy_T;
 	output [61:0] dummy_control;
 	
 	wire phi1,phi2;
-	wire [7:0] opcode;
     wire [3:0] interruptArray;
 	wire [6:0] currT;
 	reg [6:0] dummy_T;

@@ -3,7 +3,7 @@ task BRK;
 	input [6:0] T;
 	input phi1,phi2;
     input [3:0] interruptArray;
-	output [61:0] controlSigs;
+	output [62:0] controlSigs;
 	output [6:0] newT;
 	reg [6:0] newT;
 
@@ -11,16 +11,16 @@ task BRK;
 	wire [6:0] T;
 	wire phi1,phi2;
     wire [3:0] interruptArray;
-	reg [61:0] controlSigs;
+	reg [62:0] controlSigs;
 	
 	always @ (*) begin
-		controlSigs = 62'd0;
+		controlSigs = 63'd0;
     
     case (T)
     
       (`Tzero) : begin
 		newT = `Tone;
-		
+        controlSigs[`IR5_I] = 1'b1;
         if (phi1) begin
             if (interruptArray[`RST_i]) begin
                 controlSigs[`O_ADL1] = 1'b1; //create address fffd

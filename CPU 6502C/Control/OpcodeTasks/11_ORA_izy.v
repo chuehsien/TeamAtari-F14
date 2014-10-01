@@ -4,7 +4,7 @@ task AND_izx;
 	input phi1,phi2;
 	input carry;
 	
-	output [61:0] controlSigs;
+	output [62:0] controlSigs;
 	output [6:0] newT;
 	reg [6:0] newT;
 
@@ -12,10 +12,10 @@ task AND_izx;
 	wire [6:0] T;
 	wire phi1,phi2;
 	wire carry;
-	reg [61:0] controlSigs;
+	reg [62:0] controlSigs;
 	
 	always @ (*) begin
-		controlSigs = 62'd0;
+		controlSigs = 63'd0;
 		case (T)
 			 `TzeroCrossPg: begin
 			newT = `Tone;
@@ -129,7 +129,7 @@ task AND_izx;
 					controlSigs[`SUMS] = 1'b1;
 					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`nDSA] = 1'b1;
-					controlSigs[`O_ADHO] = 1'b1;
+					controlSigs[`O_ADH0] = 1'b1;
 					controlSigs[`O_ADH1to7] = 1'b1;
 					controlSigs[`DL_ADL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
@@ -146,7 +146,7 @@ task AND_izx;
 					controlSigs[`SUMS] = 1'b1;
 					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`nDSA] = 1'b1;
-					controlSigs[`O_ADHO] = 1'b1;
+					controlSigs[`O_ADH0] = 1'b1;
 					controlSigs[`O_ADH1to7] = 1'b1;
 					controlSigs[`PCH_PCH] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
