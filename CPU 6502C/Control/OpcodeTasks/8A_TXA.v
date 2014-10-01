@@ -1,3 +1,5 @@
+`include "Control/opcodeDef.v"
+`include "Control/controlDef.v"
 `include "Control/TDef.v"
 task TXA;
 
