@@ -1,3 +1,6 @@
+`include "Control/opcodeDef.v"
+`include "Control/controlDef.v"
+`include "Control/TDef.v"
 task SBC_aby;
 
 	input [6:0] T;
@@ -8,12 +11,9 @@ task SBC_aby;
 	reg [6:0] newT;
 
 	
-	wire [6:0] T;
-	wire phi1,phi2;
-	wire carry;
 	reg [62:0] controlSigs;
 	
-	always @ (*) begin
+	begin
 		controlSigs = 63'd0;
 		case (T)
 			`TzeroNoCrossPg:begin

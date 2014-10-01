@@ -76,6 +76,4 @@
 `define IRQ_i 2'd2
 `define BRK_i 2'd3
 
-`define NO_INTERRUPTS 8'hxx //value to force bus to (to force address onto the line)
-
 

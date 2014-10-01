@@ -1,3 +1,6 @@
+`include "Control/opcodeDef.v"
+`include "Control/controlDef.v"
+`include "Control/TDef.v"
 task BMI_rel;
 
 	input [6:0] T;
@@ -8,12 +11,9 @@ task BMI_rel;
 	reg [6:0] newT;
 
 	
-	wire [6:0] T;
-	wire phi1,phi2;
-	wire carry, flag;
 	reg [62:0] controlSigs;
 	
-	always @ (*) begin
+	begin
 		controlSigs = 63'd0;
 		case (T)
  			`Tzero:begin
@@ -80,7 +80,7 @@ task BMI_rel;
 			end
 			`Tthree: begin
 			if (carry) newT = `Tzero;
-			else newT = T1BranchNoCross
+			else newT = `T1BranchNoCross;
 				if(phi1) begin
 				//SS,ADLADD,SBADD,SUMS,#DAA,~DAA,#DSA,~DSA,SBDB,ADHPCH,PCHADH,#IPC,~IPC,PCLADL,ADLPCL,DL/DB
 					controlSigs[`S_S] = 1'b1;
