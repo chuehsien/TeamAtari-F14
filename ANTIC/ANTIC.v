@@ -1,10 +1,13 @@
 // top module for the ANTIC processor.
 // last updated: 10/01/2014 1500H
 
-`define FSMinit1		2'b00
-`define FSMinit2	  2'b01
-`define FSMinit3    2'b10
-`define FSMnorm     2'b11
+`define FSMinit1		3'b000
+`define FSMinit2	  3'b001
+`define FSMinit3    3'b010
+`define FSMinit4    3'b011
+`define FSMinit5    3'b100
+`define FSMidle1    3'b101
+`define FSMidle2    3'b110
 `define DMA_off     1'b0
 `define DMA_on      1'b1
 
@@ -26,7 +29,7 @@ module ANTIC(F_phi0, LP_L, RW, RST, phi2, DB, address, AN, halt_L, NMI_L, RDY_L,
       output phi0;
       // extras
       output [15:0] printDLIST;
-      output [1:0] cstate;
+      output [2:0] cstate;
       output [7:0] data;
       
       // Hardware registers
@@ -48,8 +51,10 @@ module ANTIC(F_phi0, LP_L, RW, RST, phi2, DB, address, AN, halt_L, NMI_L, RDY_L,
       reg DMA;
       reg ready_L;
       reg loadAddr;
-      reg [1:0] curr_state;
-      reg [1:0] next_state;
+      reg incr;
+      reg [7:0] displayList;
+      reg [2:0] curr_state;
+      reg [2:0] next_state;
       reg [15:0] addressIn;
       wire [127:0] registers;
       wire [7:0] data;
@@ -66,7 +71,7 @@ module ANTIC(F_phi0, LP_L, RW, RST, phi2, DB, address, AN, halt_L, NMI_L, RDY_L,
 
       // Module instantiations
       
-      AddressBusReg addr(.load(loadAddr), .incr(1'b0), .addressIn(addressIn), .addressOut(address));
+      AddressBusReg addr(.load(loadAddr), .incr(incr), .addressIn(addressIn), .addressOut(address));
       dataReg dreg(.phi2(phi2), .DMA(DMA), .dataIn(DB), .data(data));
       dataTranslate dt(.data(data), .phi2(phi2), .AN(AN));
     
@@ -77,6 +82,7 @@ module ANTIC(F_phi0, LP_L, RW, RST, phi2, DB, address, AN, halt_L, NMI_L, RDY_L,
             // Set or clear registers to default state
             `FSMinit1:
               begin
+                incr <= 1'b0;
                 next_state <= `FSMinit2;
                 VCOUNT <= 8'd0;
                 NMIEN <= 8'd0;
@@ -90,26 +96,45 @@ module ANTIC(F_phi0, LP_L, RW, RST, phi2, DB, address, AN, halt_L, NMI_L, RDY_L,
             `FSMinit2:
               begin
                 next_state <= `FSMinit3;
-                
                 addressIn <= 16'h0231; // Shadow DLISTH register
                 loadAddr <= 1'b1;
               end
               
             `FSMinit3:
               begin
-                next_state <= `FSMnorm;
+                next_state <= `FSMinit4;
                 DLISTL <= data;
                 DMA <= `DMA_off;
               end
             
-            `FSMnorm:
+            `FSMinit4:
               begin
-                next_state <= `FSMnorm;
+                next_state <= `FSMinit5;
                 DLISTH <= data;
-                
-                
-                // * Sync hardware registers and RAM shadow registers?
-                // * Other DMA operations?
+                // * Sync other hardware registers and RAM shadow registers?
+              end
+              
+            `FSMinit5:
+              begin
+                next_state <= `FSMidle1;
+                addressIn <= {DLISTH, DLISTL};
+                loadAddr <= 1'b1;
+                DMA <= `DMA_on;
+                // * Sync other hardware registers and RAM shadow registers?
+              end
+              
+            `FSMidle1:
+              begin
+                next_state <= `FSMidle2;
+                DMA <= `DMA_off;
+              end
+            
+            `FSMidle2:
+              begin
+                next_state <= `FSMidle1;
+                displayList <= data;
+                incr <= 1'b1;
+                DMA <= `DMA_on;
               end
         endcase
       end
@@ -121,6 +146,7 @@ module ANTIC(F_phi0, LP_L, RW, RST, phi2, DB, address, AN, halt_L, NMI_L, RDY_L,
           curr_state <= next_state;
         
         loadAddr <= 1'b0;
+        incr <= 1'b0;
       end
       
 endmodule
@@ -137,7 +163,7 @@ module AddressBusReg(load, incr, addressIn, addressOut);
 		if (load)
       addressOut <= addressIn;
     else if (incr)
-      addressOut <= addressOut + 1'b1;
+      addressOut <= addressOut + 16'd1;
 	end
 	
 endmodule

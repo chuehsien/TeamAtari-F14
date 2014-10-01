@@ -13,7 +13,7 @@ module testANTIC;
   wire [15:0] address;
   wire [7:0] DB;
   wire [15:0] dlistptr;
-  wire [1:0] cstate;
+  wire [2:0] cstate;
   wire [7:0] data;
   
   // Instantiate Modules
@@ -31,22 +31,28 @@ module testANTIC;
     
     reset = 1'b1;
     @(posedge clock); @(negedge clock);
-    $display("reset is %b, curr_state is %b", reset, cstate);
-    
     reset = 1'b0;
+    //$display("reset is %b, curr_state is %b", reset, cstate);
     
-    @(posedge clock); @(negedge clock);
-    print;
-    @(posedge clock); @(negedge clock);
-    print;
-    @(posedge clock); @(negedge clock);
-    print;
-    @(posedge clock); @(negedge clock);
-    print;
+    print; @(posedge clock); @(negedge clock);
+    print; @(posedge clock); @(negedge clock);
+    print; @(posedge clock); @(negedge clock);
+    print; @(posedge clock); @(negedge clock);
     
     // Print address of display list ptr
     $display("Display list pointer is %h.", dlistptr);
-  
+    
+    print; @(posedge clock); @(negedge clock);
+    print; @(posedge clock); @(negedge clock);
+    print; @(posedge clock); @(negedge clock);
+    print; @(posedge clock); @(negedge clock);
+    print; @(posedge clock); @(negedge clock);
+    print; @(posedge clock); @(negedge clock);
+    print; @(posedge clock); @(negedge clock);
+    print; @(posedge clock); @(negedge clock);
+    print; @(posedge clock); @(negedge clock);
+    print; @(posedge clock); @(negedge clock);
+    
     $display("Completed ANTIC test.");
     $finish;
   end
