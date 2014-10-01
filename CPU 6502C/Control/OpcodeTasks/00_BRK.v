@@ -14,7 +14,7 @@ task BRK;
     wire [3:0] interruptArray;
 	reg [62:0] controlSigs;
 	
-	always @ (*) begin
+	begin
 		controlSigs = 63'd0;
     
     case (T)

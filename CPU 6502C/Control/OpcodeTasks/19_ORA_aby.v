@@ -14,7 +14,7 @@ task ORA_aby;
 	wire carry;
 	reg [62:0] controlSigs;
 	
-	always @ (*) begin
+	begin
 		controlSigs = 63'd0;
 		case (T)
 			 `TzeroNoCrossPg: begin

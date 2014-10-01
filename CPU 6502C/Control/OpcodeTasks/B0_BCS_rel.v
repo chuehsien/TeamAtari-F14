@@ -14,7 +14,7 @@ task BCS_rel;
 	wire carry, flag;
 	reg [62:0] controlSigs;
 	
-	always @ (*) begin
+	begin
 		controlSigs = 63'd0;
 		case (T)s
  			`Tzero:begin

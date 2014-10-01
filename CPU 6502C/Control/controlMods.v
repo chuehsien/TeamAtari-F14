@@ -329,12 +329,12 @@ task findLeftOverSig;
     always @ (*) begin
     leftOverSigNum = 8'd0;
     
-        if (currT == `Tone) && 
+        if ((currT == `Tone) && 
             (opcode == `ADC_abs || opcode == `ADC_abx || opcode == `ADC_aby || opcode == `ADC_imm || 
              opcode == `ADC_izx || opcode == `ADC_izy || opcode == `ADC_zp  || opcode == `ADC_zpx ||
              opcode == `SBC_abs || opcode == `SBC_abx || opcode == `SBC_aby || opcode == `SBC_imm || 
              opcode == `SBC_izx || opcode == `SBC_izy || opcode == `SBC_zp  || opcode == `SBC_zpx ||
-             opcode == `ASL     || opcode == `LSR     || opcode == `ROL     || opcode == `ROR     ) begin
+             opcode == `ASL     || opcode == `LSR     || opcode == `ROL     || opcode == `ROR     ) )begin
                 leftOverSigNum = `SB_AC;
              end
              
