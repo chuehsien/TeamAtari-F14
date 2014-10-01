@@ -1,3 +1,4 @@
+`include "Control/TDef.v"
 task RTI;
 
 	input [6:0] T;

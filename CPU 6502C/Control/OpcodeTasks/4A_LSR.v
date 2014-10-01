@@ -1,3 +1,4 @@
+`include "Control/TDef.v"
 task LSR;
 
 	input [6:0] T;

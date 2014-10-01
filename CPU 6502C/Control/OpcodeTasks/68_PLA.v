@@ -1,3 +1,4 @@
+`include "Control/TDef.v"
 task PLA;
 
 	input [6:0] T;

@@ -1,3 +1,4 @@
+`include "Control/TDef.v"
 task TXA;
 
 	input [6:0] T;

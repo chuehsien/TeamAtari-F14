@@ -1,3 +1,4 @@
+`include "Control/TDef.v"
 task ADC_izy;
 
 	input [6:0] T;

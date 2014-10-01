@@ -1,3 +1,4 @@
+`include "Control/TDef.v"
 task BIT_abs;
 
 	input [6:0] T;

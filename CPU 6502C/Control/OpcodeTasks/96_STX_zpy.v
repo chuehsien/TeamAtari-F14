@@ -1,3 +1,4 @@
+`include "Control/TDef.v"
 task STX_zpy;
 
 	input [6:0] T;

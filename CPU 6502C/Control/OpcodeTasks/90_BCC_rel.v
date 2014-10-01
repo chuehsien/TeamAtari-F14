@@ -1,3 +1,4 @@
+`include "Control/TDef.v"
 task BCC_rel;
 
 	input [6:0] T;

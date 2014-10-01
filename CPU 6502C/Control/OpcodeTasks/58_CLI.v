@@ -1,3 +1,4 @@
+`include "Control/TDef.v"
 task CLI;
 
 	input [6:0] T;

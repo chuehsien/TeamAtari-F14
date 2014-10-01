@@ -1,3 +1,4 @@
+`include "Control/TDef.v"
 task SEI;
 
 	input [6:0] T;

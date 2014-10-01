@@ -1,3 +1,4 @@
+`include "Control/TDef.v"
 task ASL_zpx;
 
 	input [6:0] T;

@@ -1,4 +1,5 @@
 `include "Control/TDef.v"
+`include "Control/TDef.v"
 task BRK;
 
 	input [6:0] T;

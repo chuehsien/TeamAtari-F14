@@ -1,3 +1,4 @@
+`include "Control/TDef.v"
 task EOR_aby;
 
 	input [6:0] T;

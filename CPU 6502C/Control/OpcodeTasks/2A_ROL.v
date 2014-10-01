@@ -1,3 +1,4 @@
+`include "Control/TDef.v"
 task ROL;
 
 	input [6:0] T;

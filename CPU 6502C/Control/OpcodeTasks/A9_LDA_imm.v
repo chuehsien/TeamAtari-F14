@@ -1,3 +1,4 @@
+`include "Control/TDef.v"
 task LDA_imm;
 
 	input [6:0] T;

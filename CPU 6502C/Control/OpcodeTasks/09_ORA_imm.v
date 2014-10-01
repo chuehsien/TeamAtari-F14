@@ -1,3 +1,4 @@
+`include "Control/TDef.v"
 task ORA_imm;
 
 	input [6:0] T;
