@@ -339,12 +339,12 @@ task findLeftOverSig;
              opcode == `SBC_abs || opcode == `SBC_abx || opcode == `SBC_aby || opcode == `SBC_imm || 
              opcode == `SBC_izx || opcode == `SBC_izy || opcode == `SBC_zp  || opcode == `SBC_zpx ||
              opcode == `ASL     || opcode == `LSR     || opcode == `ROL     || opcode == `ROR     ) begin
-                leftOverSigNum = `SBAC
+                leftOverSigNum = `SB_AC;
              end
              
              
-        else if (opcode == `INX || opcode == `DEX) leftOverSigNum = `SBX;
-        else if (opcode == `INY || opcode == `DEY) leftOverSigNum = `SBY;
+        else if (opcode == `INX || opcode == `DEX) leftOverSigNum = `SB_X;
+        else if (opcode == `INY || opcode == `DEY) leftOverSigNum = `SB_Y;
              
     end
 endtask

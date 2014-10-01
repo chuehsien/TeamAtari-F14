@@ -1,3 +1,4 @@
+`include "Control/TDef.v"
 task BNE_rel;
 
 	input [6:0] T;

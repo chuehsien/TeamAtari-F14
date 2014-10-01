@@ -1,3 +1,4 @@
+`include "Control/TDef.v"
 task SBC_abx;
 
 	input [6:0] T;

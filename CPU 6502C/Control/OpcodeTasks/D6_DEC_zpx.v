@@ -1,3 +1,4 @@
+`include "Control/TDef.v"
 task DEC_zpx;
 
 	input [6:0] T;

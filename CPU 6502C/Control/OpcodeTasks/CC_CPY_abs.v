@@ -1,3 +1,4 @@
+`include "Control/TDef.v"
 task CPY_abs;
 
 	input [6:0] T;

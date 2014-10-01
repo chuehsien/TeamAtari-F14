@@ -1,3 +1,4 @@
+`include "Control/TDef.v"
 task CMP_abx;
 
 	input [6:0] T;
