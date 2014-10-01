@@ -1,6 +1,6 @@
 /*  Test module for top level CPU 6502C 
  *  Created:        1 Oct 2014, 1058 hrs (bhong)
- *  Last Modified:  1 Oct 2014, 1058 hrs
+ *  Last Modified:  1 Oct 2014, 1236 hrs
 
  Designed to test module "top_6502C", located in "6502C_top.v"
 
@@ -16,6 +16,11 @@ module testCPU;
   
   wire [7:0] DB; //Data Bus
   
+  //Setting up the clock to run
+  always begin
+    #10 phi0_in = ~phi0_in;
+  end
+  
   top_6502C top_6502C_module(.RDY(RDY), .IRQ_L(IRQ_L), .NMI_L(NMI_L), .RES_L(RES_L), .SO(SO), .phi0_in(phi0_in), .DB(DB), .phi1_out(phi1_out), .SYNC(SYNC), .AB(AB), .phi2_out(phi2_out), .RW(RW));
   
   /* High level description:  
@@ -29,8 +34,7 @@ module testCPU;
     - Status Register
     - Adder Hold Register
     - Decimal Adjust
-    - 
-
+    - ..and others?
   */
 
 
