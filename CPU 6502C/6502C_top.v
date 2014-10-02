@@ -1,7 +1,7 @@
 // top module for the 6502C cpu.
 // last updated: 09/30/2014 2140H
 
-module 6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, 
+module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, 
 			DB,
 			phi1_out, SYNC, AB, phi2_out, RW)
 			
