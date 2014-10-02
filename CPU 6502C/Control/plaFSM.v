@@ -9,18 +9,19 @@ This is the top FSM modules which implements the opcode -> controlSignal state m
 
 
 module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg, 
-                controlSigs, SYNC);
+                controlSigs, SYNC, T1now);
      
 `include "Control/controlMods.v"               
     input phi1,phi2,nmi,irq,rst,RDY; //RDY is external input
     input [7:0] statusReg, opcodeIn;
     output [62:0] controlSigs;
-    output SYNC;
+    output SYNC, T1now; //T1now is to signal predecode register to load in value.
     
     wire phi1,phi2,nmi,irq,rst,RDY;
     wire [7:0] opcode,opcodeIn;
     reg [62:0] controlSigs, next_controlSigs;
     reg SYNC;
+    wire T1now;
     
     //internal variables. open_T and open_control are just holders, since u cant leave task outputs empty
     reg [2:0]       curr_state,next_state;
@@ -35,7 +36,7 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
     
     wire interruptPending;
     
-
+    assign T1now = (next_state == `Tone); //might be wrong!
     assign interruptPending = nmi|irq;
     /*
     //may not need this chunk if predecode logic handled it.
@@ -47,7 +48,10 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
         
     begin
 	interruptArray = 4'd0;
-
+    if (rst) interruptArray[`RST_i] = 1'b1;
+    if (nmi) interruptArray[`NMI_i] = 1'b1;
+    if (irq) interruptArray[`IRQ_i] = 1'b1;
+    else     interruptArray[`BRK_i] = 1'b1;
         if (RDY) begin
             case(curr_state)
                 `FSMinit: begin 
@@ -101,11 +105,26 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
                     //figure out which kind of instruction it is.
                     instructionType(opcode, dummy_state); //timing issues. new opcode havent clock in.
                     
-
                     next_state <= dummy_state; //will go to either norm, rmw, or branch.
+                    
+                    if (dummy_state == `execNorm) begin
+                        getControlsNorm(phi1,phi2,opcode, curr_T, dummy_T, open_control);
+                        getControlsNorm(phi1,phi2,opcode, dummy_T, open_T , dummy_control);
+                    end
+                    else if (dummy_state == `execRMW) begin
+                        getControlsRMW(phi1,phi2,statusReg, opcode, curr_T, dummy_T, open_control);
+                        getControlsRMW(phi1,phi2,statusReg, opcode, dummy_T,open_T  , dummy_control);
+                    end
+                    else if (dummy_state == `execBranch) begin
+                        getControlsBranch(phi1,phi2,statusReg, opcode, curr_T, dummy_T, open_control);
+                        getControlsBranch(phi1,phi2,statusReg, opcode, dummy_T,open_T  , dummy_control);
+                    end
+                    else if (dummy_state == `execBrk) begin
+                        getControlsBrk(phi1,phi2,interruptArray,curr_T,dummy_T,open_control );
+                        getControlsBrk(phi1,phi2,interruptArray,dummy_T,open_T , dummy_control);
+                    end
                     //get controlSigs for newstate;
-                    getControls(phi1,phi2,dummy_state, opcode, curr_T, dummy_T,open_control );
-                    getControls(phi1,phi2,dummy_state, opcode, dummy_T, open_T ,dummy_control);
+
                     next_T <= dummy_T;
                     next_controlSigs <= dummy_control;
                     
@@ -118,7 +137,7 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
                     */
                 end
                 
-                `FSMstall: begin
+/*                 `FSMstall: begin
                     if (phi1) SYNC <= 1'd0;
                     instructionType(opcode, dummy_state); //timing issues. new opcode havent clock in.
                     
@@ -137,7 +156,7 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
                         next_controlSigs <= `controlStall;
                     end
                     
-                end
+                end */
                 
                 `execNorm: begin //all fixed cycle instructions except BRK
                     if (phi1) SYNC <= 1'd0;
@@ -156,12 +175,7 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
                 
                 `execBrk: begin //used to handle all interrupts
                     if (phi1) SYNC <= 1'd0;
-                    if (rst) interruptArray[`RST_i] = 1'b1;
-                    if (nmi) interruptArray[`NMI_i] = 1'b1;
-                    if (irq) interruptArray[`IRQ_i] = 1'b1;
-                    else     interruptArray[`BRK_i] = 1'b1;
-                    
-                    
+
                     getControlsBrk(phi1,phi2,interruptArray,curr_T,dummy_T,open_control );
                     getControlsBrk(phi1,phi2,interruptArray,dummy_T,open_T , dummy_control);
                     

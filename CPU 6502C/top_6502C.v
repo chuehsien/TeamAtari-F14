@@ -1,25 +1,31 @@
 // top module for the 6502C cpu.
 // last updated: 09/30/2014 2140H
 
-module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, 
-			DB,
-			phi1_out, SYNC, AB, phi2_out, RW)
+`include "Control/controlDef.v"
+`include "Control/opcodeDef.v"
+`include "left_components.v"
+`include "right_components.v"
+`include "Control/plaFSM.v"
+`include "peripherals.v"
+
+module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,	
+                phi1_out, SYNC, extAB, phi2_out, RW);
 			
 			input RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in;
-			inout [7:0] DB;
+			input [7:0] extDB;
 			output phi1_out, SYNC, phi2_out,RW;
-			output [15:0] AB;
+			output [15:0] extAB;
 		
         
             wire RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in;
-            wire [7:0] DB;
-            wire [15:0] AB;
+            wire [7:0] extDB;
+            wire [15:0] extAB;
             wire phi1_out, SYNC, phi2_out, RW;
             
             //internal variables
             
             //bus lines
-            wire [7:0] extDataBus, DB, ADL, ADH, SB;
+            wire [7:0] DB, ADL, ADH, SB;
             
             //control sigs
             wire [62:0] controlSigs;
@@ -38,22 +44,22 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in,
             
 			
             //datapath modules
-            inputDataLatch dl(phi1,phi2,controlSigs[`DL_DB], controlSigs[`DL_ADL], controlSigs[`DL_ADH],extDataBus,
+            inputDataLatch dl(phi1,phi2,controlSigs[`DL_DB], controlSigs[`DL_ADL], controlSigs[`DL_ADH],extDB,
                         DB,ADL,ADH);
             
             wire [7:0] inFromPC_lo, outToIncre_lo, outToPCL;
             wire PCLC;
             PcSelectReg lo_1(controlSigs[`PCL_PCL], controlSigs[`ADL_PCL], inFromPC_lo, ADL, 
                         outToIncre_lo);
-            increment   lo_2(~controlSig[`nI_PC],outToIncre_lo,PCLC,outToPCL);
-            PC          lo_3(phi2, controlSig[`PCL_DB], controlSig[`PCL_ADL],outToPCL,DB, ADL,inFromPC_lo);
+            increment   lo_2(~controlSigs[`nI_PC],outToIncre_lo,PCLC,outToPCL);
+            PC          lo_3(phi2, controlSigs[`PCL_DB], controlSigs[`PCL_ADL],outToPCL,DB, ADL,inFromPC_lo);
             
             
             wire [7:0] inFromPC_hi, outToIncre_hi, outToPCH;
             PcSelectReg hi_1(controlSigs[`PCH_PCH], controlSigs[`ADH_PCH], inFromPC_hi, ADL, 
                         outToIncre_hi);           
             increment   hi_2(PCLC,outToIncre_hi, ,outToPCH);
-            PC          hi_3(phi2, controlSig[`PCH_DB], controlSig[`PCH_ADH],outToPCH,DB, ADL,inFromPC_hi);
+            PC          hi_3(phi2, controlSigs[`PCH_DB], controlSigs[`PCH_ADH],outToPCH,DB, ADL,inFromPC_hi);
                
             prechargeMos        pcMos1(phi2,ADH); 
             prechargeMos        pcMos2(phi2,ADL);
@@ -77,7 +83,7 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in,
                         
             wire [7:0] nDB;
             inverter inv(DB,nDB);
-            Breg    b_reg(controlSigs[`DB_L_AD], controlSigs[`DB_ADD], controlSigs[`ADL_ADD], DB,nDB,ADL,B);
+            Breg    b_reg(controlSigs[`DB_L_ADD], controlSigs[`DB_ADD], controlSigs[`ADL_ADD], DB,nDB,ADL,B);
             
             Areg    a_reg(controlSigs[`O_ADD], controlSigs[`SB_ADD], SB, A);
             
@@ -86,12 +92,12 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in,
                                 ADL,SB);
             
             wire [7:0] inFromDecAdder;
-            decimalAdjust   decAdj(SB, ~controlSigs[`DSA], ~controlSigs[`DAA], ACR, HC, phi2,inFromDecAdder);
+            decimalAdjust   decAdj(SB, ~controlSigs[`nDSA], ~controlSigs[`nDAA], ACR, HC, phi2,inFromDecAdder);
             accum           a(inFromDecAdder, controlSigs[`SB_AC], controlSigs[`AC_DB], controlSigs[`AC_SB],
                             DB,SB);
                         
-            AddressBusReg   add_hi(phi1&controlSigs[`ADH_ABH], ADH, AB[15:8]);
-            AddressBusReg   add_lo(phi1&controlSigs[`ADL_ABL], ADL, AB[7:0]);
+            AddressBusReg   add_hi(phi1&controlSigs[`ADH_ABH], ADH, extAB[15:8]);
+            AddressBusReg   add_lo(phi1&controlSigs[`ADL_ABL], ADL, extAB[7:0]);
             
             register        x_reg(phi2, controlSigs[`SB_X],controlSigs[`X_SB],SB);
             register        y_reg(phi2, controlSigs[`SB_Y],controlSigs[`Y_SB],SB);
@@ -100,23 +106,23 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in,
             wire DBZ,DB_N;
             assign DBZ = ~(|(DB));
             assign DB_N = (DB[7]);
+            wire [7:0] opcode;
             statusReg       status_reg(phi2, controlSigs[`P_DB], DBZ, controlSigs[`IR5_I], ~controlSigs[`nDAA], ACR ,AVR, DB_N, 
                                         DB, opcode,DB, statusReg);
                 
             wire [7:0] dataOutBuf;
             dataOutReg          dor(phi1, phi2, DB, dataOutBuf);
-            dataBusTristate     dataBuf(controlSigs[`nRW] & phi2, dataOutBuf,extDataBus);
+            dataBusTristate     dataBuf(controlSigs[`nRW] & phi2, dataOutBuf,extDB);
             
             //moving on to left side...
             wire [7:0] precodeOut, outToIR;
             wire interrupt;
             
             assign interrupt = resPending | nmiPending | irqPending;
-            predecodeRegister   pdr(phi2,extDataBus,precodeOut);
+            predecodeRegister   pdr(phi2,extDB,precodeOut);
             predecodeLogic      pdl(precodeOut,interrupt,outToIR);
-            wire loadIR;
-            wire [7:0] opcode;
-            assign loadIR = T1 & phi1 & RDY;
+            wire loadIR, T1now;
+            assign loadIR = T1now & phi1 & RDY;
             instructionRegister ir_reg(loadIR, outToIR,opcode);
             
             //module instantiations here
@@ -128,7 +134,7 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in,
             
             // finally, control logic
             plaFSM      myFSM(phi1,phi2,nmiPending,irqPending,resPending,RDYout,opcode,statusReg,
-                                controlSigs,SYNC);
+                                controlSigs,SYNC,T1now);
                                 
                         
 endmodule
