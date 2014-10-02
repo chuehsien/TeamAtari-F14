@@ -1,6 +1,7 @@
 // top module for the 6502C cpu.
 // last updated: 09/30/2014 2140H
 
+`include "Control/controlDef.v"
 module 6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, 
 			DB,
 			phi1_out, SYNC, AB, phi2_out, RW)

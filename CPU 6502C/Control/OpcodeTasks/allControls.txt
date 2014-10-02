@@ -1,6 +1,4 @@
-`include "Control/opcodeDef.v"
-`include "Control/controlDef.v"
-`include "Control/TDef.v"
+
 00_BRK.v --->
 	(`Tzero):
 		phi1: SS,DBADD,0ADD,SUMS,#DAA,~DAA,#DSA,~DSA,PCHPCH,#IPC,~IPC,PCLPCL,DL/DB
