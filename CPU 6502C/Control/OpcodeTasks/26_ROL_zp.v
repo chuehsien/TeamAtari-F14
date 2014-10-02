@@ -1,7 +1,7 @@
 `include "Control/opcodeDef.v"
 `include "Control/controlDef.v"
 `include "Control/TDef.v"
-task ROR_zp;
+task ROL_zp;
 
 	input [6:0] T;
 	input phi1,phi2;

@@ -128,7 +128,7 @@ task DEC_abs;
 					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`DL_ADH] = 1'b1;
 			end
-			
+			end
 			`Tfour:begin
 		newT = `Tfive;
 			if (phi1) begin
@@ -154,7 +154,7 @@ task DEC_abs;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
 			end		
-			
+			end
 			`Tfive:begin
             newT = `Tzero;
             controlSigs[`nRW] = 1'b1;
@@ -182,7 +182,7 @@ task DEC_abs;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 			end
-			
+			end
 		endcase
 
 	end

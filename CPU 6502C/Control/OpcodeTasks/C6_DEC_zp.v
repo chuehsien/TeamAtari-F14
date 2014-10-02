@@ -131,7 +131,7 @@ task DEC_zp;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
 			end
-			
+			end
 			`Tfour:begin
             newT = `Tzero;
             controlSigs[`nRW] = 1'b1;
@@ -162,7 +162,7 @@ task DEC_zp;
 			end	
 			
 			
-			
+			end
 		endcase
 
 	end

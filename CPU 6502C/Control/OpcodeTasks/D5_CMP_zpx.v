@@ -129,7 +129,7 @@ task CMP_zpx;
 					controlSigs[`nI_PC] = 1'b1;
 			end
 			
-			
+			end
 			
 		endcase
 

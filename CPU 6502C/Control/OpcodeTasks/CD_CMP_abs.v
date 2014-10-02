@@ -127,7 +127,7 @@ task CMP_abs;
 					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`DL_ADH] = 1'b1;
 			end
-			
+			end
 		
 			
 		endcase

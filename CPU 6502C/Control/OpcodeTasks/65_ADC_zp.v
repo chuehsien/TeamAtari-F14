@@ -102,7 +102,7 @@ task ADC_zp;
 					controlSigs[`O_ADH1to7] = 1'b1;
 					controlSigs[`DL_ADL] = 1'b1;
 				end
-			
+                end
 		
 		
 		endcase

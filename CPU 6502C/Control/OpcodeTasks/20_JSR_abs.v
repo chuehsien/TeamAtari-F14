@@ -135,7 +135,7 @@ task JSR_abs;
 					controlSigs[`PCH_DB] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 			end
-	
+            end
 			`Tfour:begin
             newT = `Tfive;
             controlSigs[`nRW] = 1'b1;
@@ -162,7 +162,7 @@ task JSR_abs;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_DB] = 1'b1;
 			end
-			
+			end
 			`Tfive:begin
             newT = `Tzero;
             controlSigs[`nRW] = 1'b1;
@@ -191,6 +191,7 @@ task JSR_abs;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
 			end
+            end
 		endcase
 
 	end

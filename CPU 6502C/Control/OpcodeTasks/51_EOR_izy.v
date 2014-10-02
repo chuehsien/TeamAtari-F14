@@ -162,7 +162,7 @@ task EOR_izy;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
 			end
-	
+            end
 			`Tfour:begin
 			if (carry) newT = `Tfive;
 			else newT = `TzeroNoCrossPg;
@@ -192,7 +192,7 @@ task EOR_izy;
 					controlSigs[`DL_ADH] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
 			end
-			
+			end
 			`Tfive:begin
 			newT = `TzeroCrossPg;
 			if (phi1) begin
@@ -220,6 +220,7 @@ task EOR_izy;
 					controlSigs[`SB_ADH] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 			end
+            end
 		endcase
 
 	end

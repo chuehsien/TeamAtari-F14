@@ -1,0 +1,49 @@
+// Memory List for 65K RAM
+// Place 1 byte of data on each line
+// Use @0000 to jump to addresses in memory
+// Initialize shadow registers
+@022F
+20 // S-DMACTL
+@0230
+00 // S-DLISTL
+A0 // S-DLISTH
+@0234
+00 // S-PENH
+00 // S-PENV
+@02F3
+00 // S_CHACTL
+00 // S-CHBASE
+// Demo Display List
+@A000
+70  // Blank 8 lines
+70  // Blank 8 lines
+70  // Blank 8 lines
+42  // display ANTIC mode 2 (BASIC mode0)
+20  // Also, screen memory starts at7C20
+7C
+02  // Display Antic Mode 2
+02
+02
+02
+02
+02
+02
+02
+02
+02
+02
+02
+02
+02
+02
+02
+02
+02
+02
+02
+02
+02
+02
+41  // Jump and watt for vertical
+E0  // blank to display list which
+7B  // starts at $7BEO
