@@ -5,9 +5,7 @@
  Designed to test module "plaFSM", located in "plaFSM.v"
 
 */
-
 module testCPU_FSM;
-
   //This number needs to change according to how many lines there are in fsm_test_vectors.vm
   parameter NUM_VECTORS=30;
   
@@ -24,6 +22,10 @@ module testCPU_FSM;
   
   integer i, j;
   
+  reg[6:0] T_state;
+  reg[2:0] FSM_state;
+  reg[8*15:0] T_string;
+  reg[8*9:0] FSM_string;
   
   wire [62:0] controlSigs;
   wire SYNC;
@@ -60,14 +62,50 @@ module testCPU_FSM;
     statusReg = F;
     // numCycles = C;
     //clock the number of cycles, after this, the result should be ready on controlSigs already.
-    //@(posedge clock) x 30
+    
     //$display("A: %4d, B: %d, C:%d, E: %d, F: %D",A,B,C,D,E,F);
-    $display("@%4d, SR: %b, OP: %b, nmi: %b, irq: %b, rst: %b, RDY: %b",i,statusReg, opcodeIn, nmi, irq, rst, RDY);
-    $display("@%4d, T: %h, control: %b, SYNC: %b",i, plaFSM_mod.curr_T, controlSigs, SYNC);
-      
-  
+    T_state = plaFSM_mod.curr_T;
+    FSM_state = plaFSM_mod.curr_state;
+    TtoString();
+    FSMtoString();
+
+    $display("@%3d, SR: %b, OP: %b, nmi: %b, irq: %b, rst: %b, RDY: %b",i,statusReg, opcodeIn, nmi, irq, rst, RDY);
+    $display("@%3d, (%s,%s) ---> control: %b, SYNC: %b",i, FSM_string,T_string, controlSigs, SYNC);
+    
+    
   end
   
+  endtask
+  
+  task TtoString;
+      begin
+      if (T_state == `Tzero) T_string = "Tzero";
+      else if (T_state == `Tone) T_string = "Tone";
+      else if (T_state == `Ttwo) T_string = "Ttwo";
+      else if (T_state == `Tthree) T_string = "Tthree";
+      else if (T_state == `Tfour) T_string = "Tfour";
+      else if (T_state == `Tfive) T_string = "Tfive";
+      else if (T_state == `Tsix) T_string = "Tsix";
+      else if (T_state == `T1NoBranch) T_string = "T1NoBranch";
+      else if (T_state == `T1BranchNoCross) T_string = "T1BranchNoCross";
+      else if (T_state == `T1BranchCross) T_string = "T1BranchCross";
+      else if (T_state == `TzeroNoCrossPg) T_string = "TzeroNoCrossPg";
+      else if (T_state == `TzeroCrossPg) T_string = "TzeroCrossPg";
+      else T_string = "error";
+      end
+  endtask
+  
+    task FSMtoString;
+      begin
+      if (FSM_state == `FSMinit) FSM_string = "FSMinit";
+      else if (FSM_state == `FSMfetch) FSM_string = "FSMfetch";
+      else if (FSM_state == `FSMstall) FSM_string = "FSMstall";
+      else if (FSM_state == `execNorm) FSM_string = "execNorm";
+      else if (FSM_state == `execRMW) FSM_string = "execRMW";
+      else if (FSM_state == `execBranch) FSM_string = "execBranch";
+      else if (FSM_state == `execBrk) FSM_string = "execBrk";
+      else FSM_string = "error";
+      end
   endtask
   
   

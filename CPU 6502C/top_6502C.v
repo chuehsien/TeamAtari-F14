@@ -12,7 +12,8 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
                 phi1_out, SYNC, extAB, phi2_out, RW);
 			
 			input RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in;
-			input [7:0] extDB;
+			inout [7:0] extDB;
+            
 			output phi1_out, SYNC, phi2_out,RW;
 			output [15:0] extAB;
 		

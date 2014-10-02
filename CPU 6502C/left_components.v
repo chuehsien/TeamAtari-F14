@@ -8,22 +8,6 @@ module BUF (Y,A);
     buf #(0.5, 0.5) g(Y,A);
 endmodule
 
-/* Tri-State Buffer
- * Much like a transmition gate, 
- * by asserting "EN", the value of 
- * "A" goes to "Y". Otherwise, a floating
- * output is kept.
- * Size: 6
- */
-module TRIBUF (Y, A, EN);
-	output Y;
-	input A, EN;
-	bufif1 g(Y,A,EN);
-endmodule
-
-
-
-
 module clockGen(phi0_in,
                 phi1_out,phi2_out,phi1_extout,phi2_extout);
                 
