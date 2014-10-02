@@ -1,7 +1,6 @@
 // this module contains all contains that are driven by clocks and the left side of the block diagram
 
 `define G1ANDG2 2'd0
-`include "Controls/plaFSM.v"
 
 module BUF (Y,A);
     output Y;
@@ -32,7 +31,7 @@ module clockGen(phi0_in,
     output phi1_out,phi2_out,phi1_extout,phi2_extout;
 
     wire phi0_in;
-    reg phi1_out,phi2_out,phi1_extout,phi2_extout;
+    wire phi1_out,phi2_out,phi1_extout,phi2_extout;
     
     buf a(phi1_out,phi0_in);
     not b(phi2_out,phi1_out);
@@ -42,12 +41,13 @@ module clockGen(phi0_in,
     
 endmodule
 
-module predecodeRegister(phi2_in,extDataBus,
+module predecodeRegister(phi2,extDataBus,
                         outToIR);
                         
-    input phi2_in;
+    input phi2;
     input [7:0] extDataBus;
-    output outToIR;
+    output [7:0] outToIR;
+    reg [7:0] outToIR;
     
     always @ (posedge phi2) begin
         outToIR <= extDataBus;
@@ -61,8 +61,9 @@ module predecodeLogic(irIn, interrupt,
     input [7:0] irIn;
     input interrupt;
     output [7:0] irOut;
+    wire [7:0] irOut;
     
-    assign irOut = (~interrupt) irIn : 8'd0;
+    assign irOut = (~interrupt) ? irIn : 8'd0;
     
 endmodule
                         
@@ -72,6 +73,7 @@ module instructionRegister(en, inFromPredecode,
     input en; //en - (T2)(phi1)(RDY) not sure!
     input [7:0] inFromPredecode; 
     output [7:0] outToDecodeRom;
+    reg [7:0] outToDecodeRom;
     
     always @ (posedge en) begin
         outToDecodeRom <= inFromPredecode;
@@ -235,20 +237,21 @@ endmodule
 
 module interruptResetControl(phi2,NMI_L, IRQ_L, RES_L, nmiHandled, irqHandled, resHandled,
                             nmi,irq,res);
-    input NMI_L,IRQ_L,RES_L;
+    input phi2,NMI_L,IRQ_L,RES_L;
     input nmiHandled, irqHandled, resHandled;
     output nmi,irq,res;
     
-    wire NMI_L,IRQ_L,RES_L;
+    wire phi2,NMI_L,IRQ_L,RES_L;
     wire nmiHandled, irqHandled, resHandled;
     reg nmi,irq,res;
     
+    reg intg;
     reg nmiPending, irqPending, resPending;
     
     always @ (posedge NMI_L) begin //NMI is captured on negedge.
         nmiPending <= NMI_L;
     end
-    always (IRQ_L or RES_L) begin
+    always @(IRQ_L or RES_L) begin
         irqPending = ~IRQ_L;
         resPending = ~RES_L;
     end
@@ -262,7 +265,7 @@ module interruptResetControl(phi2,NMI_L, IRQ_L, RES_L, nmiHandled, irqHandled, r
         
     end
     
-    always @ (nmiHandled or irqHandled or resHandled)
+    always @ (nmiHandled or irqHandled or resHandled) begin
         if (nmiHandled) nmiPending = 1'b0;
         if (irqHandled) irqPending = 1'b0;
         if (resHandled) resPending = 1'b0;
@@ -272,7 +275,7 @@ endmodule
 
 //nRW - reading, ~nRW - writing
 module readyControl(phi2, RDY,nRW,
-                    RDYout)
+                    RDYout);
     input phi2;
     input RDY, nRW;
     output RDYout;
@@ -285,7 +288,7 @@ module readyControl(phi2, RDY,nRW,
     
 endmodule
 
-module randomControl(clock, decoded, interrupt, rdyControl, SV,
+/* module randomControl(clock, decoded, interrupt, rdyControl, SV,
                     clock_out, RW, controlSig_t);
                     
     input clock, decoded, interrupt, rdyControl, SV;
@@ -293,4 +296,4 @@ module randomControl(clock, decoded, interrupt, rdyControl, SV,
     output controlSig_t;
 
 endmodule
-
+ */

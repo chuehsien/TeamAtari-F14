@@ -18,8 +18,8 @@ module testCPU_FSM;
   
   reg [2:0] numCycles;
   
-  reg [19:0] vectors [NUM_VECTORS-1:0];
-  reg [19:0] vec; 
+  reg [31:0] vectors [NUM_VECTORS-1:0];
+  reg [31:0] vec; 
   //20 bits per test vector, (nmi, irq, rst, RDY, opcodeIn, statusReg)
   
   integer i, j;
@@ -37,7 +37,8 @@ module testCPU_FSM;
   
   
   
-  plaFSM plaFSM_mod(.phi1(phi1), .phi2(phi2), .nmi(nmi), .irq(irq), .rst(rst), .RDY(RDY), .opcodeIn(opcodeIn), .statusReg(statusReg), .controlSigs(controlSigs), .SYNC(SYNC));
+  plaFSM plaFSM_mod(.phi1(phi1), .phi2(phi2), .nmi(nmi), .irq(irq), .rst(rst), .RDY(RDY), 
+                   .opcodeIn(opcodeIn), .statusReg(statusReg), .controlSigs(controlSigs), .SYNC(SYNC),.T1now());
   
   //need to keep flipping two clocks? off by half? Ans: no, just flip phi1 and get phi2 to be ~phi1
   
@@ -49,6 +50,7 @@ module testCPU_FSM;
   task run_vector;
   input A, B, C, D;
   input [7:0] E, F;
+  
   begin
     nmi = A;
     irq = B;
@@ -59,23 +61,10 @@ module testCPU_FSM;
     // numCycles = C;
     //clock the number of cycles, after this, the result should be ready on controlSigs already.
     //@(posedge clock) x 30
-    
-    $display("======================");
-    
-    $display("\tstatusReg is: \t%b, \topcodeIn is: \t%b, \tnmi is: \t%b, \tirq is: \t%b, \trst is: \t%b, \tRDY is: \t%b", statusReg, opcodeIn, nmi, irq, rst, RDY);
-    
-    @(posedge phi1);
-    /* for (j = 3'd0; j < numCycles; j=j+1) begin
-      @(posedge phi1);
-     end*/
-    
-    
-    $display("\topcodeIn: \t%h, \tTstate: \t%h, \tcontrolSigs: \t%b, \tSYNC: \t%b", opcodeIn, plaFSM_mod.curr_T, controlSigs, SYNC);
-    
-    $display("======================");
-    
-    
-    
+    //$display("A: %4d, B: %d, C:%d, E: %d, F: %D",A,B,C,D,E,F);
+    $display("@%4d, SR: %b, OP: %b, nmi: %b, irq: %b, rst: %b, RDY: %b",i,statusReg, opcodeIn, nmi, irq, rst, RDY);
+    $display("@%4d, T: %h, control: %b, SYNC: %b",i, plaFSM_mod.curr_T, controlSigs, SYNC);
+      
   
   end
   
@@ -83,12 +72,19 @@ module testCPU_FSM;
   
   
   initial begin
-  
+  phi1 = 0;
+    
   $readmemh("fsm_test_vectors.vm", vectors);
   for (i=0; i<NUM_VECTORS; i=i+1) begin
     vec = vectors[i];
-    run_vector(vec[19], vec[18], vec[17], vec[16], vec[15:8], vec[7:0]);
+    @(posedge phi1);
+    $display("==========posedge========");
+    run_vector(vec[28], vec[24], vec[20], vec[16], vec[15:8], vec[7:0]);
     //run_vector(4 bits of signals, statusReg, opcodeIn);
+    
+    @(negedge phi1);
+    $display("==========negedge========");
+    run_vector(vec[28], vec[24], vec[20], vec[16], vec[15:8], vec[7:0]);
   end
   
   $finish;

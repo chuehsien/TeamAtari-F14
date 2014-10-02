@@ -59,7 +59,7 @@ module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC)
         if (SUMS) begin
           {HC, ALU_out[3:0]} = A[3:0] + B[3:0] + I_ADDC;
           {ACR, ALU_out[7:4]} = A[7:4] + B[7:4] + HC;
-          AVR = ((A[7]==B[7]) & (A[7]!=ALU_out[7]); 
+          AVR = (A[7]==B[7]) & (A[7]!=ALU_out[7]); 
         end
         else if (ANDS)
           ALU_out = A & B;
@@ -72,7 +72,7 @@ module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC)
           ALU_out = {1'b0, A[7:1]};
           // need to shift out the carry i thk.
           ACR = A[0];
-
+        end
     
   end
   
@@ -84,16 +84,19 @@ module AdderHoldReg(phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes, ADL,SB);
     input [7:0] addRes;
     inout [7:0] ADL, SB;
     
-    wire phi2;
+    wire phi2, ADD_ADL, ADD_SB0to6, ADD_SB7;
+    wire [7:0] addRes;
+    wire [7:0] ADL,SB;
+    
     reg [7:0] adderReg;
   
     always @ (posedge phi2) begin
         adderReg <= addRes;
     end
   
-  TRIBUF adl[7:0](adderReg, ADD_ADL, ADL);
-  TRIBUF sb1[6:0](adderReg[6:0], ADD_ADL0to6, SB[6:0]);
-  TRIBUF sb2(adderReg[7], ADD_SB7, SB[7]);
+    TRIBUF adl[7:0](adderReg, ADD_ADL, ADL);
+    TRIBUF sb1[6:0](adderReg[6:0], ADD_ADL0to6, SB[6:0]);
+    TRIBUF sb2(adderReg[7], ADD_SB7, SB[7]);
   
 endmodule
 
@@ -207,8 +210,8 @@ module inputDataLatch(phi1, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
     
     always @ (posedge phi1) begin
         DBreg <= (DL_DB) ? data : 8'bZZZZZZZZ;
-        ADLreg <= (ADL_DB) ? data : 8'bZZZZZZZZ;
-        ADHreg <= (ADH_DB) ? data : 8'bZZZZZZZZ;
+        ADLreg <= (DL_ADL) ? data : 8'bZZZZZZZZ;
+        ADHreg <= (DL_ADH) ? data : 8'bZZZZZZZZ;
             
     end
     
@@ -276,7 +279,7 @@ module PC(phi2, PCL_DB, PCL_ADL,inFromIncre,
     
     wire phi2, PCL_DB, PCL_ADL;
     wire [7:0] DB, ADL, inFromIncre;
-    reg [7:0] PCout;
+    wire [7:0] PCout;
     
     reg [7:0] currPC;
     TRIBUF db[7:0](currPC, PCL_DB, DB);
@@ -380,17 +383,21 @@ module accum(inFromDecAdder, SB_AC, AC_DB, AC_SB,
         
     input [7:0] inFromDecAdder;
     input SB_AC, AC_DB, AC_SB;
-    inout DB, SB;
+    inout [7:0] DB, SB;
+
+    wire [7:0] inFromDecAdder;
+    wire SB_AC, AC_DB, AC_SB;
+    wire [7:0] DB, SB;
     
-    wire S
     reg [7:0] currAccum;
+    
+    assign DB = (AC_DB) ? currAccum : 8'bzzzzzzzz;
+    assign SB = (AC_SB) ? currAccum : 8'bzzzzzzzz;
+        
     
     always @ (*) begin
         if (SB_AC) currAccum = inFromDecAdder;
     
-        DB = (AC_DB) ? currAccum : 8'bzzzzzzzz;
-        SB = (AC_SB) ? currAccum : 8'bzzzzzzzz;
-        
     end
     
 endmodule
@@ -442,18 +449,15 @@ endmodule
 module register(phi2, load, bus_en,
             SB);
     
-    input phi2, bus_en;
+    input phi2, load, bus_en;
     inout [7:0] SB;
     
-    wire phi2, bus_en;
+    wire phi2, load, bus_en;
     wire [7:0] SB;
-    
-    
-    assign SB = (bus_en) ? currVal : 8'bzzzzzzzz;
-    
     
     reg [7:0] currVal;
     
+    assign SB = (bus_en) ? currVal : 8'bzzzzzzzz;
     
     always @(posedge phi2) begin
         if (load) currVal <= SB;
@@ -485,8 +489,8 @@ module statusReg(phi2, P_DB, DBZ, IR5, DAA, ACR ,AVR, DB_N, DBin, opcode,
         currVal[`status_C] <= ACR;
         currVal[`status_Z] <= DBZ;
         currVal[`status_I] <= IR5;
-        currVal[`status_D] <= DAA
-        currVal[4] <= (opcode == `BRK || opcode == `PHP) ? 1'b1 : 1'b0; //trying to inject B in..
+        currVal[`status_D] <= DAA;
+        currVal[4] <= ((opcode == `BRK || opcode == `PHP) ? 1'b1 : 1'b0); //trying to inject B in..
         currVal[5] <= 1'b1; //default
         currVal[`status_V] <= AVR;
         currVal[`status_N] <= DB_N;
@@ -498,15 +502,15 @@ module statusReg(phi2, P_DB, DBZ, IR5, DAA, ACR ,AVR, DB_N, DBin, opcode,
 endmodule
 
 module prechargeMos(phi2,
-                    bus)
+                    bus);
     
     input phi2;
-    inout bus;
+    inout [7:0] bus;
     
     wire phi2;
-    wire bus;
+    wire [7:0] bus;
     
-    bufif0 (medium1, highz0) a[7:0](bus,8'hff,phi2);
+    bufif0 (weak1, highz0) a[7:0](bus,8'hff,phi2);
     
     /*
     always @(posedge phi2) begin
@@ -542,7 +546,13 @@ module prechargeMos(phi2,
 endmodule
 
 module opendrainMosADL(O_ADL0, O_ADL1, O_ADL2,
-                    bus)
+                    bus);
+    
+    input O_ADL0, O_ADL1, O_ADL2;
+    inout [7:0] bus;
+                    
+    wire O_ADL0, O_ADL1, O_ADL2;
+    wire [7:0] bus;
     
     bufif0 (highz1, strong0) a(bus[0],1'b0,O_ADL0);
     bufif0 (highz1, strong0) b(bus[1],1'b0,O_ADL1);
@@ -552,10 +562,16 @@ endmodule
 
 
 module opendrainMosADH(O_ADH0, O_ADH17,
-                    bus)
+                    bus);
+    
+    input O_ADH0, O_ADH17;
+    inout [7:0] bus;
+    
+    wire O_ADH0, O_ADH17;
+    wire [7:0] bus;
     
     bufif0 (highz1, strong0) a(bus[0],1'b0,O_ADH0);
-    bufif0 (highz1, strong0) b(bus[7:1],7'b111_1111,O_ADH17);
+    bufif0 (highz1, strong0) b[6:0](bus[7:1],7'b111_1111,O_ADH17);
     
 endmodule
 

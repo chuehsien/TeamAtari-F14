@@ -108,7 +108,7 @@
 `define ADC_imm   8'h69 //N
 `define ROR       8'h6a //N
 //`define ARR_imm   8'h6b
-`define JMP_ind   8'h6c //N
+`define JMP_zp   8'h6c //N
 `define ADC_abs   8'h6d //N
 `define ROR_abs   8'h6e //N
 //`define RRA_abs   8'h6f

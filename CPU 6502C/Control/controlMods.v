@@ -32,7 +32,7 @@ task instructionType;
 		opcode == `LSR_zp  ||opcode == `PHA     ||opcode == `EOR_imm ||opcode == `LSR     ||opcode == `JMP_abs ||
 		opcode == `EOR_abs ||opcode == `LSR_abs ||opcode == `EOR_zpx ||opcode == `LSR_zpx ||opcode == `CLI     ||
 		opcode == `LSR_abx ||opcode == `RTS     ||opcode == `ADC_izx ||opcode == `ADC_zp  ||opcode == `ROR_zp  ||
-		opcode == `PLA     ||opcode == `ADC_imm ||opcode == `ROR     ||opcode == `JMP_ind ||opcode == `ADC_abs ||
+		opcode == `PLA     ||opcode == `ADC_imm ||opcode == `ROR     ||opcode == `JMP_zp  ||opcode == `ADC_abs ||
 		opcode == `ROR_abs ||opcode == `ADC_zpx ||opcode == `ROR_zpx ||opcode == `SEI     ||opcode == `ROR_abx ||
 		opcode == `STA_izx ||opcode == `STY_zp  ||opcode == `STA_zp  ||opcode == `STX_zp  ||opcode == `DEY     ||
 		opcode == `TXA     ||opcode == `STY_abs ||opcode == `STA_abs ||opcode == `STX_abs ||opcode == `STY_zpx ||
@@ -156,7 +156,7 @@ task getControlsNorm;
 		`PLA    : PLA    (currT,phi1,phi2,dummy_control,dummy_T);
 		`ADC_imm: ADC_imm(currT,phi1,phi2,dummy_control,dummy_T);
 		`ROR    : ROR    (currT,phi1,phi2,dummy_control,dummy_T);
-		`JMP_ind: JMP_ind(currT,phi1,phi2,dummy_control,dummy_T);
+		`JMP_zp : JMP_zp(currT,phi1,phi2,dummy_control,dummy_T);
 		`ADC_abs: ADC_abs(currT,phi1,phi2,dummy_control,dummy_T);
 		`ROR_abs: ROR_abs(currT,phi1,phi2,dummy_control,dummy_T);
 		`ADC_zpx: ADC_zpx(currT,phi1,phi2,dummy_control,dummy_T);

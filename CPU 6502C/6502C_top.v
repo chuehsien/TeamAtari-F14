@@ -2,9 +2,8 @@
 // last updated: 09/30/2014 2140H
 
 `include "Control/controlDef.v"
-module 6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, 
-			DB,
-			phi1_out, SYNC, AB, phi2_out, RW)
+
+module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, DB,	phi1_out, SYNC, AB, phi2_out, RW);
 			
 			input RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in;
 			inout [7:0] DB;
@@ -12,7 +11,7 @@ module 6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in,
 			output [15:0] AB;
 		
         
-            wire RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in;
+           // wire RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in;
             wire [7:0] DB;
             wire [15:0] AB;
             wire phi1_out, SYNC, phi2_out, RW;
@@ -78,7 +77,7 @@ module 6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in,
                         
             wire [7:0] nDB;
             inverter inv(DB,nDB);
-            Breg    b_reg(controlSigs[`DB_L_AD], controlSigs[`DB_ADD], controlSigs[`ADL_ADD], DB,nDB,ADL,B);
+            Breg    b_reg(controlSigs[`DB_L_ADD], controlSigs[`DB_ADD], controlSigs[`ADL_ADD], DB,nDB,ADL,B);
             
             Areg    a_reg(controlSigs[`O_ADD], controlSigs[`SB_ADD], SB, A);
             
@@ -87,7 +86,7 @@ module 6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in,
                                 ADL,SB);
             
             wire [7:0] inFromDecAdder;
-            decimalAdjust   decAdj(SB, ~controlSigs[`DSA], ~controlSigs[`DAA], ACR, HC, phi2,inFromDecAdder);
+            decimalAdjust   decAdj(SB, ~controlSigs[`nDSA], ~controlSigs[`nDAA], ACR, HC, phi2,inFromDecAdder);
             accum           a(inFromDecAdder, controlSigs[`SB_AC], controlSigs[`AC_DB], controlSigs[`AC_SB],
                             DB,SB);
                         
