@@ -18,6 +18,9 @@ A0 // S-DLISTH
 70  // Blank 8 lines
 70  // Blank 8 lines
 70  // Blank 8 lines
+41  // Jump and wait for vertical
+52  // blank to display list which
+A2  // starts at $7BEO
 42  // display ANTIC mode 2 (BASIC mode0)
 20  // Also, screen memory starts at7C20
 7C
@@ -44,6 +47,10 @@ A0 // S-DLISTH
 02
 02
 02
-41  // Jump and watt for vertical
+41  // Jump and wait for vertical
 E0  // blank to display list which
 7B  // starts at $7BEO
+@A252
+70  // Blank 8 lines
+70  // Blank 8 lines
+70  // Blank 8 lines

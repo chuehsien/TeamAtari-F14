@@ -14,7 +14,9 @@
 `define DMA_off     1'b0
 `define DMA_on      1'b1
 
-module ANTIC(Fphi0, LP_L, RW, RST, phi2, DB, address, AN, halt_L, NMI_L, RDY_L, REF_L, RNMI_L, phi0, printDLIST, cstate, data, IR_out);
+module ANTIC(Fphi0, LP_L, RW, RST, phi2, DB, address, AN, halt_L, NMI_L, RDY_L,
+             REF_L, RNMI_L, phi0, printDLIST, cstate, data, IR_out, load_IR,
+             loadDLIST_both);
 
       input Fphi0;
       input LP_L;
@@ -31,11 +33,13 @@ module ANTIC(Fphi0, LP_L, RW, RST, phi2, DB, address, AN, halt_L, NMI_L, RDY_L, 
       output RNMI_L;
       output phi0;
       output [7:0] IR_out;
+      output load_IR;
       
       // extras (remove later on)
       output [15:0] printDLIST;
       output [2:0] cstate;
       output [7:0] data;
+      output [1:0] loadDLIST_both;
       
       // Hardware registers
       reg [7:0] DMACTL;   // $D400
@@ -70,12 +74,15 @@ module ANTIC(Fphi0, LP_L, RW, RST, phi2, DB, address, AN, halt_L, NMI_L, RDY_L, 
       wire loadDLISTH;
       wire DLISTend;
       wire DLISTjump;
+      wire loadPtr;
       
       // * Temp:
       assign printDLIST = {DLISTH, DLISTL};
       assign halt_L = ~DMA;
       assign cstate = currState;
       assign IR_out = IR;
+      assign load_IR = loadIR;
+      assign loadDLIST_both = {loadDLISTH, loadDLISTL};
       // End Temp *
       
       assign registers = {NMI, NMIEN, PENV, PENH, VCOUNT, WSYNC,
@@ -87,7 +94,8 @@ module ANTIC(Fphi0, LP_L, RW, RST, phi2, DB, address, AN, halt_L, NMI_L, RDY_L, 
       AddressBusReg addr(.load(loadAddr), .incr(incr), .addressIn(addressIn), .addressOut(address));
       dataReg dreg(.phi2(phi2), .DMA(DMA), .dataIn(DB), .data(data));
       dataTranslate dt(.IR(IR), .IR_rdy(IR_rdy), .Fphi0(Fphi0), .RST(RST), .vblank(vblank), .AN(AN), .loadIR(loadIR),
-                       .loadDLISTL(loadDLISTL), .loadDLISTH(loadDLISTH), .DLISTjump(DLISTjump), .DLISTend(DLISTend));
+                       .loadDLISTL(loadDLISTL), .loadDLISTH(loadDLISTH), .DLISTjump(DLISTjump), .DLISTend(DLISTend),
+                       .loadPtr(loadPtr));
     
       // FSM to initialize
       always @ (posedge phi2) begin
@@ -95,7 +103,7 @@ module ANTIC(Fphi0, LP_L, RW, RST, phi2, DB, address, AN, halt_L, NMI_L, RDY_L, 
         // Display list pointer changes (triggered by JUMP instruction in dataTranslate module)
         if (loadDLISTL)
           DLISTL <= IR;
-        if (loadDLISTH)
+        else if (loadDLISTH)
           DLISTH <= IR;
           
         // * TODO: Add vertical blank signal occurrence signal to dataTranslate module
@@ -154,7 +162,8 @@ module ANTIC(Fphi0, LP_L, RW, RST, phi2, DB, address, AN, halt_L, NMI_L, RDY_L, 
             
             `FSMload2:
               begin
-                incr <= 1'b1; // Increment display list pointer
+                if (~loadPtr)
+                  incr <= 1'b1; // Increment display list pointer
                 IR <= data;
                 IR_rdy <= 1'b1;
                 
@@ -192,8 +201,12 @@ module ANTIC(Fphi0, LP_L, RW, RST, phi2, DB, address, AN, halt_L, NMI_L, RDY_L, 
         else 
           currState <= nextState;
         
+        if (incr) begin
+          incr <= 1'b0;
+          {DLISTH, DLISTL} <= address;
+        end
+        
         loadAddr <= 1'b0;
-        incr <= 1'b0;
         IR_rdy <= 1'b0;
       end
       

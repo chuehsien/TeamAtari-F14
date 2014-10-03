@@ -9,7 +9,8 @@
 `define jumpExecute     2'b11
 
 // To translate display list commands into AN[2:0] bits to GTIA
-module dataTranslate(IR, IR_rdy, Fphi0, RST, vblank, AN, loadIR, loadDLISTL, loadDLISTH, DLISTjump, DLISTend);
+module dataTranslate(IR, IR_rdy, Fphi0, RST, vblank, AN, loadIR, loadDLISTL, loadDLISTH, 
+                     DLISTjump, DLISTend, loadPtr);
   
   input [7:0] IR;
   input IR_rdy;
@@ -22,6 +23,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, RST, vblank, AN, loadIR, loadDLISTL, loa
   output reg loadDLISTH;
   output reg DLISTjump;
   output reg DLISTend;
+  output reg loadPtr;
   
   reg idle;
   reg [3:0] mode;
@@ -30,11 +32,20 @@ module dataTranslate(IR, IR_rdy, Fphi0, RST, vblank, AN, loadIR, loadDLISTL, loa
   reg [2:0] blankCount;
   reg jumpType;
   reg [1:0] jumpState;
+  reg loadIR_hold;
+  reg modeComplete;
+  reg loadDLIST_hold;
+  
+  wire loadDLIST;
+  assign loadDLIST = (loadDLISTH | loadDLISTL);
   
   // 1. Retrieve data from RAM via DMA
   // 2. Evaluate retrieved data
   // 3. Output bits to AN
   always @ (posedge Fphi0) begin
+  
+    // Will be overwritten if bits are sent on this clock cycle
+    AN <= 3'bzzz;
   
     if (RST) begin
       // Initialize registers
@@ -47,11 +58,50 @@ module dataTranslate(IR, IR_rdy, Fphi0, RST, vblank, AN, loadIR, loadDLISTL, loa
       DLISTjump <= 1'b0;
       DLISTend <= 1'b0;
       idle <= 1'b0;
+      loadIR_hold <= 1'b0;
+      modeComplete <= 1'b0;
+      jumpState <= `jumpStart;
+      loadDLIST_hold <= 1'b0;
+      loadPtr <= 1'b0;
     end
     
     else if (idle) begin
       if (vblank)
         idle <= 1'b0;
+    end
+    
+    // Holds required signals to the ANTIC FSM for 2 Fphi0 cycles (1 phi2 cycle)
+    else if (modeComplete || loadDLIST) begin
+    
+      if (modeComplete) begin
+        if (loadIR && ~loadIR_hold)
+          loadIR_hold <= 1'b1;
+        else if (loadIR && loadIR_hold) begin
+          loadIR <= 1'b0;
+          loadIR_hold <= 1'b0;
+          modeComplete <= 1'b0;
+        end
+      end
+      
+      if (loadDLIST) begin
+        if (loadDLISTL) begin
+          if (loadDLISTL && ~loadDLIST_hold)
+            loadDLIST_hold <= 1'b1;
+          else if (loadDLISTL && loadDLIST_hold) begin
+            loadDLIST_hold <= 1'b0;
+            loadDLISTL <= 1'b0;
+          end
+        end
+        else if (loadDLISTH) begin
+          if (loadDLISTH && ~loadDLIST_hold)
+            loadDLIST_hold <= 1'b1;
+          else if (loadDLISTH && loadDLIST_hold) begin
+            loadDLIST_hold <= 1'b0;
+            loadDLISTH <= 1'b0;
+          end
+        end
+      end
+      
     end
     
     else begin
@@ -78,6 +128,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, RST, vblank, AN, loadIR, loadDLISTL, loa
               if (IR[6:4] == 3'd0) begin
                 newBlank <= 1'b1;
                 loadIR <= 1'b1;
+                modeComplete <= 1'b1;
               end  
               
               // More than 1 blank line required; Continue instruction
@@ -94,6 +145,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, RST, vblank, AN, loadIR, loadDLISTL, loa
                 AN <= `modeNorm_bgColor;
                 newBlank <= 1'b1;
                 loadIR <= 1'b1;
+                modeComplete <= 1'b1;
               end
             
               // More to display; Continue displaying blank lines
@@ -129,12 +181,12 @@ module dataTranslate(IR, IR_rdy, Fphi0, RST, vblank, AN, loadIR, loadDLISTL, loa
                   if (IR_rdy) begin
                     jumpState <= `jumpLoadByte2;
                     loadDLISTL <= 1'b1;
+                    loadPtr <= 1'b1;  // Block ANTIC FSM from incr dlistptr
                   end
                 end
               
               `jumpLoadByte2:
                 begin
-                  loadDLISTL <= 1'b0;
                   if (IR_rdy) begin
                     jumpState <= `jumpExecute;
                     loadIR <= 1'b0;
@@ -145,7 +197,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, RST, vblank, AN, loadIR, loadDLISTL, loa
               `jumpExecute:
                 begin
                   holdMode <= 1'b0;
-                  loadDLISTH <= 1'b0;
+                  loadPtr <= 1'b0;
                   jumpState <= `jumpStart;
                   
                   // Trigger jump to new pointer location
@@ -161,6 +213,11 @@ module dataTranslate(IR, IR_rdy, Fphi0, RST, vblank, AN, loadIR, loadDLISTL, loa
                     DLISTend <= 1'b1;
                     idle <= 1'b1; // Idle until next vertical blank
                   end
+                end
+                
+              default:
+                begin
+                  jumpState <= `jumpStart;
                 end
             endcase
             
@@ -255,7 +312,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, RST, vblank, AN, loadIR, loadDLISTL, loa
         // No mode selected
         default:
           begin
-            loadIR <= 1'b0;
+            
           end
         
       endcase
