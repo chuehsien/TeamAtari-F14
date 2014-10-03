@@ -8,15 +8,16 @@
 
 module testCPU;
 
-  parameter NUM_VECTORS=30;
+  parameter NUM_TESTS=30;
   
+  /* CPU registers */
   reg RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in;
-  reg [7:0] DBin;
+  reg [7:0] extDBin;
   
   wire phi1_out, SYNC, phi2_out, RW;
-  wire [15:0] AB; //Address Bus Low and High
+  wire [15:0] extAB; //Address Bus Low and High
   
-  wire [7:0] DB; //Data Bus
+  wire [7:0] extDB; //Data Bus
   
   integer i, j;
   
@@ -24,15 +25,27 @@ module testCPU;
   reg [11:0] vectors [NUM_VECTORS-1:0];
   reg [11:0] vec; 
   
+  /* Memory registers */
+  reg clock, enable, we_L, re_L;
+  reg [15:0] address;
+  //reg [7:0] data_reg;
+  
+  //wire [7:0] data;
+  
+  
   //Setting up the clock to run
   always begin
     #10 phi0_in = ~phi0_in;
   end
   
-  top_6502C top_6502C_module(.RDY(RDY), .IRQ_L(IRQ_L), .NMI_L(NMI_L), .RES_L(RES_L), .SO(SO), .phi0_in(phi0_in), .DB(DB), .phi1_out(phi1_out), .SYNC(SYNC), .AB(AB), .phi2_out(phi2_out), .RW(RW));
+  top_6502C top_6502C_module(.RDY(RDY), .IRQ_L(IRQ_L), .NMI_L(NMI_L), .RES_L(RES_L), .SO(SO), .phi0_in(phi0_in), .extDB(extDBin), .phi1_out(phi1_out), .SYNC(SYNC), .extAB(extAB), .phi2_out(phi2_out), .RW(RW));
+  
+  memory256x256 mem256x256_module(.clock(phi1_out), .enable(enable), .we_L(we_L), .re_L(re_L), .address(address), .data(extDB));
+
+  
   
   /* High level description:  
-   *  We want to generate an opcode on the databus, provide it to the CPU, and have it return a certain checkable value (e.g. control signals and Tstates (which we will have to hook out)), after a certain number of clock cycles have passed.
+   *  We want to generate an opcode on the databus, provide it to the CPU, and have it return a certain checkable value (e.g. control signals and Tstates (which we will have to hook out)), after a certain (known) number of clock cycles have passed.
    Other components we want to observe: 
     - Address Bus (AB) high and low
     - Side Bus (SB) and Data Bus (DB)
@@ -44,24 +57,37 @@ module testCPU;
     - Decimal Adjust
     - ..and others? That's it for now.
   */
+  
+  /*  We only control the bytecode that's coming in, we feed it into CPU one byte by one byte, and the CPU should be taking care of it. Display the associated outputs every half cycle (posedge and negedge phi0) Qn: when should I be loading the new byte from memory into the DBin? after every full clock?   
+    
+  
+  */
 
   task run_vector;
-    input [7:0] A;
-    input [3:0] B;
+    //input [7:0] A;
+    //input [3:0] B;
     begin
-      DBin = A;
-      numCycles = B;
+      //extDBin = A;
+      //numCycles = B;
+
+      $display("======================");
+
+      $display("\tDB: \t%h", extDB);
+      @(posedge phi0_in);
+      
+      $display("\tDB: \t%h, \tAB: \t%h, \tSYNC: \t%h, \tRW: \t%h, \tcontrolSigs: \t%b, \tA: \t%h, \tY: \t%h", extDB, extAB, SYNC, RW, top_6502C_module.controlSigs, top_6502C_module.A, top_6502C_module.SB);
+      
+      @(negedge phi0_in);
       
       //Clock the system however many cycles this opcode needs
-      for (j= 4'd0; j < numCycles; j=j+1) begin
-        @(posedge phi0_in);
-      end
+      // for (j= 4'd0; j < numCycles; j=j+1) begin
+        // @(posedge phi0_in); //NB: check if clocking this value is correct
+      // end 
       
       //Check that the output is correct
       //ALTERNATIVE: check that certain outputs correspond to expected values
-      $display("======================");
       
-      $display("\tDBin: \t%h", DBin);
+      $display("\tDB: \t%h, \tAB: \t%h, \tSYNC: \t%h, \tRW: \t%h, \tcontrolSigs: \t%b, \tA: \t%h, \tY: \t%h", extDB, extAB, SYNC, RW, top_6502C_module.controlSigs, top_6502C_module.A, top_6502C_module.SB);
       
       $display("======================");
     
@@ -74,11 +100,12 @@ module testCPU;
 
 
   initial begin
+  phi0_in = 1'b0;
   
-  $readmemh("fsm_test_vectors.vm", vectors);
-  for (i=0; i<NUM_VECTORS; i=i+1) begin
-    vec = vectors[i];
-    run_vector(vec[11:4], vec[3:0]);
+  //$readmemh("fsm_test_vectors.vm", vectors);
+  for (i=0; i<NUM_TESTS; i=i+1) begin
+    // vec = vectors[i];
+    run_vector;
     //run_vector(opcodeIn, numCycles);
   end
   
