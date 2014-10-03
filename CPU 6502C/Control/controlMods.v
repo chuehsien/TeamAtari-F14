@@ -35,7 +35,7 @@ task instructionType;
 		opcode == `PLA     ||opcode == `ADC_imm ||opcode == `ROR     ||opcode == `JMP_zp  ||opcode == `ADC_abs ||
 		opcode == `ROR_abs ||opcode == `ADC_zpx ||opcode == `ROR_zpx ||opcode == `SEI     ||opcode == `ROR_abx ||
 		opcode == `STA_izx ||opcode == `STY_zp  ||opcode == `STA_zp  ||opcode == `STX_zp  ||opcode == `DEY     ||
-		opcode == `TXA     ||opcode == `STY_abs ||opcode == `STA_abs ||opcode == `STX_abs ||opcode == `STY_zpx ||
+		opcode == `TXA     ||opcode == `STY_abs ||opcode == `STA_abs ||opcode == `STX_abs ||opcode == `STA_izy ||opcode == `STY_zpx ||
 		opcode == `STA_zpx ||opcode == `STX_zpy ||opcode == `TYA     ||opcode == `STA_aby ||opcode == `TXS     ||
 		opcode == `STA_abx ||opcode == `LDY_imm ||opcode == `LDA_izx ||opcode == `LDX_imm ||opcode == `LDY_zp  ||
 		opcode == `LDA_zp  ||opcode == `LDX_zp  ||opcode == `TAY     ||opcode == `LDA_imm ||opcode == `TAX     ||
@@ -172,6 +172,7 @@ task getControlsNorm;
 		`STY_abs: STY_abs(currT,phi1,phi2,dummy_control,dummy_T);
 		`STA_abs: STA_abs(currT,phi1,phi2,dummy_control,dummy_T);
 		`STX_abs: STX_abs(currT,phi1,phi2,dummy_control,dummy_T);
+        `STA_izy: STA_izy(currT,phi1,phi2,dummy_control,dummy_T);
 		`STY_zpx: STY_zpx(currT,phi1,phi2,dummy_control,dummy_T);
 		`STA_zpx: STA_zpx(currT,phi1,phi2,dummy_control,dummy_T);
 		`STX_zpy: STX_zpy(currT,phi1,phi2,dummy_control,dummy_T);

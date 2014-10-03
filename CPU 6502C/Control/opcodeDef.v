@@ -145,7 +145,7 @@
 `define STX_abs   8'h8e //N
 //`define SAX_abs   8'h8f
 `define BCC_rel   8'h90 //B
-//`define STA_izy   8'h91
+`define STA_izy   8'h91
 //`define KIL       8'h92
 //`define AHX_izy   8'h93
 `define STY_zpx   8'h94 //N

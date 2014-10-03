@@ -7,7 +7,7 @@
 */
 module testCPU_FSM;
   //This number needs to change according to how many lines there are in fsm_test_vectors.vm
-  parameter NUM_VECTORS=38;
+  parameter NUM_VECTORS=602;
   
   reg phi1, nmi, irq, rst, RDY;
   reg [7:0] statusReg, opcodeIn; 
@@ -27,8 +27,8 @@ module testCPU_FSM;
   reg[2:0]  FSM_dummy_state;
   
   reg[8*15:0] T_string;
-  reg[8*9:0] FSM_string;
-  reg[8*9:0] dummy_string;
+  reg[9*9:0] FSM_string;
+  reg[9*9:0] dummy_string;
   
   
   
@@ -111,7 +111,7 @@ module testCPU_FSM;
   
     task FSMtoString;
         input reg[2:0] FSM_state;
-        output reg[8*9:0] FSM_string;
+        output reg[8*10:0] FSM_string;
   
       begin
       if (FSM_state == `FSMinit) FSM_string = "FSMinit";
