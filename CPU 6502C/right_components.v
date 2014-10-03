@@ -214,6 +214,9 @@ module inputDataLatch(phi1, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
         ADHreg <= (DL_ADH) ? data : 8'bZZZZZZZZ;
             
     end
+    assign DB = DBreg;
+    assign ADL = ADLreg;
+    assign ADH = ADHreg;
     
 endmodule
 
