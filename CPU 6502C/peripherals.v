@@ -52,7 +52,7 @@ module memory256x256 (clock, enable, we_L, re_L,address,
       data_reg <= mem[address]; //not sure if this screws up the timing for memory being accessible not.
     end
     else begin
-      $display("something's wrong...");
+      $display("re_L is high, we_L is high");
       data_reg <= 8'bxxxxxxxx;
     end
 	end

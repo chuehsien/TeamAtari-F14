@@ -1,6 +1,6 @@
 /*  Test module for top level CPU 6502C 
  *  Created:        1 Oct 2014, 1058 hrs (bhong)
- *  Last Modified:  1 Oct 2014, 1236 hrs
+ *  Last Modified:  3 Oct 2014, 1414 hrs
 
  Designed to test module "top_6502C", located in "6502C_top.v"
 
@@ -22,15 +22,12 @@ module testCPU;
   integer i, j;
   
   reg [3:0] numCycles;
-  reg [11:0] vectors [NUM_VECTORS-1:0];
+  reg [11:0] vectors [NUM_TESTS-1:0];
   reg [11:0] vec; 
   
   /* Memory registers */
   reg clock, enable, we_L, re_L;
   reg [15:0] address;
-  //reg [7:0] data_reg;
-  
-  //wire [7:0] data;
   
   
   //Setting up the clock to run
@@ -38,7 +35,7 @@ module testCPU;
     #10 phi0_in = ~phi0_in;
   end
   
-  top_6502C top_6502C_module(.RDY(RDY), .IRQ_L(IRQ_L), .NMI_L(NMI_L), .RES_L(RES_L), .SO(SO), .phi0_in(phi0_in), .extDB(extDBin), .phi1_out(phi1_out), .SYNC(SYNC), .extAB(extAB), .phi2_out(phi2_out), .RW(RW));
+  top_6502C top_6502C_module(.RDY(RDY), .IRQ_L(IRQ_L), .NMI_L(NMI_L), .RES_L(RES_L), .SO(SO), .phi0_in(phi0_in), .extDB(extDB), .phi1_out(phi1_out), .SYNC(SYNC), .extAB(extAB), .phi2_out(phi2_out), .RW(RW));
   
   memory256x256 mem256x256_module(.clock(phi1_out), .enable(enable), .we_L(we_L), .re_L(re_L), .address(address), .data(extDB));
 
@@ -64,34 +61,28 @@ module testCPU;
   */
 
   task run_vector;
-    //input [7:0] A;
-    //input [3:0] B;
     begin
-      //extDBin = A;
-      //numCycles = B;
 
       $display("======================");
 
-      $display("\tDB: \t%h", extDB);
+      $display("DB: \t%h", extDB);
+      
       @(posedge phi0_in);
       
-      $display("\tDB: \t%h, \tAB: \t%h, \tSYNC: \t%h, \tRW: \t%h, \tcontrolSigs: \t%b, \tA: \t%h, \tY: \t%h", extDB, extAB, SYNC, RW, top_6502C_module.controlSigs, top_6502C_module.A, top_6502C_module.SB);
+      $display("DB: \t%h, \tAB: \t%h, \tSYNC: \t%h, \tRW: \t%h, \tcontrolSigs: \t%b, \tA: \t%h, \tY: \t%h", extDB, extAB, SYNC, RW, top_6502C_module.controlSigs, top_6502C_module.A, top_6502C_module.SB);
       
       @(negedge phi0_in);
-      
-      //Clock the system however many cycles this opcode needs
-      // for (j= 4'd0; j < numCycles; j=j+1) begin
-        // @(posedge phi0_in); //NB: check if clocking this value is correct
-      // end 
       
       //Check that the output is correct
       //ALTERNATIVE: check that certain outputs correspond to expected values
       
-      $display("\tDB: \t%h, \tAB: \t%h, \tSYNC: \t%h, \tRW: \t%h, \tcontrolSigs: \t%b, \tA: \t%h, \tY: \t%h", extDB, extAB, SYNC, RW, top_6502C_module.controlSigs, top_6502C_module.A, top_6502C_module.SB);
+      $display("DB: \t%h, \tAB: \t%h, \tSYNC: \t%h, \tRW: \t%h, \tcontrolSigs: \t%b, \tA: \t%h, \tY: \t%h", extDB, extAB, SYNC, RW, top_6502C_module.controlSigs, top_6502C_module.A, top_6502C_module.SB);
       
       $display("======================");
     
     end
+    
+  endtask
     
 
 
@@ -100,13 +91,11 @@ module testCPU;
 
 
   initial begin
+  
   phi0_in = 1'b0;
   
-  //$readmemh("fsm_test_vectors.vm", vectors);
   for (i=0; i<NUM_TESTS; i=i+1) begin
-    // vec = vectors[i];
     run_vector;
-    //run_vector(opcodeIn, numCycles);
   end
   
   $finish;

@@ -200,9 +200,9 @@ module inputDataLatch(phi1, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
     reg [7:0] DBreg, ADLreg, ADHreg; 
     reg [7:0] data;
   
-    TRIBUF db(DBreg,en,DB);
-    TRIBUF adl(ADLreg,en,ADL);
-    TRIBUF adh(ADHreg,en,ADH);
+    TRIBUF db [7:0](DBreg,en,DB);
+    TRIBUF adl [7:0](ADLreg,en,ADL);
+    TRIBUF adh [7:0](ADHreg,en,ADH);
   
     always @ (posedge phi2) begin
             data <= extDataBus;
