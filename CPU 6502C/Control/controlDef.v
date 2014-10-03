@@ -68,8 +68,7 @@
 
 `define nRW 6'd62
 
-
-`define controlStall 61'd0
+`define emptyControl 63'd0
 
 `define RST_i 2'd0
 `define NMI_i 2'd1

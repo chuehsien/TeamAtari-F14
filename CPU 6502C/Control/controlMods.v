@@ -329,6 +329,7 @@ task findLeftOverSig;
              
         else if (opcode == `INX || opcode == `DEX) leftOverSigNum = `SB_X;
         else if (opcode == `INY || opcode == `DEY) leftOverSigNum = `SB_Y;
+        else leftOverSigNum = 8'hxx;
              
     end
 endtask

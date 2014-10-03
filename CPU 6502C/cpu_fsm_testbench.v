@@ -7,7 +7,7 @@
 */
 module testCPU_FSM;
   //This number needs to change according to how many lines there are in fsm_test_vectors.vm
-  parameter NUM_VECTORS=30;
+  parameter NUM_VECTORS=38;
   
   reg phi1, nmi, irq, rst, RDY;
   reg [7:0] statusReg, opcodeIn; 
@@ -24,8 +24,13 @@ module testCPU_FSM;
   
   reg[6:0] T_state;
   reg[2:0] FSM_state;
+  reg[2:0]  FSM_dummy_state;
+  
   reg[8*15:0] T_string;
   reg[8*9:0] FSM_string;
+  reg[8*9:0] dummy_string;
+  
+  
   
   wire [62:0] controlSigs;
   wire SYNC;
@@ -34,7 +39,7 @@ module testCPU_FSM;
   assign phi2 = ~phi1;
   
   always begin
-    #10 phi1 = ~phi1; //check after phi1 goes up @(posedge phi1)
+    #50 phi1 = ~phi1; //check after phi1 goes up @(posedge phi1)
   end
   
   
@@ -62,22 +67,31 @@ module testCPU_FSM;
     statusReg = F;
     // numCycles = C;
     //clock the number of cycles, after this, the result should be ready on controlSigs already.
+    #25;
     
     //$display("A: %4d, B: %d, C:%d, E: %d, F: %D",A,B,C,D,E,F);
     T_state = plaFSM_mod.curr_T;
     FSM_state = plaFSM_mod.curr_state;
-    TtoString();
-    FSMtoString();
+    FSM_dummy_state = plaFSM_mod.dummy_state;
+    TtoString(T_state, T_string);
+    FSMtoString(FSM_state,FSM_string);
+    FSMtoString(FSM_dummy_state,dummy_string);
 
-    $display("@%3d, SR: %b, OP: %b, nmi: %b, irq: %b, rst: %b, RDY: %b",i,statusReg, opcodeIn, nmi, irq, rst, RDY);
-    $display("@%3d, (%s,%s) ---> control: %b, SYNC: %b",i, FSM_string,T_string, controlSigs, SYNC);
     
-    
+    $display("@%3h, (%s,%s) ---> control: %h, SYNC: %b, OPin:%H",i, FSM_string,T_string,controlSigs, SYNC, plaFSM_mod.opcode);
+    //$display("phi1:%b, next_T: %b, dummy_state:%s", plaFSM_mod.phi1, plaFSM_mod.next_T,dummy_string);
+    //if (phi1) begin
+    //$display("next_P1control: %h (op:%h)", plaFSM_mod.next_P1controlSigs,plaFSM_mod.opcode);
+    //$display("next_P2control: %h (op:%h)", plaFSM_mod.next_P2controlSigs,plaFSM_mod.opcode);
+    //end
   end
   
   endtask
   
   task TtoString;
+    input reg[6:0] T_state;
+    output reg[8*15:0] T_string;
+
       begin
       if (T_state == `Tzero) T_string = "Tzero";
       else if (T_state == `Tone) T_string = "Tone";
@@ -96,6 +110,9 @@ module testCPU_FSM;
   endtask
   
     task FSMtoString;
+        input reg[2:0] FSM_state;
+        output reg[8*9:0] FSM_string;
+  
       begin
       if (FSM_state == `FSMinit) FSM_string = "FSMinit";
       else if (FSM_state == `FSMfetch) FSM_string = "FSMfetch";
@@ -115,14 +132,19 @@ module testCPU_FSM;
   $readmemh("fsm_test_vectors.vm", vectors);
   for (i=0; i<NUM_VECTORS; i=i+1) begin
     vec = vectors[i];
+    
+    $display("@%3h, SR: %H, OP: %H, nmi: %b, irq: %b, rst: %b, RDY: %b",i,vec[7:0], vec[15:8], vec[28], vec[24], vec[20], vec[16]);
+    
     @(posedge phi1);
-    $display("==========posedge========");
+    
     run_vector(vec[28], vec[24], vec[20], vec[16], vec[15:8], vec[7:0]);
     //run_vector(4 bits of signals, statusReg, opcodeIn);
     
     @(negedge phi1);
-    $display("==========negedge========");
-    run_vector(vec[28], vec[24], vec[20], vec[16], vec[15:8], vec[7:0]);
+    
+   run_vector(vec[28], vec[24], vec[20], vec[16], vec[15:8], vec[7:0]);
+    
+    $display("===================================================================");
   end
   
   $finish;

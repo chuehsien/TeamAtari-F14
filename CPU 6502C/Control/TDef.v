@@ -13,3 +13,5 @@
 `define T1BranchCross   7'b1000011
 `define TzeroNoCrossPg  7'b1000100
 `define TzeroCrossPg    7'b1000101
+
+`define emptyT          7'b0000000
