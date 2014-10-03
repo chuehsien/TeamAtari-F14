@@ -12,7 +12,7 @@
 /* Changelog:
 	15 Sep 2014,  0033hrs: added memory module (chue)
   26 Sep 2014,  0115hrs: lifted module for temporary RAM for ANTIC (jong)
-  01 Oct 2014,  1145hrs: lifted updated module, added memory list for display list
+  01 Oct 2014,  1145hrs: lifted updated module, added memory list for display list (jong)
 */
 
 // Temporary 65K memory to simulate RAM for ANTIC. (16 bits)
@@ -34,7 +34,7 @@ module memory256x256(clock, enable, we_L, re_L, address, data);
   end
             
 	assign data = (enable & ~re_L) ? data_reg : 8'bzzzzzzzz;
-	always @(negedge clock) begin
+	always @(posedge clock) begin
 		if (enable & ~we_L) begin
 			mem[address] <= data;
       $display("RAM: Storing data %h at address %h", data, address);
