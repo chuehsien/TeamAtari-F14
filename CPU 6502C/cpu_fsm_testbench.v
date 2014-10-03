@@ -78,12 +78,12 @@ module testCPU_FSM;
     FSMtoString(FSM_dummy_state,dummy_string);
 
     
-    $display("@%3h, (%s,%s) ---> control: %h, SYNC: %b, OPin:%H",i, FSM_string,T_string,controlSigs, SYNC, plaFSM_mod.opcode);
-    //$display("phi1:%b, next_T: %b, dummy_state:%s", plaFSM_mod.phi1, plaFSM_mod.next_T,dummy_string);
-    //if (phi1) begin
-    //$display("next_P1control: %h (op:%h)", plaFSM_mod.next_P1controlSigs,plaFSM_mod.opcode);
-    //$display("next_P2control: %h (op:%h)", plaFSM_mod.next_P2controlSigs,plaFSM_mod.opcode);
-    //end
+    $display("@%3h, (%s,%s) ---> control: %h, SYNC: %b, OPin:%H, O2:%H",i, FSM_string,T_string,controlSigs, SYNC, plaFSM_mod.activeOpcode,plaFSM_mod.opcode);
+    $display("phi1:%b, next_T: %b, dummy_state:%s", plaFSM_mod.phi1, plaFSM_mod.next_T,dummy_string);
+    if (phi1) begin
+    $display("next_P1control: %h (op:%h) RW: %d", plaFSM_mod.next_P1controlSigs,plaFSM_mod.opcode,plaFSM_mod.next_P1controlSigs[`nRW]);
+    $display("next_P2control: %h (op:%h) RW: %d", plaFSM_mod.next_P2controlSigs,plaFSM_mod.opcode,plaFSM_mod.next_P2controlSigs[`nRW]);
+    end
   end
   
   endtask

@@ -78,10 +78,10 @@ task getControlsBrk;
     input [3:0] interruptArray;
 	input [6:0] currT;
 	output [6:0] dummy_T;
-	output [61:0] dummy_control;
+	output [62:0] dummy_control;
 	
 	reg [6:0] dummy_T;
-	reg [61:0] dummy_control;
+	reg [62:0] dummy_control;
 	
 	begin
 		dummy_control = 62'd0;
@@ -99,10 +99,10 @@ task getControlsNorm;
 	input [7:0] opcode;
 	input [6:0] currT;
 	output [6:0] dummy_T;
-	output [61:0] dummy_control;
+	output [62:0] dummy_control;
 	
 	reg [6:0] dummy_T;
-	reg [61:0] dummy_control;
+	reg [62:0] dummy_control;
 	
 	begin
 		dummy_control = 62'd0;
@@ -238,10 +238,10 @@ task getControlsRMW;
 	input [7:0] statusReg,opcode;
 	input [6:0] currT;
 	output [6:0] dummy_T;
-	output [61:0] dummy_control;
+	output [62:0] dummy_control;
 	
 	reg [6:0] dummy_T;
-	reg [61:0] dummy_control;
+	reg [62:0] dummy_control;
 	
 	begin
 		dummy_control = 62'd0;
@@ -284,10 +284,10 @@ task getControlsBranch;
 	input [7:0] statusReg,opcode;
 	input [6:0] currT;
 	output [6:0] dummy_T;
-	output [61:0] dummy_control;
+	output [62:0] dummy_control;
 	
 	reg [6:0] dummy_T;
-	reg [61:0] dummy_control;
+	reg [62:0] dummy_control;
 	
 	
 	begin

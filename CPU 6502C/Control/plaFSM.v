@@ -31,7 +31,7 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
     
     reg [2:0]       curr_state,next_state;
     reg [6:0]       curr_T,next_T,open_T;
-    reg [7:0]       currOpcode;
+    reg [7:0]       activeOpcode,nextOpcode;
 
     reg [2:0]       dummy_state; //just to hold intermediate values;
     reg [62:0]      dummy_control, open_control;
@@ -90,6 +90,7 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
                     getControlsBrk(~phi1,~phi2,interruptArray,dummy_T, open_T,next_P2controlSigs); 
                     
                     next_T = dummy_T;
+                    nextOpcode = 8'h00;
                     
                     if (curr_T == `Tone) SYNC = 1'd1;
                     else SYNC = 1'd0;
@@ -111,7 +112,7 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
                     if (phi1) SYNC <= 1'd1;
                     //figure out which kind of instruction it is.
                     instructionType(opcode, dummy_state); //timing issues. new opcode havent clock in.
-                    
+                    nextOpcode = opcode;
                     if (dummy_state == `execNorm) begin
                         //get controls for the next T.
                         getControlsNorm(phi1,phi2,opcode, curr_T, dummy_T, open_control);
@@ -183,10 +184,10 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
                     //get controls for the next T.
                     getControlsNorm(phi1,phi2,opcode, curr_T, dummy_T, open_control);
                     
-                    
                     getControlsNorm(phi1,phi2,opcode, dummy_T, open_T, next_P1controlSigs);
                     getControlsNorm(~phi1,~phi2,opcode, dummy_T, open_T , next_P2controlSigs);
-                    
+                    nextOpcode = opcode;
+             
                     next_T = dummy_T;                   
                     
                     if (dummy_T == `Tone || dummy_T == `T1NoBranch ||
@@ -204,6 +205,7 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
                     
                     getControlsBrk(phi1,phi2,interruptArray,dummy_T, open_T,next_P1controlSigs); //get next T 
                     getControlsBrk(~phi1,~phi2,interruptArray,dummy_T, open_T,next_P2controlSigs); //get controls for new T
+                    nextOpcode = opcode;
                     
                     next_T = dummy_T;
                     
@@ -223,6 +225,7 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
                     
                     getControlsRMW(phi1,phi2,statusReg,opcode, dummy_T, open_T, next_P1controlSigs); // get next T
                     getControlsRMW(~phi1,~phi2,statusReg,opcode, dummy_T, open_T , next_P2controlSigs); //get controls for new T
+                    nextOpcode = opcode;
                     
                     next_T = dummy_T;
                     
@@ -240,6 +243,7 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
                     
                     getControlsBranch(phi1,phi2,statusReg,opcode, dummy_T, open_T, next_P1controlSigs); // get next T
                     getControlsBranch(~phi1,~phi2,statusReg,opcode, dummy_T, open_T , next_P2controlSigs); //get controls for new T
+                    nextOpcode = opcode;
                     
                     next_T = dummy_T;
                                            
@@ -278,7 +282,7 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
             getControlsBrk(phi1,phi2,interruptArray,`Tone,open_T ,curr_P1controlSigs);
             getControlsBrk(~phi1,~phi2,interruptArray,`Tone,open_T ,curr_P2controlSigs);
             
-            
+            activeOpcode <= nextOpcode;
             controlSigs <= curr_P1controlSigs;
             curr_T <= `Tone;
             rstNow = 1'b0;
@@ -290,6 +294,7 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
             
             controlSigs <= next_P1controlSigs;
             curr_P2controlSigs <= next_P2controlSigs;
+            activeOpcode <= nextOpcode;
             
             //controlSigs <= curr_P1controlSigs;
         end

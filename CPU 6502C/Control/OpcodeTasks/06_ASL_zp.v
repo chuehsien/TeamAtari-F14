@@ -14,7 +14,7 @@ task ASL_zp;
 	
 	begin
 		controlSigs = 63'd0;
-    
+        
     case (T)
     
       (`Tzero) : begin
