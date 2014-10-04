@@ -54,7 +54,7 @@ module testANTIC;
     $display("Display list pointer is %h.", dlistptr);
     
     // Step through display list
-    for (i=8'd0; i<8'd30; i=i+8'd1) begin
+    for (i=8'd0; i<8'd40; i=i+8'd1) begin
       print; @(posedge phi2); print; @(negedge phi2);
     end
     
