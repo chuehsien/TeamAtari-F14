@@ -29,24 +29,26 @@ module memory256x256 (clock, enable, we_L, re_L,address,
 	
 	// [7:0] addL, addH;
 	//assign {addH,addL} = address;
-  reg [7:0] data_reg;
+    reg [7:0] data_reg;
 	
 	reg [7:0] mem [0:65535]; //65kb of linear memory declared
   
-  //Initializing memory
-  initial begin
-    $readmemh("memory.list", mem);
-  end
-	
-	// memory256 memRows[255:0](.clock(clock), .enable(enable), .we_L(we_L), .re_L(re_L),
-						// .address(addL), .data(dataCol);
-            
-	assign data = (enable & ~re_L) ? data_reg : 8'bzzzzzzzz;
+    //Initializing memory
+    initial begin
+     $readmemh("memory.list", mem);
+    end
+
+    //reading from memory is ASYNC
+    //writing to memory is SYNC
+	assign data = (enable & ~re_L) ? mem[address] : 8'bzzzzzzzz;
+    
 	always @(posedge clock) begin
+    
 		if (enable & ~we_L) begin
       // $display("we're storing data at %h", address);
 			mem[address] <= data;
-    end
+        end
+    /*
     else if (~re_L) begin
       // $display("we're reading data at %h", address);
       data_reg <= mem[address]; //not sure if this screws up the timing for memory being accessible not.
@@ -55,6 +57,7 @@ module memory256x256 (clock, enable, we_L, re_L,address,
       $display("re_L is high, we_L is high");
       data_reg <= 8'bxxxxxxxx;
     end
+    */
 	end
 
 endmodule
