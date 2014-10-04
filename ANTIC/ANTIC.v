@@ -185,6 +185,10 @@ module ANTIC(Fphi0, LP_L, RW, RST, phi2, DB, address, AN, halt_L, NMI_L, RDY_L,
                 if (loadIR) begin
                   nextState <= `FSMload1;
                   DMA <= `DMA_on;
+                  if (DLISTjump) begin
+                    addressIn <= {DLISTH, DLISTL};
+                    loadAddr <= 1'b1;
+                  end
                 end
                 
                 // Continue to idle

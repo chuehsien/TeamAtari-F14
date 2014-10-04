@@ -3,10 +3,11 @@
 
 `include "GTIA_modeDef.v"
 
-`define jumpStart       2'b00
-`define jumpLoadByte1   2'b01
-`define jumpLoadByte2   2'b10
-`define jumpExecute     2'b11
+`define jumpStart       3'b000
+`define jumpLoadByte1   3'b001
+`define jumpLoadByte2   3'b010
+`define jumpExecute     3'b011
+`define jumpEnd         3'b100
 
 // To translate display list commands into AN[2:0] bits to GTIA
 module dataTranslate(IR, IR_rdy, Fphi0, RST, vblank, AN, loadIR, loadDLISTL, loadDLISTH, 
@@ -181,6 +182,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, RST, vblank, AN, loadIR, loadDLISTL, loa
                   if (IR_rdy) begin
                     jumpState <= `jumpLoadByte2;
                     loadDLISTL <= 1'b1;
+                    loadIR <= 1'b0;
                     loadPtr <= 1'b1;  // Block ANTIC FSM from incr dlistptr
                   end
                 end
@@ -189,7 +191,6 @@ module dataTranslate(IR, IR_rdy, Fphi0, RST, vblank, AN, loadIR, loadDLISTL, loa
                 begin
                   if (IR_rdy) begin
                     jumpState <= `jumpExecute;
-                    loadIR <= 1'b0;
                     loadDLISTH <= 1'b1;
                   end
                 end
@@ -197,11 +198,12 @@ module dataTranslate(IR, IR_rdy, Fphi0, RST, vblank, AN, loadIR, loadDLISTL, loa
               `jumpExecute:
                 begin
                   holdMode <= 1'b0;
+                  jumpState <= `jumpEnd;
                   loadPtr <= 1'b0;
-                  jumpState <= `jumpStart;
                   
                   // Trigger jump to new pointer location
                   DLISTjump <= 1'b1;
+                  loadIR <= 1'b1;
                   
                   // Jump to address (used for crossing over 1K boundary)
                   if (jumpType == 1'b0) begin
@@ -213,6 +215,12 @@ module dataTranslate(IR, IR_rdy, Fphi0, RST, vblank, AN, loadIR, loadDLISTL, loa
                     DLISTend <= 1'b1;
                     idle <= 1'b1; // Idle until next vertical blank
                   end
+                end
+                
+              `jumpEnd:
+                begin
+                  jumpState <= `jumpStart;
+                  DLISTjump <= 1'b1;
                 end
                 
               default:
