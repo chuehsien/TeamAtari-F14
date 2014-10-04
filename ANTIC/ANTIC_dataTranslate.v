@@ -320,7 +320,24 @@ module dataTranslate(IR, IR_rdy, Fphi0, RST, vblank, AN, loadIR, loadDLISTL, loa
         if (~holdMode) begin
           case (mode)  
           
-            // Mode 2: Character, 32/40/48 bytes per mode line, 8 TV scan lines per mode line, 1.5 color
+            /* Mode 2: Character, 32/40/48 bytes per mode line, 8 TV scan lines per mode line, 1.5 color
+             *
+             *  - Default, normal-sized text mode
+             *  - ANTIC displays 40 of these 8x8 sized characters on each mode line (in normal mode)
+             *  - 24 of such mode lines in total (8 TV scan lines per mode line, 8*24 = 192 total lines)
+             *  - Memory Scan Register (MSR) points to the current byte of character data
+             *  - For a 128-char set, charByte[6:0] indexes to a character at [CHBASE], charByte[7] is for color / special info
+             *  - Each character code is fetch from memory and placed in a rotating shift register for display
+             *  - Each character from the set (located at [CHBASE]) is a 8-byte bitmap (* is a 1, - is a 0)
+             *      A: 0 -------- 0x00
+             *         1 ---**--- 0x18
+             *         2 --****-- 0x3C
+             *         3 -**--**- 0x66
+             *         4 -**--**- 0x66
+             *         5 -******- 0x7E
+             *         6 -**--**- 0x66
+             *         7 -------- 0x00
+             */
             4'h2:
               begin
               
