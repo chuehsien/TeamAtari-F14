@@ -34,7 +34,7 @@
 module TRIBUF (A, EN, Y);
 	input A, EN;
 	output Y;
-	bufif1 g(Y,A,EN);
+	bufif1 (weak1, highz0) g(Y,A,EN);
 endmodule
 
 
@@ -78,18 +78,21 @@ module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC)
   
 endmodule
 
-module AdderHoldReg(phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes, ADL,SB);
+module AdderHoldReg(rstAll,phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes, ADL,SB);
 
-    input phi2, ADD_ADL, ADD_SB0to6, ADD_SB7;
+    input rstAll,phi2, ADD_ADL, ADD_SB0to6, ADD_SB7;
     input [7:0] addRes;
     inout [7:0] ADL, SB;
     
-    wire phi2, ADD_ADL, ADD_SB0to6, ADD_SB7;
+    wire rstAll,phi2, ADD_ADL, ADD_SB0to6, ADD_SB7;
     wire [7:0] addRes;
     wire [7:0] ADL,SB;
     
     reg [7:0] adderReg;
   
+    always @ (posedge rstAll) begin
+        adderReg <= 8'h00;
+    end
     always @ (posedge phi2) begin
         adderReg <= addRes;
     end
@@ -101,14 +104,14 @@ module AdderHoldReg(phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes, ADL,SB);
 endmodule
 
 // is this sync or async? - async for now
-module Areg(O_ADD, SB_ADD, SB,
+module Areg(rstAll, O_ADD, SB_ADD, SB,
             outToALU);
             
-    input O_ADD, SB_ADD;
+    input rstAll, O_ADD, SB_ADD;
     input [7:0] SB;
     output [7:0] outToALU;
   
-    wire O_ADD, SB_ADD;
+    wire rstAll, O_ADD, SB_ADD;
     wire [7:0] SB;
     reg [7:0] outToALU;
     
@@ -119,19 +122,21 @@ module Areg(O_ADD, SB_ADD, SB,
     else if (O_ADD)
       outToALU <= 8'h00;
   end
-    
+    always @ (posedge rstAll) begin
+        outToALU <= 8'h00;
+    end
 endmodule
 
 // is this sync or async - async for now
-module Breg(DB_L_AD, DB_ADD, ADL_ADD, dataIn, INVdataIn, ADL,
+module Breg(rstAll, DB_L_AD, DB_ADD, ADL_ADD, dataIn, INVdataIn, ADL,
             outToALU);
             
-    input DB_L_AD, DB_ADD, ADL_ADD;
+    input rstAll,DB_L_AD, DB_ADD, ADL_ADD;
     input [7:0] dataIn, INVdataIn;
     input [7:0] ADL;
     output [7:0] outToALU;
     
-    wire DB_L_AD, DB_ADD, ADL_ADD;
+    wire rstAll,DB_L_AD, DB_ADD, ADL_ADD;
     wire [7:0] dataIn, INVdataIn, ADL;
     reg [7:0] outToALU;
   
@@ -144,6 +149,9 @@ module Breg(DB_L_AD, DB_ADD, ADL_ADD, dataIn, INVdataIn, ADL,
       outToALU <= ADL;
   end
     
+    always @ (posedge rstAll) begin
+        outToALU <= 8'h00;
+    end
 endmodule
 
 
@@ -162,14 +170,14 @@ module dataBusTristate(en, dataIn,
 endmodule
 
 // latched on phi1, driven onto data pins in phi2(if write is done).
-module dataOutReg(phi1, phi2, dataIn,
+module dataOutReg(rstAll, phi1, phi2, dataIn,
                 dataOut);
                 
-    input phi1, phi2;
+    input rstAll,phi1, phi2;
     input [7:0] dataIn;
     output [7:0] dataOut;
     
-    wire phi1,phi2;
+    wire rstAll,phi1,phi2;
     wire [7:0] dataIn;
     reg [7:0] dataOut;
     
@@ -183,16 +191,21 @@ module dataOutReg(phi1, phi2, dataIn,
         dataOut <= data;
     end
 
+    always @ (posedge rstAll) begin
+        data <= 8'h00;
+    end
+    
+    
 endmodule
 
-module inputDataLatch(phi1, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
+module inputDataLatch(rstAll, phi1, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
                         DB,ADL,ADH);
     
-    input phi1, phi2, DL_DB, DL_ADL, DL_ADH;
+    input rstAll,phi1, phi2, DL_DB, DL_ADL, DL_ADH;
     input [7:0] extDataBus;
     inout [7:0] DB, ADL, ADH;
     
-    wire phi1,phi2,DL_DB, DL_ADL, DL_ADH;
+    wire rstAll,phi1,phi2,DL_DB, DL_ADL, DL_ADH;
     wire [7:0] extDataBus;
     wire [7:0] DB, ADL, ADH; 
     
@@ -200,9 +213,9 @@ module inputDataLatch(phi1, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
     reg [7:0] DBreg, ADLreg, ADHreg; 
     reg [7:0] data;
   
-    TRIBUF db [7:0](DBreg,en,DB);
-    TRIBUF adl [7:0](ADLreg,en,ADL);
-    TRIBUF adh [7:0](ADHreg,en,ADH);
+    TRIBUF db [7:0](DBreg,DL_DB,DB);
+    TRIBUF adl [7:0](ADLreg,DL_ADL,ADL);
+    TRIBUF adh [7:0](ADHreg,DL_ADH,ADH);
   
     always @ (posedge phi2) begin
             data <= extDataBus;
@@ -214,10 +227,10 @@ module inputDataLatch(phi1, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
         ADHreg <= (DL_ADH) ? data : 8'bZZZZZZZZ;
             
     end
-    assign DB = DBreg;
-    assign ADL = ADLreg;
-    assign ADH = ADHreg;
     
+    always @ (posedge rstAll) begin
+        data <= 8'h00;
+    end
 endmodule
 
 // TOTAL OF TWO OF THESE IN THE FULL IMPLEMENTATION. 1 for low add, 1 for high add.
@@ -271,16 +284,16 @@ module increment(inc, inAdd,
     
 endmodule
 
-module PC(phi2, PCL_DB, PCL_ADL,inFromIncre,
+module PC(rstAll, phi2, PCL_DB, PCL_ADL,inFromIncre,
             DB, ADL,
             PCout);
             
-    input phi2, PCL_DB, PCL_ADL;
+    input rstAll,phi2, PCL_DB, PCL_ADL;
     input [7:0] inFromIncre;
     inout [7:0] DB, ADL;
     output [7:0] PCout;
     
-    wire phi2, PCL_DB, PCL_ADL;
+    wire rstAll,phi2, PCL_DB, PCL_ADL;
     wire [7:0] DB, ADL, inFromIncre;
     wire [7:0] PCout;
     
@@ -293,7 +306,10 @@ module PC(phi2, PCL_DB, PCL_ADL,inFromIncre,
     always @ (posedge phi2) begin
         currPC <= inFromIncre;  
     end
-
+    
+    always @ (posedge rstAll) begin
+        currPC <= 8'h00;
+    end
 endmodule
 
 module inverter(DB,
@@ -309,14 +325,14 @@ module inverter(DB,
     
 endmodule
 
-module SPreg(S_S, SB_S, S_ADL, S_SB, SBin,
+module SPreg(rstAll,S_S, SB_S, S_ADL, S_SB, SBin,
             ADL, SB);
             
-    input S_S, SB_S, S_ADL, S_SB;
+    input rstAll,S_S, SB_S, S_ADL, S_SB;
     input [7:0] SBin;
     inout [7:0] ADL, SB;
     
-    wire S_S, SB_S, S_ADL, S_SB;
+    wire rstAll, S_S, SB_S, S_ADL, S_SB;
     wire [7:0] SBin;
     wire [7:0] ADL, SB;
     
@@ -331,18 +347,24 @@ module SPreg(S_S, SB_S, S_ADL, S_SB, SBin,
         if (SB_S) latchOut = SBin;
     end
     
+    always @ (posedge rstAll) begin
+        latchOut <= 8'h00;
+    end
     
 endmodule
 
 //DSA - Decimal subtract adjust
 //DAA - Decimal add adjust
-module decimalAdjust(SBin, DSA, DAA, ACR, HC, phi2,
+module decimalAdjust(rstAll,SBin, DSA, DAA, ACR, HC, phi2,
                     dataOut);
-
+    input rstAll;
     input [7:0] SBin;
     input DSA, DAA, ACR, HC, phi2;
     output [7:0] dataOut;
     
+    wire rstAll;
+    wire [7:0] SBin;
+    wire DSA,DAA,ACR,HC,phi2;
     reg [7:0] dataOut;
     
     //internal
@@ -378,19 +400,23 @@ module decimalAdjust(SBin, DSA, DAA, ACR, HC, phi2,
     always @ (posedge phi2) begin
         dataOut <= data;
     end
-    
+    always @ (posedge rstAll) begin
+        data <= 8'h00;
+    end
     // this module is a mess!
     
 endmodule
 
-module accum(inFromDecAdder, SB_AC, AC_DB, AC_SB,
+module accum(rstAll,inFromDecAdder, SB_AC, AC_DB, AC_SB,
             DB,SB,updateSR);
-        
+    
+    input rstAll;
     input [7:0] inFromDecAdder;
     input SB_AC, AC_DB, AC_SB;
     inout [7:0] DB, SB;
     output updateSR; //prompt SR to update itself according what's on the bus.
-        
+    
+    wire rstAll;
     wire [7:0] inFromDecAdder;
     wire SB_AC, AC_DB, AC_SB;
     wire [7:0] DB, SB;
@@ -413,23 +439,36 @@ module accum(inFromDecAdder, SB_AC, AC_DB, AC_SB,
     
     end
     
+    always @ (posedge rstAll) begin
+        currAccum <= 8'h00;
+    end
+    
+    
 endmodule
 
 
-module AddressBusReg(ld, dataIn,
+module AddressBusReg(rstAll,ld, dataIn,
                 dataOut);
 
+    input rstAll;
     input ld;
     input [7:0] dataIn;
     output [7:0] dataOut;
 
+    wire rstAll;
     wire ld;
+    wire [7:0] dataIn;
     wire [7:0] dataOut;
+    
     reg [7:0] data;
     
     assign dataOut = data;
     always @ (posedge ld) begin
         data <= dataIn;
+    end
+    
+    always @ (posedge rstAll) begin
+        data <= 8'h00;
     end
     
 endmodule
@@ -460,14 +499,14 @@ endmodule
 
 
 //used for x and y registers
-module register(load, bus_en,
+module register(rstAll,load, bus_en,
             SB,updateSR);
     
-    input load, bus_en;
+    input rstAll,load, bus_en;
     inout [7:0] SB;
     output updateSR; //prompt SR to update reg according to what's on the bus.
     
-    wire load, bus_en;
+    wire rstAll,load, bus_en;
     wire [7:0] SB;
     reg updateSR;
     
@@ -486,12 +525,16 @@ module register(load, bus_en,
         end
     end
     
+    always @ (posedge rstAll) begin
+        currVal <= 8'h00;
+    end
+    
 endmodule
 
 //this needs to push out B bit when its a BRK.
 //the x_set and x_clr are edge triggered.
 //everything else is ticked in when 'update' is asserted.
-module statusReg(phi2,update, P_DB, DBZ, ACR, AVR, DAA,B,
+module statusReg(rstAll,phi2,update, P_DB, DBZ, ACR, AVR, DAA,B,
                         C_set, C_clr,
                         I_set,I_clr, 
                         V_set,V_clr,
@@ -500,7 +543,7 @@ module statusReg(phi2,update, P_DB, DBZ, ACR, AVR, DAA,B,
                         DBin,
                     DBinout,decMode,status);
     
-    input phi2,update, P_DB, DBZ, ACR, AVR, DAA,B,
+    input rstAll,phi2,update, P_DB, DBZ, ACR, AVR, DAA,B,
                         C_set, C_clr,
                         I_set,I_clr, 
                         V_set,V_clr,
@@ -512,7 +555,7 @@ module statusReg(phi2,update, P_DB, DBZ, ACR, AVR, DAA,B,
     output decMode;
     output [7:0] status; //used by the FSM
     
-    wire phi2,update, P_DB, DBZ, ACR, AVR, DAA,B,
+    wire rstAll, phi2,update, P_DB, DBZ, ACR, AVR, DAA,B,
                         C_set, C_clr,
                         I_set,I_clr, 
                         V_set,V_clr,
@@ -575,6 +618,9 @@ module statusReg(phi2,update, P_DB, DBZ, ACR, AVR, DAA,B,
         currVal[`status_N] <= DB_N;
     end
     
+    always @ (posedge rstAll) begin
+        currVal = 8'b0010_0000;
+    end
     assign DBinout = (P_DB) ? currVal : 8'bzzzzzzzz;
     assign status = currVal;
     assign decMode = currVal[`status_D];
@@ -584,12 +630,19 @@ module prechargeMos(phi2,
                     bus);
     
     input phi2;
-    inout [7:0] bus;
+    output [7:0] bus;
     
     wire phi2;
     wire [7:0] bus;
     
-    bufif0 (weak1, highz0) a[7:0](bus,8'hff,phi2);
+    reg [7:0] pullupReg;
+    always @ (phi2) begin
+        pullupReg = 8'hff;
+    end
+    
+    bufif1 (weak1, highz0) a[7:0](bus,pullupReg,phi2);
+    //bufif1 (pull1, highz0) a[7:0](bus,8'hff,phi2);
+
     
     /*
     always @(posedge phi2) begin
@@ -628,14 +681,22 @@ module opendrainMosADL(O_ADL0, O_ADL1, O_ADL2,
                     bus);
     
     input O_ADL0, O_ADL1, O_ADL2;
-    inout [7:0] bus;
+    output [7:0] bus;
                     
     wire O_ADL0, O_ADL1, O_ADL2;
     wire [7:0] bus;
     
-    bufif0 (highz1, strong0) a(bus[0],1'b0,O_ADL0);
-    bufif0 (highz1, strong0) b(bus[1],1'b0,O_ADL1);
-    bufif0 (highz1, strong0) c(bus[2],1'b0,O_ADL2);
+   reg pulldownReg0,pulldownReg1,pulldownReg2;
+    always @ (*) begin
+        pulldownReg0 = 1'b0;
+        pulldownReg1 = 1'b0;
+        pulldownReg2 = 1'b0;
+    end
+    
+    
+    bufif1 (highz1, supply0) a(bus[0],pulldownReg0,O_ADL0);
+    bufif1 (highz1, supply0) b(bus[1],pulldownReg1,O_ADL1);
+    bufif1 (highz1, supply0) c(bus[2],pulldownReg2,O_ADL2);
     
 endmodule
 
@@ -644,13 +705,21 @@ module opendrainMosADH(O_ADH0, O_ADH17,
                     bus);
     
     input O_ADH0, O_ADH17;
-    inout [7:0] bus;
+    output [7:0] bus;
     
     wire O_ADH0, O_ADH17;
     wire [7:0] bus;
     
-    bufif0 (highz1, strong0) a(bus[0],1'b0,O_ADH0);
-    bufif0 (highz1, strong0) b[6:0](bus[7:1],7'b111_1111,O_ADH17);
+    reg pulldownReg0;
+    reg [6:0] pulldownReg17;
+    
+    always @ (*) begin
+        pulldownReg0 = 1'b0;
+        pulldownReg17 = 7'b000_0000;
+    end
+    
+    bufif1 (highz1, supply0) a(bus[0],pulldownReg0,O_ADH0);
+    bufif1 (highz1, supply0) b[6:0](bus[7:1],pulldownReg17,O_ADH17);
     
 endmodule
 

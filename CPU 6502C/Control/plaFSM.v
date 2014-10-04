@@ -8,21 +8,22 @@ This is the top FSM modules which implements the opcode -> controlSignal state m
 `include "Control/TDef.v"
 
 module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcode, statusReg, 
-                controlSigs, SYNC, T1now, nmiHandled, irqHandled, rstHandled);
+                controlSigs, SYNC, T1next, nmiHandled, irqHandled, rstHandled, rstAll);
      
 `include "Control/controlMods.v"               
     input phi1,phi2,nmi,irq,rst,RDY; //RDY is external input
     input [7:0] opcode, statusReg;
     output [62:0] controlSigs;
-    output SYNC, T1now; //T1now is to signal predecode register to load in value.
-    output nmiHandled, irqHandled, rstHandled;
+    output SYNC, T1next; //T1now is to signal predecode register to load in value.
+    output nmiHandled, irqHandled, rstHandled, rstAll;
     
     wire phi1,phi2,nmi,irq,rst,RDY;
     wire [7:0] opcode;
     wire [7:0] statusReg;
     reg [62:0] controlSigs;
     reg SYNC;
-    wire T1now;
+    reg rstAll;
+    wire T1next;
     reg nmiHandled, irqHandled, rstHandled;
     reg [2:0] active_interrupt;
     
@@ -45,8 +46,8 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcode, statusReg,
     
     wire interruptPending;
     
-    assign T1now = (curr_T == `Tone || curr_T == `T1NoBranch || 
-                curr_T == `T1BranchNoCross || curr_T == `T1BranchCross); //might be wrong!
+    assign T1next = (next_T == `Tone || next_T == `T1NoBranch || 
+                next_T == `T1BranchNoCross || next_T == `T1BranchCross); //might be wrong!
                       
     assign interruptPending = nmi|irq;
     /*
@@ -294,25 +295,27 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcode, statusReg,
     always @ (posedge phi1) begin
         if (rstNow) begin
             curr_state <= `FSMinit; 
-            SYNC <= 1'd1;
+            SYNC <= 1'd0;
             //set up reset sequence
 
             active_interrupt = `RST_i;
            // interruptArray = 4'd0;
             //interruptArray[`RST_i] = 1'b1;              
             //get controls for the first state (T1) of the reset cycle.
-            getControlsBrk(phi1,phi2,active_interrupt,`Tone,open_T ,curr_P1controlSigs);
-            getControlsBrk(~phi1,~phi2,active_interrupt,`Tone,open_T ,curr_P2controlSigs);
+            getControlsBrk(phi1,phi2,active_interrupt,`Ttwo,open_T ,curr_P1controlSigs);
+            getControlsBrk(~phi1,~phi2,active_interrupt,`Ttwo,open_T ,curr_P2controlSigs);
             
             //interruptArray <= 4'b1; // set rst bit
             activeOpcode <= 8'b00;
             controlSigs <= curr_P1controlSigs;
-            curr_T <= `Tone;
+            curr_T <= `Ttwo;
             rstNow <= 1'b0;
+            rstAll <= 1'b1;
             
         end
         
         else begin
+        rstAll <= 1'b0;
             curr_state <= next_state;
             curr_T <= next_T;
             
