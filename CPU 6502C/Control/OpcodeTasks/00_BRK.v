@@ -5,7 +5,7 @@ task BRK;
 
 	input [6:0] T;
 	input phi1,phi2;
-    input [3:0] interruptArray;
+    input [2:0] active_interrupt;
 	output [62:0] controlSigs;
 	output [6:0] newT;
 	reg [6:0] newT;
@@ -20,15 +20,15 @@ task BRK;
     
       (`Tzero) : begin
 		newT = `Tone;
-        controlSigs[`IR5_I] = 1'b1;
+        controlSigs[`SET_I] = 1'b1;
         if (phi1) begin
-            if (interruptArray[`RST_i]) begin
+            if (active_interrupt == `RST_i) begin
                 controlSigs[`O_ADL1] = 1'b1; //create address fffd
             end
             
             //do nothing for irq/brk, fetching address ffff.
             
-            if (interruptArray[`NMI_i]) begin
+            if (active_interrupt == `NMI_i) begin
                 controlSigs[`O_ADL2] = 1'b1;//create address fffb
             end
             
@@ -121,7 +121,7 @@ task BRK;
       
       (`Tthree) : begin
 		newT = `Tfour;
-		if (~interruptArray[`RST_i]) controlSigs[`nRW] = 1'b1;
+		if (active_interrupt !== `RST_i) controlSigs[`nRW] = 1'b1;
         if (phi1) begin
           //SADL,SS,ADLADD,SBADD,SUMS,#DAA,~DAA,#DSA,~DSA,0ADH17,PCHPCH,PCHDB,#IPC,~IPC,PCLPCL
 					controlSigs[`S_ADL] = 1'b1;
@@ -150,7 +150,7 @@ task BRK;
       
       (`Tfour) : begin
 		newT = `Tfive;
-		if (~interruptArray[`RST_i]) controlSigs[`nRW] = 1'b1;
+		if (active_interrupt !== `RST_i) controlSigs[`nRW] = 1'b1;
         if (phi1) begin
           //SS,ADLADD,SBADD,SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,PCHPCH,#IPC,~IPC,PCLDB,PCLPCL
 					controlSigs[`S_S] = 1'b1;
@@ -179,7 +179,7 @@ task BRK;
       
       (`Tfive) : begin
 		newT = `Tsix;
-        if (~interruptArray[`RST_i]) controlSigs[`nRW] = 1'b1;
+        if (active_interrupt !== `RST_i) controlSigs[`nRW] = 1'b1;
         if (phi1) begin
           //SS,ADLADD,SBADD,SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,PCHPCH,#IPC,~IPC,PCLPCL,PDB
 					controlSigs[`S_S] = 1'b1;
@@ -196,14 +196,14 @@ task BRK;
         end
         else if(phi2) begin
             //place interrupt vector address onto ADH,ADL here.
-            if (interruptArray[`RST_i]) begin
+            if (active_interrupt == `RST_i) begin
                 controlSigs[`O_ADL0] = 1'b1;
                 controlSigs[`O_ADL1] = 1'b1; //create address fffc
             end
-            if (interruptArray[`IRQ_i] || interruptArray[`BRK_i]  ) begin
+            if (active_interrupt == `IRQ_i || active_interrupt == `NONE) begin
                 controlSigs[`O_ADL0] = 1'b1;//create address fffe
             end
-            if (interruptArray[`NMI_i]) begin
+            if (active_interrupt == `NMI_i) begin
                 controlSigs[`O_ADL0] = 1'b1;
                 controlSigs[`O_ADL2] = 1'b1;//create address fffa
             end
@@ -222,14 +222,14 @@ task BRK;
 		newT = `Tzero;
 		
         if (phi1) begin
-            if (interruptArray[`RST_i]) begin
+            if (active_interrupt ==`RST_i) begin
                 controlSigs[`O_ADL0] = 1'b1;
                 controlSigs[`O_ADL1] = 1'b1; //create address fffc
             end
-            if (interruptArray[`IRQ_i] || interruptArray[`BRK_i]  ) begin
+            if (active_interrupt == `IRQ_i || active_interrupt == `BRK_i) begin
                 controlSigs[`O_ADL0] = 1'b1;//create address fffe
             end
-            if (interruptArray[`NMI_i]) begin
+            if (active_interrupt == `NMI_i) begin
                 controlSigs[`O_ADL0] = 1'b1;
                 controlSigs[`O_ADL2] = 1'b1;//create address fffa
             end
@@ -247,13 +247,13 @@ task BRK;
 					controlSigs[`PCL_PCL] = 1'b1;
         end
         else if(phi2) begin
-            if (interruptArray[`RST_i]) begin
+            if (active_interrupt == `RST_i) begin
                 controlSigs[`O_ADL1] = 1'b1; //create address fffd
             end
             
             //do nothing for irq/brk, fetching address ffff.
             
-            if (interruptArray[`NMI_i]) begin
+            if (active_interrupt == `NMI_i) begin
                 controlSigs[`O_ADL2] = 1'b1;//create address fffb
             end
             

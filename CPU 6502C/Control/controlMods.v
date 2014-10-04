@@ -75,7 +75,7 @@ endtask
 task getControlsBrk;
                     				
 	input phi1,phi2;
-    input [3:0] interruptArray;
+    input [2:0] active_interrupt;
 	input [6:0] currT;
 	output [6:0] dummy_T;
 	output [62:0] dummy_control;
@@ -84,9 +84,9 @@ task getControlsBrk;
 	reg [62:0] dummy_control;
 	
 	begin
-		dummy_control = 62'd0;
+		dummy_control = 63'd0;
 		dummy_T = 7'dx;
-        BRK(currT,phi1,phi2,interruptArray,dummy_control,dummy_T);
+        BRK(currT,phi1,phi2,active_interrupt,dummy_control,dummy_T);
         
     end
         
@@ -105,7 +105,7 @@ task getControlsNorm;
 	reg [62:0] dummy_control;
 	
 	begin
-		dummy_control = 62'd0;
+		dummy_control = 63'd0;
 		dummy_T = 7'dx;
 		case (opcode)
 		`ORA_izx: ORA_izx(currT,phi1,phi2,dummy_control,dummy_T);
@@ -245,7 +245,7 @@ task getControlsRMW;
 	reg [62:0] dummy_control;
 	
 	begin
-		dummy_control = 62'd0;
+		dummy_control = 63'd0;
 		dummy_T = 7'dx;
 		case (opcode)
 		
@@ -292,7 +292,7 @@ task getControlsBranch;
 	
 	
 	begin
-		dummy_control = 62'd0;
+		dummy_control = 63'd0;
 		dummy_T = 7'dx;
 		case (opcode)
 			
@@ -323,6 +323,10 @@ task findLeftOverSig;
              opcode == `ADC_izx || opcode == `ADC_izy || opcode == `ADC_zp  || opcode == `ADC_zpx ||
              opcode == `SBC_abs || opcode == `SBC_abx || opcode == `SBC_aby || opcode == `SBC_imm || 
              opcode == `SBC_izx || opcode == `SBC_izy || opcode == `SBC_zp  || opcode == `SBC_zpx ||
+             opcode == `AND_imm || opcode == `AND_abs || opcode == `AND_abx || opcode == `AND_aby ||
+             opcode == `AND_izx || opcode == `AND_izy || opcode == `AND_zp  || opcode == `AND_zpx ||
+             opcode == `ORA_imm || opcode == `ORA_abs || opcode == `ORA_abx || opcode == `ORA_aby ||
+             opcode == `ORA_izx || opcode == `ORA_izy || opcode == `ORA_zp  || opcode == `ORA_zpx ||
              opcode == `ASL     || opcode == `LSR     || opcode == `ROL     || opcode == `ROR     ) )begin
                 leftOverSigNum = `SB_AC;
              end

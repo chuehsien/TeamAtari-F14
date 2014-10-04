@@ -309,14 +309,14 @@ module inverter(DB,
     
 endmodule
 
-module SPreg(phi2, S_S, SB_S, S_ADL, S_SB, SBin,
+module SPreg(S_S, SB_S, S_ADL, S_SB, SBin,
             ADL, SB);
             
-    input phi2, S_S, SB_S, S_ADL, S_SB;
+    input S_S, SB_S, S_ADL, S_SB;
     input [7:0] SBin;
     inout [7:0] ADL, SB;
     
-    wire phi2, S_S, SB_S, S_ADL, S_SB;
+    wire S_S, SB_S, S_ADL, S_SB;
     wire [7:0] SBin;
     wire [7:0] ADL, SB;
     
@@ -325,8 +325,10 @@ module SPreg(phi2, S_S, SB_S, S_ADL, S_SB, SBin,
     TRIBUF adl[7:0](latchOut, S_ADL, ADL);
     TRIBUF sb[7:0](latchOut, S_SB, SB);
     
-    always @ (posedge phi2) begin
-        if (SB_S) latchOut <= SBin;
+    
+    
+    always @ (SB_S) begin
+        if (SB_S) latchOut = SBin;
     end
     
     
@@ -382,15 +384,17 @@ module decimalAdjust(SBin, DSA, DAA, ACR, HC, phi2,
 endmodule
 
 module accum(inFromDecAdder, SB_AC, AC_DB, AC_SB,
-            DB,SB);
+            DB,SB,updateSR);
         
     input [7:0] inFromDecAdder;
     input SB_AC, AC_DB, AC_SB;
     inout [7:0] DB, SB;
-
+    output updateSR; //prompt SR to update itself according what's on the bus.
+        
     wire [7:0] inFromDecAdder;
     wire SB_AC, AC_DB, AC_SB;
     wire [7:0] DB, SB;
+    reg updateSR;
     
     reg [7:0] currAccum;
     
@@ -398,13 +402,20 @@ module accum(inFromDecAdder, SB_AC, AC_DB, AC_SB,
     assign SB = (AC_SB) ? currAccum : 8'bzzzzzzzz;
         
     
-    always @ (*) begin
-        if (SB_AC) currAccum = inFromDecAdder;
+    always @ (SB_AC) begin
+        if (SB_AC) begin
+            currAccum = inFromDecAdder;
+            updateSR = 1'b1;
+        end
+        else begin
+            updateSR = 1'b0;
+        end
     
     end
     
 endmodule
-            
+
+
 module AddressBusReg(ld, dataIn,
                 dataOut);
 
@@ -449,59 +460,124 @@ endmodule
 
 
 //used for x and y registers
-module register(phi2, load, bus_en,
-            SB);
+module register(load, bus_en,
+            SB,updateSR);
     
-    input phi2, load, bus_en;
+    input load, bus_en;
     inout [7:0] SB;
+    output updateSR; //prompt SR to update reg according to what's on the bus.
     
-    wire phi2, load, bus_en;
+    wire load, bus_en;
     wire [7:0] SB;
+    reg updateSR;
     
     reg [7:0] currVal;
     
     assign SB = (bus_en) ? currVal : 8'bzzzzzzzz;
     
-    always @(posedge phi2) begin
-        if (load) currVal <= SB;
-        else currVal <= currVal;
+    always @(load) begin
+        if (load) begin
+            currVal = SB;
+            updateSR = 1'b1;
+        end
+        else begin
+            currVal = currVal;
+            updateSR = 1'b0;
+        end
     end
     
 endmodule
 
 //this needs to push out B bit when its a BRK.
-module statusReg(phi2, P_DB, DBZ, IR5, DAA, ACR ,AVR, DB_N, DBin, opcode,
-                    DBinout,status);
+//the x_set and x_clr are edge triggered.
+//everything else is ticked in when 'update' is asserted.
+module statusReg(phi2,update, P_DB, DBZ, ACR, AVR, DAA,B,
+                        C_set, C_clr,
+                        I_set,I_clr, 
+                        V_set,V_clr,
+                        D_set,D_clr,
+                        DB_N, 
+                        DBin,
+                    DBinout,decMode,status);
     
-    input phi2, P_DB, DBZ, IR5, DAA, ACR ,AVR, DB_N;
-    input [7:0] DBin, opcode;
+    input phi2,update, P_DB, DBZ, ACR, AVR, DAA,B,
+                        C_set, C_clr,
+                        I_set,I_clr, 
+                        V_set,V_clr,
+                        D_set,D_clr,
+                        DB_N;
+                        
+    input [7:0] DBin;
     inout [7:0] DBinout;
-    output status; //used by the FSM
+    output decMode;
+    output [7:0] status; //used by the FSM
     
-    wire phi2, P_DB, DBZ, IR5, DAA, ACR ,AVR, DB_N;
-    wire [7:0] DBin, opcode;
+    wire phi2,update, P_DB, DBZ, ACR, AVR, DAA,B,
+                        C_set, C_clr,
+                        I_set,I_clr, 
+                        V_set,V_clr,
+                        D_set,D_clr,
+                        DB_N;
+    wire [7:0] DBin;
     wire [7:0] DBinout;
+    wire decMode;
     wire [7:0] status;
+    
     // internal
     reg [7:0] currVal;
     
-    // bit arrangement: (bit 7) NV_BDIZC (bit 0) - bit 2 has no purpose.
-        
-    always @(posedge phi2) begin
-        
+    // bit arrangement: (bit 7) NV_BDIZC (bit 0) - bit 5 has no purpose.
+    always @ (posedge C_set) begin
+        currVal[`status_C] <= 1'b1;
+    end
+    
+    always @ (posedge C_clr) begin
+        currVal[`status_C] <= 1'b0;
+    end
+    
+    always @ (posedge I_set) begin
+        currVal[`status_I] <= 1'b1;
+    end
+    
+    always @ (posedge I_clr) begin
+        currVal[`status_I] <= 1'b0;
+    end
+    
+    always @ (posedge V_set) begin
+        currVal[`status_V] <= 1'b1;
+    end
+    
+    always @ (posedge V_clr) begin
+        currVal[`status_V] <= 1'b0;
+    end
+    
+    always @ (posedge D_set) begin
+        currVal[`status_D] <= 1'b1;
+    end
+    
+    always @ (posedge D_clr) begin
+        currVal[`status_D] <= 1'b0;
+    end   
+    
+    always @ (B) begin
+        currVal[4] = B;
+    end
+    
+    always @ (posedge update) begin
+       
         currVal[`status_C] <= ACR;
         currVal[`status_Z] <= DBZ;
-        currVal[`status_I] <= IR5;
+        //currVal[`status_I] <= IR5;
         currVal[`status_D] <= DAA;
-        currVal[4] <= ((opcode == `BRK || opcode == `PHP) ? 1'b1 : 1'b0); //trying to inject B in..
+        //currVal[4] <= ((opcode == `BRK || opcode == `PHP) ? 1'b1 : 1'b0); //trying to inject B in..
         currVal[5] <= 1'b1; //default
         currVal[`status_V] <= AVR;
         currVal[`status_N] <= DB_N;
-        
     end
     
     assign DBinout = (P_DB) ? currVal : 8'bzzzzzzzz;
     assign status = currVal;
+    assign decMode = currVal[`status_D];
 endmodule
 
 module prechargeMos(phi2,

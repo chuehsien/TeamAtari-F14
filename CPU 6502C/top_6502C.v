@@ -34,11 +34,7 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
             //interrupt sigs
             wire nmiHandled, irqHandled, resHandled, nmiPending, irqPending, resPending;
             
-            
-            
-            
-            
-			
+
             //clock
             wire phi1,phi2;
 			clockGen clock(phi0_in,phi1,phi2,phi1_out,phi2_out);
@@ -72,14 +68,14 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
             tranif1             pass2[7:0](SB, DB, controlSigs[`SB_DB]);
             
             wire [7:0] A, B, ALU_out;
-            wire AVR,ACR,HC; //will be connected to status reg
-            ALU     alu(A, B, ~controlSigs[`nDAA], controlSigs[`I_ADDC], controlSigs[`SUMS], 
+            wire decMode,AVR,ACR,HC; //will be connected to status reg
+            ALU     alu(A, B, decMode, controlSigs[`I_ADDC], controlSigs[`SUMS], 
                         controlSigs[`ANDS], controlSigs[`EORS], controlSigs[`ORS], 
                             controlSigs[`SRS], ALU_out, AVR, ACR, HC);
             
             
             //registers
-            SPreg   sp(phi2, controlSigs[`S_S], controlSigs[`SB_S], controlSigs[`S_ADL], 
+            SPreg   sp(controlSigs[`S_S], controlSigs[`SB_S], controlSigs[`S_ADL], 
                         controlSigs[`S_SB], SB, ADL, SB);
                         
             wire [7:0] nDB;
@@ -93,24 +89,41 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
                                 ADL,SB);
             
             wire [7:0] inFromDecAdder;
+            wire updateSR_accum, updateSR_x, updateSR_y;
             decimalAdjust   decAdj(SB, ~controlSigs[`nDSA], ~controlSigs[`nDAA], ACR, HC, phi2,inFromDecAdder);
             accum           a(inFromDecAdder, controlSigs[`SB_AC], controlSigs[`AC_DB], controlSigs[`AC_SB],
-                            DB,SB);
+                            DB,SB,updateSR_accum);
                         
             AddressBusReg   add_hi(phi1&controlSigs[`ADH_ABH], ADH, extAB[15:8]);
             AddressBusReg   add_lo(phi1&controlSigs[`ADL_ABL], ADL, extAB[7:0]);
             
-            register        x_reg(phi2, controlSigs[`SB_X],controlSigs[`X_SB],SB);
-            register        y_reg(phi2, controlSigs[`SB_Y],controlSigs[`Y_SB],SB);
+            register        x_reg(controlSigs[`SB_X],controlSigs[`X_SB],SB,updateSR_x);
+            register        y_reg(controlSigs[`SB_Y],controlSigs[`Y_SB],SB,updateSR_y);
             
             //unsure about the inputs...
             wire DBZ,DB_N;
             assign DBZ = ~(|(DB));
             assign DB_N = (DB[7]);
-            wire [7:0] opcode;
-            statusReg       status_reg(phi2, controlSigs[`P_DB], DBZ, controlSigs[`IR5_I], ~controlSigs[`nDAA], ACR ,AVR, DB_N, 
-                                        DB, opcode,DB, statusReg);
-                
+
+            
+            wire updateSR;
+            assign updateSR = updateSR_accum|updateSR_x|updateSR_y;
+            //statusReg       status_reg(phi2,  controlSigs[`IR5_I], , ACR ,AVR, DB_N, 
+            //                            DB, opcode,DB, statusReg);
+            wire BRKins;
+            wire [7:0] real_outToIR, effective_outToIR, real_opcode, effective_opcode;
+            assign BRKins = (real_opcode == `BRK || real_opcode == `PHP);
+            //need to assert B in SR when performing BRK/PHP.
+            statusReg(phi2,updateSR, controlSigs[`P_DB], DBZ, ACR, AVR, ~controlSigs[`nDAA], BRKins,
+                        controlSigs[`SET_C], controlSigs[`CLR_C],
+                        controlSigs[`SET_I], controlSigs[`CLR_I],
+                        controlSigs[`SET_V], controlSigs[`CLR_V],
+                        controlSigs[`SET_D], controlSigs[`CLR_D],
+                        DB_N, 
+                        DB,
+                    DB,decMode,statusReg);
+                    
+                    
             wire [7:0] dataOutBuf;
             dataOutReg          dor(phi1, phi2, DB, dataOutBuf);
             dataBusTristate     dataBuf(controlSigs[`nRW] & phi2, dataOutBuf,extDB);
@@ -121,12 +134,12 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
             
             assign interrupt = resPending | nmiPending | irqPending;
             predecodeRegister   pdr(phi2,extDB,precodeOut);
-            predecodeLogic      pdl(precodeOut,interrupt,outToIR);
+            predecodeLogic      pdl(precodeOut,interrupt,real_outToIR,effective_outToIR);
+            
             wire loadIR, T1now;
             assign loadIR = T1now & phi1 & RDY;
-            instructionRegister ir_reg(loadIR, outToIR,opcode);
-            
-            //module instantiations here
+            instructionRegister ir_reg(loadIR, real_outToIR,effective_outToIR,real_opcode, effective_opcode);
+
             interruptResetControl iHandler(phi2,NMI_L, IRQ_L, RES_L, nmiHandled, irqHandled, resHandled,
                             nmiPending,irqPending,resPending);
             
@@ -134,8 +147,8 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
             readyControl rdy_control(phi2, RDY, nRW, RDYout);
             
             // finally, control logic
-            plaFSM      myFSM(phi1,phi2,nmiPending,irqPending,resPending,RDYout,opcode,statusReg,
-                                controlSigs,SYNC,T1now);
+            plaFSM      myFSM(phi1,phi2,nmiPending,irqPending,resPending,RDYout,effective_opcode,statusReg,
+                                controlSigs,SYNC,T1now,nmiHandled, irqHandled, resHandled);
                                 
                         
 endmodule

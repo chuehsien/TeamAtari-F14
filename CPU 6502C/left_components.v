@@ -40,28 +40,34 @@ module predecodeRegister(phi2,extDataBus,
 endmodule
 
 module predecodeLogic(irIn, interrupt,
-                        irOut);
+                        realOpcode, irOut);
                         
     input [7:0] irIn;
     input interrupt;
-    output [7:0] irOut;
-    wire [7:0] irOut;
+    output [7:0] realOpcode,irOut;
+    
+    wire [7:0] realOpcode, irOut;
     
     assign irOut = (~interrupt) ? irIn : 8'd0;
+    assign realOpcode = irIn;
     
 endmodule
                         
-module instructionRegister(en, inFromPredecode, 
-                        outToDecodeRom);
+module instructionRegister(en, realIR, effectiveIR, 
+                        real_out, effective_out);
                 
-    input en; //en - (T2)(phi1)(RDY) not sure!
-    input [7:0] inFromPredecode; 
-    output [7:0] outToDecodeRom;
-    reg [7:0] outToDecodeRom;
+    input en;
+    input [7:0] realIR, effectiveIR; 
+    output [7:0] real_out, effective_out;
+    
+    wire [7:0] realIR, effectiveIR; 
+    reg [7:0]  real_out, effective_out;
     
     always @ (posedge en) begin
-        outToDecodeRom <= inFromPredecode;
+        effective_out<= effectiveIR;
+        real_out <= effective_out;
     end
+    
     
 endmodule
 
@@ -219,28 +225,31 @@ module decodeROM(in, T,
 endmodule
 */
 
-module interruptResetControl(phi2,NMI_L, IRQ_L, RES_L, nmiHandled, irqHandled, resHandled,
+module interruptResetControl(NMI_L, IRQ_L, RES_L, nmiHandled, irqHandled, resHandled,
                             nmi,irq,res);
-    input phi2,NMI_L,IRQ_L,RES_L;
+    input NMI_L,IRQ_L,RES_L;
     input nmiHandled, irqHandled, resHandled;
     output nmi,irq,res;
     
-    wire phi2,NMI_L,IRQ_L,RES_L;
+    wire NMI_L,IRQ_L,RES_L;
     wire nmiHandled, irqHandled, resHandled;
     reg nmi,irq,res;
     
     reg intg;
     reg nmiPending, irqPending, resPending;
     
+    //take in signals...
     always @ (posedge NMI_L) begin //NMI is captured on negedge.
-        nmiPending <= NMI_L;
+        nmiPending <= ~NMI_L;
     end
     always @(IRQ_L or RES_L) begin
         irqPending = ~IRQ_L;
         resPending = ~RES_L;
     end
     
-    always @(negedge phi2) begin
+    
+    // process and send to FSM
+    always @(*) begin
         
         intg = nmiPending & irqPending; //if nmi and irq both asserted, nmi takes priority.
         nmi = intg | nmiPending;
@@ -249,7 +258,7 @@ module interruptResetControl(phi2,NMI_L, IRQ_L, RES_L, nmiHandled, irqHandled, r
         
     end
     
-    always @ (nmiHandled or irqHandled or resHandled) begin
+    always @ (posedge nmiHandled or posedge irqHandled or posedge resHandled) begin
         if (nmiHandled) nmiPending = 1'b0;
         if (irqHandled) irqPending = 1'b0;
         if (resHandled) resPending = 1'b0;

@@ -52,6 +52,19 @@
 `define Y_SB 6'd47
 `define P_DB 6'd48
 
+
+`define SET_C 6'd49
+`define CLR_C 6'd50
+`define SET_I 6'd51
+`define CLR_I 6'd52
+`define SET_V 6'd53
+`define CLR_V 6'd54
+`define SET_D 6'd55
+`define CLR_D 6'd56
+`define SET_B 6'd57
+`define CLR_B 6'd58
+
+/*
 `define DBO_C 6'd49
 `define IR5_C 6'd50
 `define ACR_C 6'd51
@@ -65,14 +78,15 @@
 `define AVR_V 6'd59
 `define I_V 6'd60
 `define DB7_N 6'd61
+*/
 
 `define nRW 6'd62
 
 `define emptyControl 63'd0
 
-`define RST_i 2'd0
-`define NMI_i 2'd1
-`define IRQ_i 2'd2
-`define BRK_i 2'd3
-
+`define RST_i 3'd0
+`define NMI_i 3'd1
+`define IRQ_i 3'd2
+`define BRK_i 3'd3
+`define NONE 3'd4
 

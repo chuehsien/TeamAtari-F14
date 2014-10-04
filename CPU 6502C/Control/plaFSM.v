@@ -7,15 +7,15 @@ This is the top FSM modules which implements the opcode -> controlSignal state m
 `include "Control/controlDef.v"
 `include "Control/TDef.v"
 
-
 module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg, 
-                controlSigs, SYNC, T1now);
+                controlSigs, SYNC, T1now, nmiHandled, irqHandled, rstHandled);
      
 `include "Control/controlMods.v"               
     input phi1,phi2,nmi,irq,rst,RDY; //RDY is external input
     input [7:0] opcodeIn, statusReg;
     output [62:0] controlSigs;
     output SYNC, T1now; //T1now is to signal predecode register to load in value.
+    output nmiHandled, irqHandled, rstHandled;
     
     wire phi1,phi2,nmi,irq,rst,RDY;
     wire [7:0] opcodeIn;
@@ -23,6 +23,8 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
     reg [62:0] controlSigs;
     reg SYNC;
     wire T1now;
+    reg nmiHandled, irqHandled, rstHandled;
+    reg [2:0] active_interrupt;
     
     //internal variables. open_T and open_control are just holders, since u cant leave task outputs empty
     reg [7:0] opcode;
@@ -37,7 +39,7 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
     reg [62:0]      dummy_control, open_control;
     reg [6:0]       dummy_T;
     reg [7:0]      leftOverSig; //to perform last SBAC/SBX/SBY controls in T2 of next instruction.
-    reg [3:0]      interruptArray; //from bit 0-3 : rst,nmi,irq,brk.
+    //reg [3:0]      interruptArray; //from bit 0-3 : rst,nmi,irq,brk.
     
     reg rstNow;
     
@@ -66,15 +68,16 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
     always @ (curr_T or curr_state or RDY or opcode)
         
     begin
-	interruptArray = 4'd0;
-    dummy_control = `emptyControl;
-    dummy_T = `emptyT;
-    dummy_state = 3'bxxx;
+        
+        dummy_control = `emptyControl;
+        dummy_T = `emptyT;
+        dummy_state = 3'bxxx;
     
-    if (rst) interruptArray[`RST_i] = 1'b1;
-    if (nmi) interruptArray[`NMI_i] = 1'b1;
-    if (irq) interruptArray[`IRQ_i] = 1'b1;
-    else     interruptArray[`BRK_i] = 1'b1;
+        rstHandled = 1'b0;
+        nmiHandled = 1'b0;
+        irqHandled = 1'b0;
+        
+        
         if (RDY) begin
             case(curr_state)
                 `FSMinit: begin 
@@ -82,14 +85,13 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
                 //this is somewhat the prefetch stage, only for first cycle
                 //when does the right opcode appear? not here. opcode is loaded when ticked into FSMfetch.
                 
-                    interruptArray[`RST_i] = 1'b1;
-                    
+
                     //get controls for the next T state.
                     
-                    getControlsBrk(~phi1,~phi2,interruptArray,curr_T,dummy_T, open_control);
+                    getControlsBrk(~phi1,~phi2,active_interrupt,curr_T,dummy_T, open_control);
                     
-                    getControlsBrk(phi1,phi2,interruptArray,dummy_T, open_T,next_P1controlSigs);  
-                    getControlsBrk(~phi1,~phi2,interruptArray,dummy_T, open_T,next_P2controlSigs); 
+                    getControlsBrk(phi1,phi2,active_interrupt,dummy_T, open_T,next_P1controlSigs);  
+                    getControlsBrk(~phi1,~phi2,active_interrupt,dummy_T, open_T,next_P2controlSigs); 
                     
                     next_T = dummy_T;
                     nextOpcode = 8'h00;
@@ -100,7 +102,8 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
                     if (dummy_T == `Tone) begin
                         //went one cycle and finished brk!
                         next_state = `FSMfetch;
-                        interruptArray[`RST_i] = 1'b0;
+                        active_interrupt = `NONE;
+                        rstHandled = 1'b1;
                     end
                     else begin
                         next_state = curr_state;
@@ -146,8 +149,8 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
                         //get controls for the next T.
                         //getControlsBrk(phi1,phi2,interruptArray,curr_T, dummy_T, open_control);
                         
-                        getControlsBrk(phi1,phi2,interruptArray,`Ttwo, open_T,next_P1controlSigs); //get next T 
-                        getControlsBrk(~phi1,~phi2,interruptArray,`Ttwo, open_T,next_P2controlSigs); //get controls for new T
+                        getControlsBrk(phi1,phi2,active_interrupt,`Ttwo, open_T,next_P1controlSigs); //get next T 
+                        getControlsBrk(~phi1,~phi2,active_interrupt,`Ttwo, open_T,next_P2controlSigs); //get controls for new T
                         
                     end
                     
@@ -198,17 +201,25 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
                 
                 `execBrk: begin //used to handle all interrupts
                     if (phi1) SYNC = 1'd0;
+
                     //get controls for the next T.
-                    getControlsBrk(phi1,phi2,interruptArray,curr_T, dummy_T, open_control);
+                    getControlsBrk(phi1,phi2,active_interrupt,curr_T, dummy_T, open_control);
                     
-                    getControlsBrk(phi1,phi2,interruptArray,dummy_T, open_T,next_P1controlSigs); //get next T 
-                    getControlsBrk(~phi1,~phi2,interruptArray,dummy_T, open_T,next_P2controlSigs); //get controls for new T
+                    getControlsBrk(phi1,phi2,active_interrupt,dummy_T, open_T,next_P1controlSigs); //get next T 
+                    getControlsBrk(~phi1,~phi2,active_interrupt,dummy_T, open_T,next_P2controlSigs); //get controls for new T
                     nextOpcode = opcode;
                     
                     next_T = dummy_T;
                     
-                    if (dummy_T == `Tone)
+                    if (dummy_T == `Tone) begin
                         next_state = `FSMfetch;
+                        //done handling int, inform interrupt controller
+                        if (active_interrupt == `RST_i) rstHandled = 1'b1;
+                        if (active_interrupt == `IRQ_i) irqHandled = 1'b1;
+                        if (active_interrupt == `NMI_i) nmiHandled = 1'b1;
+                        
+                        active_interrupt = `NONE;
+                    end
                         
                     else next_state = curr_state;
                     
@@ -256,8 +267,21 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
             
             // handle leftover instructions (SBAC, SBX, SBY)
             findLeftOverSig(activeOpcode,next_T, leftOverSig);
-            if (next_T == `Ttwo && phi1) next_P1controlSigs[leftOverSig] = 1'b1;
+            
+            if (next_T == `Ttwo && phi1) begin
+                next_P1controlSigs[leftOverSig] = 1'b1;
+            end
         
+            if (next_T == `Tzero || next_T == `TzeroNoCrossPg || next_T == `TzeroCrossPg) begin
+                //check for interrupts
+                //hierarchy of interrupts
+                if (active_interrupt == `NONE) begin
+                    if (rst) active_interrupt = `RST_i;
+                    else if (nmi) active_interrupt = `NMI_i;
+                    else if (irq) active_interrupt = `IRQ_i;
+                    else active_interrupt = `NONE;
+                end
+            end
         
         end
      
@@ -274,16 +298,19 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
             SYNC <= 1'd1;
             //set up reset sequence
 
-            interruptArray = 4'd0;
-            interruptArray[`RST_i] = 1'b1;              
+            active_interrupt = `RST_i;
+           // interruptArray = 4'd0;
+            //interruptArray[`RST_i] = 1'b1;              
             //get controls for the first state (T1) of the reset cycle.
-            getControlsBrk(phi1,phi2,interruptArray,`Tone,open_T ,curr_P1controlSigs);
-            getControlsBrk(~phi1,~phi2,interruptArray,`Tone,open_T ,curr_P2controlSigs);
+            getControlsBrk(phi1,phi2,active_interrupt,`Tone,open_T ,curr_P1controlSigs);
+            getControlsBrk(~phi1,~phi2,active_interrupt,`Tone,open_T ,curr_P2controlSigs);
             
+            //interruptArray <= 4'b1; // set rst bit
             activeOpcode <= nextOpcode;
             controlSigs <= curr_P1controlSigs;
             curr_T <= `Tone;
-            rstNow = 1'b0;
+            rstNow <= 1'b0;
+            
         end
         
         else begin
