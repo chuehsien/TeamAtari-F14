@@ -15,21 +15,25 @@ module testANTIC;
   wire [15:0] address;
   wire [7:0] DB;
   wire [15:0] dlistptr;
-  wire [2:0] cstate;
+  wire [2:0] curr_state;
   wire [7:0] data;
   wire [7:0] dataReg;
   wire [7:0] IR;
   wire [1:0] loadDLIST;
+  wire [7:0] CHBASE;
+  wire [15:0] MSR;
+  wire [1:0] loadMSR_both;
   
   // Instantiate Modules
   memory256x256 mem(.clock(~phi2), .enable(1'b1), .we_L(1'b1), .re_L(halt_L), .address(address), .data(DB));
   ANTIC antic(.Fphi0(Fphi0), .LP_L(), .RW(), .RST(reset), .phi2(phi2), .DB(DB), .address(address), .AN(AN),
               .halt_L(halt_L), .NMI_L(), .RDY_L(), .REF_L(), .RNMI_L(), .phi0(), .printDLIST(dlistptr),
-              .cstate(cstate), .data(data), .IR_out(IR), .load_IR(load_IR), .loadDLIST_both(loadDLIST));
+              .curr_state(curr_state), .data(data), .IR(IR), .loadIR(loadIR), .loadDLIST_both(loadDLIST),
+              .CHBASE(CHBASE), .MSR(MSR), .loadMSR_both(loadMSR_both));
   
   task print;
-    $display("halt_L is %b, curr_state is %b, data is %h, IR is %h, loadIR is %b, AN is %b, dlistptr is %h, loadDLIST is %b", 
-             halt_L, cstate, data, IR, load_IR, AN, dlistptr, loadDLIST);
+    $display("halt_L is %b, curr_state is %b, data is %h, IR is %h, loadIR is %b, AN is %b, dlistptr is %h, loadDLIST is %b, CHBASE is %h, MSR is %h, loadMSR is %b", 
+             halt_L, curr_state, data, IR, loadIR, AN, dlistptr, loadDLIST, CHBASE, MSR, loadMSR_both);
   endtask
   
   initial begin

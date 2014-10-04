@@ -12,18 +12,15 @@ A0 // S-DLISTH
 00 // S-PENV
 @02F3
 00 // S_CHACTL
-00 // S-CHBASE
+E0 // S-CHBASE
 // Demo Display List
 @A000
 70  // Blank 8 lines
 70  // Blank 8 lines
 70  // Blank 8 lines
-41  // Jump and wait for vertical
-52  // blank to display list which
-A2  // starts at $7BEO
 42  // display ANTIC mode 2 (BASIC mode0)
-20  // Also, screen memory starts at7C20
-7C
+50  // Also, screen memory starts at $A250
+A2
 02  // Display Antic Mode 2
 02
 02
@@ -48,9 +45,9 @@ A2  // starts at $7BEO
 02
 02
 41  // Jump and wait for vertical
-E0  // blank to display list which
-7B  // starts at $7BEO
-@A252
-70  // Blank 8 lines
-70  // Blank 8 lines
-70  // Blank 8 lines
+00  // blank to display list which
+A0  // starts at $A000
+@A250
+// 960 bits of character data
+@E000
+// Character Set
