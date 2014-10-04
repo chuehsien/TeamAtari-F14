@@ -7,7 +7,7 @@
 */
 module testCPU_FSM;
   //This number needs to change according to how many lines there are in fsm_test_vectors.vm
-  parameter NUM_VECTORS=33;
+  parameter NUM_VECTORS=602;
   
   reg phi1, nmi, irq, rst, RDY;
   reg [7:0] statusReg, opcodeIn; 
@@ -20,7 +20,7 @@ module testCPU_FSM;
   reg [31:0] vec; 
   //20 bits per test vector, (nmi, irq, rst, RDY, opcodeIn, statusReg)
   
-  integer i, j;
+  integer i;
   
   reg[6:0] T_state;
   reg[2:0] FSM_state;
@@ -83,12 +83,12 @@ module testCPU_FSM;
     IntToString(plaFSM_mod.active_interrupt, int_string);
     
     $display("@%3h, (%s,%s) ---> control: %h, SYNC: %b, OPin:%H, O2:%H",i, FSM_string,T_string,controlSigs, SYNC, plaFSM_mod.activeOpcode,plaFSM_mod.opcode);
-    $display("phi1:%b, next_T: %b, dummy_state:%s", plaFSM_mod.phi1, plaFSM_mod.next_T,dummy_string);
-    if (phi1) begin
+    //$display("phi1:%b, next_T: %b, dummy_state:%s", plaFSM_mod.phi1, plaFSM_mod.next_T,dummy_string);
+    /*if (phi1) begin
     $display("next_P1control: %h (op:%h) RW: %d", plaFSM_mod.next_P1controlSigs,plaFSM_mod.opcode,plaFSM_mod.next_P1controlSigs[`nRW]);
     $display("next_P2control: %h (op:%h) RW: %d", plaFSM_mod.next_P2controlSigs,plaFSM_mod.opcode,plaFSM_mod.next_P2controlSigs[`nRW]);
     $display("active_int: %s", int_string);
-    end
+    end*/
   end
   
   endtask

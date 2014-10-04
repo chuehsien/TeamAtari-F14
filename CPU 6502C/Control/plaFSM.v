@@ -7,18 +7,18 @@ This is the top FSM modules which implements the opcode -> controlSignal state m
 `include "Control/controlDef.v"
 `include "Control/TDef.v"
 
-module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg, 
+module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcode, statusReg, 
                 controlSigs, SYNC, T1now, nmiHandled, irqHandled, rstHandled);
      
 `include "Control/controlMods.v"               
     input phi1,phi2,nmi,irq,rst,RDY; //RDY is external input
-    input [7:0] opcodeIn, statusReg;
+    input [7:0] opcode, statusReg;
     output [62:0] controlSigs;
     output SYNC, T1now; //T1now is to signal predecode register to load in value.
     output nmiHandled, irqHandled, rstHandled;
     
     wire phi1,phi2,nmi,irq,rst,RDY;
-    wire [7:0] opcodeIn;
+    wire [7:0] opcode;
     wire [7:0] statusReg;
     reg [62:0] controlSigs;
     reg SYNC;
@@ -27,7 +27,7 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
     reg [2:0] active_interrupt;
     
     //internal variables. open_T and open_control are just holders, since u cant leave task outputs empty
-    reg [7:0] opcode;
+    //reg [7:0] opcode;
     reg [62:0] curr_P1controlSigs, curr_P2controlSigs;
     reg [62:0] next_P1controlSigs, next_P2controlSigs;
     
@@ -56,16 +56,16 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
     end
     */
     
-    wire loadIR;
-   and #(1,1) andgate(loadIR, phi1,RDY,T1now); 
+    //wire loadIR;
+   //and #(1,1) andgate(loadIR, phi1,RDY,T1now); 
     
     
-    always @ (posedge loadIR) begin
+    //always @ (posedge loadIR) begin
     // clock in new opcode - not required in full setup.
-        opcode <= opcodeIn;
-    end
+    //    opcode <= opcodeIn;
+    //end
     
-    always @ (curr_T or curr_state or RDY or opcode)
+    always @ (curr_T)
         
     begin
         
@@ -81,11 +81,11 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
         if (RDY) begin
             case(curr_state)
                 `FSMinit: begin 
-
+             
                 //this is somewhat the prefetch stage, only for first cycle
                 //when does the right opcode appear? not here. opcode is loaded when ticked into FSMfetch.
                 
-
+    
                     //get controls for the next T state.
                     
                     getControlsBrk(~phi1,~phi2,active_interrupt,curr_T,dummy_T, open_control);
@@ -94,6 +94,7 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
                     getControlsBrk(~phi1,~phi2,active_interrupt,dummy_T, open_T,next_P2controlSigs); 
                     
                     next_T = dummy_T;
+
                     nextOpcode = 8'h00;
                     
                     if (curr_T == `Tone) SYNC = 1'd1;
@@ -108,9 +109,7 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
                     else begin
                         next_state = curr_state;
                     end
-                    
-                    
-                    
+
                 end
 
                 `FSMfetch: begin
@@ -306,7 +305,7 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcodeIn, statusReg,
             getControlsBrk(~phi1,~phi2,active_interrupt,`Tone,open_T ,curr_P2controlSigs);
             
             //interruptArray <= 4'b1; // set rst bit
-            activeOpcode <= nextOpcode;
+            activeOpcode <= 8'b00;
             controlSigs <= curr_P1controlSigs;
             curr_T <= `Tone;
             rstNow <= 1'b0;

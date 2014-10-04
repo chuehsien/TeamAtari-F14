@@ -114,14 +114,15 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
             wire [7:0] real_outToIR, effective_outToIR, real_opcode, effective_opcode;
             assign BRKins = (real_opcode == `BRK || real_opcode == `PHP);
             //need to assert B in SR when performing BRK/PHP.
-            statusReg(phi2,updateSR, controlSigs[`P_DB], DBZ, ACR, AVR, ~controlSigs[`nDAA], BRKins,
+            wire [7:0] SR_contents;
+            statusReg SR(phi2,updateSR, controlSigs[`P_DB], DBZ, ACR, AVR, ~controlSigs[`nDAA], BRKins,
                         controlSigs[`SET_C], controlSigs[`CLR_C],
                         controlSigs[`SET_I], controlSigs[`CLR_I],
                         controlSigs[`SET_V], controlSigs[`CLR_V],
                         controlSigs[`SET_D], controlSigs[`CLR_D],
                         DB_N, 
                         DB,
-                    DB,decMode,statusReg);
+                    DB,decMode,SR_contents);
                     
                     
             wire [7:0] dataOutBuf;
@@ -129,25 +130,28 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
             dataBusTristate     dataBuf(controlSigs[`nRW] & phi2, dataOutBuf,extDB);
             
             //moving on to left side...
-            wire [7:0] precodeOut, outToIR;
+            wire [7:0] predecodeOut, outToIR;
             wire interrupt;
             
             assign interrupt = resPending | nmiPending | irqPending;
-            predecodeRegister   pdr(phi2,extDB,precodeOut);
-            predecodeLogic      pdl(precodeOut,interrupt,real_outToIR,effective_outToIR);
+            predecodeRegister   pdr(phi2,extDB,predecodeOut);
+            predecodeLogic      pdl(predecodeOut,interrupt,real_outToIR,effective_outToIR);
             
             wire loadIR, T1now;
             assign loadIR = T1now & phi1 & RDY;
             instructionRegister ir_reg(loadIR, real_outToIR,effective_outToIR,real_opcode, effective_opcode);
 
-            interruptResetControl iHandler(phi2,NMI_L, IRQ_L, RES_L, nmiHandled, irqHandled, resHandled,
+            interruptResetControl iHandler(NMI_L, IRQ_L, RES_L, nmiHandled, irqHandled, resHandled,
                             nmiPending,irqPending,resPending);
             
             wire RDYout; //this is the one which affects the FSM.
             readyControl rdy_control(phi2, RDY, nRW, RDYout);
             
+            wire masked_irq;
+            assign masked_irq = resPending & (~SR_contents[`status_I]);
+            
             // finally, control logic
-            plaFSM      myFSM(phi1,phi2,nmiPending,irqPending,resPending,RDYout,effective_opcode,statusReg,
+            plaFSM      fsm(phi1,phi2,nmiPending,irqPending,masked_irq,RDYout,effective_opcode,SR_contents,
                                 controlSigs,SYNC,T1now,nmiHandled, irqHandled, resHandled);
                                 
                         

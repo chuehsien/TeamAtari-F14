@@ -1,13 +1,5 @@
 // this module contains all contains that are driven by clocks and the left side of the block diagram
 
-`define G1ANDG2 2'd0
-
-module BUF (Y,A);
-    output Y;
-    input A;
-    buf #(0.5, 0.5) g(Y,A);
-endmodule
-
 module clockGen(phi0_in,
                 phi1_out,phi2_out,phi1_extout,phi2_extout);
                 
