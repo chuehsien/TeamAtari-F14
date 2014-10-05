@@ -13,7 +13,7 @@ task LDA_imm;
 	reg [79:0] controlSigs;
 	
 	begin
-		controlSigs = 63'd0;
+		controlSigs = 80'd0;
 		case (T)
 
 			

@@ -6,15 +6,15 @@ task BMI_rel;
 	input [6:0] T;
 	input phi1,phi2;
 	input carry,flag;
-	output [62:0] controlSigs;
+	output [79:0] controlSigs;
 	output [6:0] newT;
 	reg [6:0] newT;
 
 	
-	reg [62:0] controlSigs;
+	reg [79:0] controlSigs;
 	
 	begin
-		controlSigs = 63'd0;
+		controlSigs = 80'd0;
 		case (T)
  			`Tzero:begin
 			newT = `T1BranchCross;
