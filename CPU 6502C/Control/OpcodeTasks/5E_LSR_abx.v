@@ -70,6 +70,7 @@ task LSR_abx;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
+                    controlSigs[`FLAG_ALU] = 1'b1;
 				end
 			end 
 			
@@ -213,6 +214,7 @@ task LSR_abx;
 					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
+                    controlSigs[`FLAG_ALU] = 1'b1;
 
 				end
 			end

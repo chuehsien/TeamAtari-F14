@@ -160,6 +160,7 @@ task ROR_zp;
 					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
+                    controlSigs[`FLAG_ALU] = 1'b1;
 				end
 			
 			end
