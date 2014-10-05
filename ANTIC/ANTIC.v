@@ -3,20 +3,21 @@
 
 `include "ANTIC_dataTranslate.v"
 
-`define FSMinit1		3'b000
-`define FSMinit2	  3'b001
-`define FSMinit3    3'b010
-`define FSMinit4    3'b011
-`define FSMinit5    3'b100
-`define FSMload1    3'b101
-`define FSMload2    3'b110
-`define FSMidle     3'b111
+`define FSMinit1		4'b0000
+`define FSMinit2	  4'b0001
+`define FSMinit3    4'b0010
+`define FSMinit4    4'b0011
+`define FSMinit5    4'b0100
+`define FSMinit6    4'b0101
+`define FSMload1    4'b0110
+`define FSMload2    4'b0111
+`define FSMidle     4'b1000
 `define DMA_off     1'b0
 `define DMA_on      1'b1
 
 module ANTIC(Fphi0, LP_L, RW, RST, phi2, DB, address, AN, halt_L, NMI_L, RDY_L,
-             REF_L, RNMI_L, phi0, printDLIST, cstate, data, IR_out, load_IR,
-             loadDLIST_both);
+             REF_L, RNMI_L, phi0, printDLIST, curr_state, data, IR, loadIR,
+             loadDLIST_both, CHBASE, MSR, loadMSR_both);
 
       input Fphi0;
       input LP_L;
@@ -32,14 +33,17 @@ module ANTIC(Fphi0, LP_L, RW, RST, phi2, DB, address, AN, halt_L, NMI_L, RDY_L,
       output REF_L;
       output RNMI_L;
       output phi0;
-      output [7:0] IR_out;
-      output load_IR;
+      output [7:0] IR;
+      output loadIR;
+      output [7:0] CHBASE;
+      output [15:0] MSR;
       
       // extras (remove later on)
       output [15:0] printDLIST;
-      output [2:0] cstate;
+      output [2:0] curr_state;
       output [7:0] data;
       output [1:0] loadDLIST_both;
+      output [1:0] loadMSR_both;
       
       // Hardware registers
       reg [7:0] DMACTL;   // $D400
@@ -57,6 +61,9 @@ module ANTIC(Fphi0, LP_L, RW, RST, phi2, DB, address, AN, halt_L, NMI_L, RDY_L,
       reg [7:0] NMIEN;    // $D40E
       reg [7:0] NMI;      // $D40F
       
+      // Internal registers
+      reg [15:0] MSR;     // Memory Scan Register
+      
       reg DMA;
       reg ready_L;
       reg loadAddr;
@@ -64,9 +71,10 @@ module ANTIC(Fphi0, LP_L, RW, RST, phi2, DB, address, AN, halt_L, NMI_L, RDY_L,
       reg vblank;
       reg IR_rdy;
       reg [7:0] IR;
-      reg [2:0] currState;
-      reg [2:0] nextState;
+      reg [3:0] currState;
+      reg [3:0] nextState;
       reg [15:0] addressIn;
+      
       wire [127:0] registers;
       wire [7:0] data;
       wire loadIR;
@@ -75,19 +83,19 @@ module ANTIC(Fphi0, LP_L, RW, RST, phi2, DB, address, AN, halt_L, NMI_L, RDY_L,
       wire DLISTend;
       wire DLISTjump;
       wire loadPtr;
-      
-      // * Temp:
-      assign printDLIST = {DLISTH, DLISTL};
-      assign halt_L = ~DMA;
-      assign cstate = currState;
-      assign IR_out = IR;
-      assign load_IR = loadIR;
-      assign loadDLIST_both = {loadDLISTH, loadDLISTL};
-      // End Temp *
+      wire loadMSRL;
+      wire loadMSRH;
       
       assign registers = {NMI, NMIEN, PENV, PENH, VCOUNT, WSYNC,
                           CHBASE, 8'd0, PMBASE, 8'd0, VSCROL, HSCROL,
                           DLISTH, DLISTL, CHACTL, DMACTL};
+      
+      // * Temp:
+      assign printDLIST = {DLISTH, DLISTL};
+      assign halt_L = ~DMA;
+      assign loadDLIST_both = {loadDLISTH, loadDLISTL};
+      assign loadMSR_both = {loadMSRH, loadMSRL};
+      // End Temp *
 
       // Module instantiations
       
@@ -95,7 +103,7 @@ module ANTIC(Fphi0, LP_L, RW, RST, phi2, DB, address, AN, halt_L, NMI_L, RDY_L,
       dataReg dreg(.phi2(phi2), .DMA(DMA), .dataIn(DB), .data(data));
       dataTranslate dt(.IR(IR), .IR_rdy(IR_rdy), .Fphi0(Fphi0), .RST(RST), .vblank(vblank), .AN(AN), .loadIR(loadIR),
                        .loadDLISTL(loadDLISTL), .loadDLISTH(loadDLISTH), .DLISTjump(DLISTjump), .DLISTend(DLISTend),
-                       .loadPtr(loadPtr));
+                       .loadPtr(loadPtr), .loadMSRL(loadMSRL), .loadMSRH(loadMSRH));
     
       // FSM to initialize
       always @ (posedge phi2) begin
@@ -105,6 +113,12 @@ module ANTIC(Fphi0, LP_L, RW, RST, phi2, DB, address, AN, halt_L, NMI_L, RDY_L,
           DLISTL <= IR;
         else if (loadDLISTH)
           DLISTH <= IR;
+        
+        // Memory Scan Register changes
+        if (loadMSRL)
+          MSR[7:0] <= IR;
+        else if (loadMSRH)
+          MSR[15:8] <= IR;
           
         // * TODO: Add vertical blank signal occurrence signal to dataTranslate module
       
@@ -118,7 +132,7 @@ module ANTIC(Fphi0, LP_L, RW, RST, phi2, DB, address, AN, halt_L, NMI_L, RDY_L,
                 VCOUNT <= 8'd0;
                 NMIEN <= 8'd0;
                 DMACTL <= 8'd0;
-                addressIn <= 16'h0230; // Shadow DLISTL register
+                addressIn <= 16'h02F4; // Shadow CHBASE register
                 loadAddr <= 1'b1;
                 DMA <= `DMA_on;
                 // * Playfield DMA clock reset?
@@ -127,25 +141,33 @@ module ANTIC(Fphi0, LP_L, RW, RST, phi2, DB, address, AN, halt_L, NMI_L, RDY_L,
             `FSMinit2:
               begin
                 nextState <= `FSMinit3;
+                addressIn <= 16'h0230; // Shadow DLISTL register
+                loadAddr <= 1'b1;
+              end
+            
+            `FSMinit3:
+              begin
+                nextState <= `FSMinit4;
+                CHBASE <= data;
                 addressIn <= 16'h0231; // Shadow DLISTH register
                 loadAddr <= 1'b1;
               end
               
-            `FSMinit3:
+            `FSMinit4:
               begin
-                nextState <= `FSMinit4;
+                nextState <= `FSMinit5;
                 DLISTL <= data;
                 DMA <= `DMA_off;
               end
             
-            `FSMinit4:
+            `FSMinit5:
               begin
-                nextState <= `FSMinit5;
+                nextState <= `FSMinit6;
                 DLISTH <= data;
                 // * Sync other hardware registers and RAM shadow registers?
               end
               
-            `FSMinit5:
+            `FSMinit6:
               begin
                 nextState <= `FSMload1;
                 addressIn <= {DLISTH, DLISTL};
