@@ -72,6 +72,7 @@ task ORA_izx;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
+                    controlSigs[`FLAG_ALU] = 1'b1;
         end
       end
       

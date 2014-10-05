@@ -45,6 +45,7 @@ task BIT_zp;
 					controlSigs[`PCL_ADL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
                     //restroing saved PC to address buses, put operand onto DB
+                    controlSigs[`FLAG_DB] = 1'b1;
         end
       end
       
@@ -78,7 +79,7 @@ task BIT_zp;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
-                    controlSigs[`LOAD_DBZ] = 1'b1;
+                    controlSigs[`FLAG_DBZ] = 1'b1;
         end
       end
       
