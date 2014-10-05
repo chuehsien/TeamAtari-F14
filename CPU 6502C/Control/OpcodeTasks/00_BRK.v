@@ -1,6 +1,7 @@
 `include "Control/opcodeDef.v"
 `include "Control/controlDef.v"
 `include "Control/TDef.v"
+
 task BRK;
 
 	input [6:0] T;
@@ -44,6 +45,8 @@ task BRK;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_PCL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
+                    controlSigs[`nADH_ABH] = 1'b1;
+                    //adderhold <= fetched PC_lo (jump vector).
         end
         else if(phi2) begin
           //SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,#IPC,~IPC,DL/ADH,DL/DB
@@ -54,6 +57,8 @@ task BRK;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`DL_ADH] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
+                    // second vector address arrived on DL. send to DB and ADH.
+                    //also load extABreg on next tick
         end
       end
       
@@ -73,6 +78,8 @@ task BRK;
 					controlSigs[`ADL_PCL] = 1'b1;
 					controlSigs[`DL_ADH] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
+                    
+                    //PChi <= ADH. PClo <= ADL. adderhold <= PC_hi
         end
         else if(phi2) begin
           //SUMS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBDB,PCHADH,PCLADL
@@ -84,6 +91,8 @@ task BRK;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
+                    //new opcode received.
+                    // new address on the bus.
         end
       end
       
@@ -105,6 +114,7 @@ task BRK;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
 					controlSigs[`ADL_PCL] = 1'b1;
+            //ADDERHOLD <= ADDERHOLD*2, PC++
         end
         
         else if(phi2) begin
@@ -115,6 +125,10 @@ task BRK;
 					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`O_ADH1to7] = 1'b1;
 					controlSigs[`PCH_DB] = 1'b1;
+                    
+            //place stack address on ADL, ADH forced to 0x01, PCH onto DB. 
+            //prepare to write to stack. sp_lo.
+            //next tick transfer contents to extAB
         end
         
       end
@@ -136,6 +150,9 @@ task BRK;
 					controlSigs[`PCH_DB] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_PCL] = 1'b1;
+                    //ADH forced to 0x01
+                    //adderhold <= sp_lo - 1, PCH goes on DB, PChold
+                    
         end
         else if(phi2) begin
           //SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,#IPC,~IPC,PCLDB
@@ -145,6 +162,9 @@ task BRK;
 					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_DB] = 1'b1;
+                    controlSigs[`nADH_ABH] = 1'b1;
+                    //adderhold(sp_lo-1) goes onto ADL, PCL goes onto DB. ABhi_reg is kept by asserting nADH_ABH
+                    //next clock stores PC to stack
         end
       end
       
@@ -164,6 +184,8 @@ task BRK;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_DB] = 1'b1;
 					controlSigs[`PCL_PCL] = 1'b1;
+                    controlSigs[`nADH_ABH] = 1'b1;
+                    // adderhold <= adderhold-1 (sp_lo-2)
         end
           
         else if(phi2) begin
@@ -174,6 +196,9 @@ task BRK;
 					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
                     controlSigs[`P_DB] = 1'b1;
+                    controlSigs[`nADH_ABH] = 1'b1;
+                    //SR onto DB,  sp_lo-2 onto ADL. ABhi_reg is kept by asserting nADH_ABH
+                    // next tick stores SR to stack.
         end
       end
       
@@ -193,6 +218,8 @@ task BRK;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_PCL] = 1'b1;
                     controlSigs[`P_DB] = 1'b1;
+                    controlSigs[`nADH_ABH] = 1'b1;
+                    // adderhold --, SR still on DB,
         end
         else if(phi2) begin
             //place interrupt vector address onto ADH,ADL here.
@@ -215,6 +242,7 @@ task BRK;
 					controlSigs[`ADD_SB0to6] = 1'b1;
 					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
+                    //adderhold onto SB. at next tick, vector addresses go onto extAB.
         end
       end
       
@@ -245,6 +273,7 @@ task BRK;
 					controlSigs[`PCH_PCH] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_PCL] = 1'b1;
+                    //decremented sp is stored into spreg. adderhold <= DB
         end
         else if(phi2) begin
             if (active_interrupt == `RST_i) begin
@@ -264,6 +293,9 @@ task BRK;
 					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
+                    controlSigs[`nADH_ABH] = 1'b1;
+                    //new data just came in, enable DL_DB.
+                    //new vector address loaded to extAB on tick.
         end
       end
     

@@ -133,11 +133,13 @@ task ORA_izx;
 					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
+                    controlSigs[`nADH_ABH] = 1'b1;
         end
       end
       
       (`Tfour) : begin
 		newT = `Tfive;
+        controlSigs[`I_ADDC] = 1'b1;
         if (phi1) begin
           //SS,ADLADD,0ADD,SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,PCHPCH,#IPC,~IPC,PCLPCL,DL/DB
 					controlSigs[`S_S] = 1'b1;
@@ -151,6 +153,7 @@ task ORA_izx;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_PCL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
+                    controlSigs[`nADH_ABH] = 1'b1;
         end
           
         else if(phi2) begin
@@ -161,6 +164,7 @@ task ORA_izx;
 					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
+                    controlSigs[`nADH_ABH] = 1'b1;
         end
       end
       
@@ -179,6 +183,7 @@ task ORA_izx;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_PCL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
+                    controlSigs[`nADH_ABH] = 1'b1;
         end
         else if(phi2) begin
           //SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,#IPC,~IPC,DL/ADH

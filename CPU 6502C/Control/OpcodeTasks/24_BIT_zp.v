@@ -5,12 +5,12 @@ task BIT_zp;
 
 	input [6:0] T;
 	input phi1,phi2;
-	output [62:0] controlSigs;
+	output [79:0] controlSigs;
 	output [6:0] newT;
 	reg [6:0] newT;
 
 	
-	reg [62:0] controlSigs;
+	reg [79:0] controlSigs;
 	
 	begin
 		controlSigs = 63'd0;
@@ -19,6 +19,7 @@ task BIT_zp;
     
       (`Tzero) : begin
 		newT = `Tone;
+        //test bit 7 and 6 of operand from zp.
         if (phi1) begin
           //SS,ADLADD,SBADD,SUMS,#DAA,~DAA,#DSA,~DSA,0ADH0,0ADH17,PCHPCH,#IPC,~IPC,PCLPCL,DL/ADL
 					controlSigs[`S_S] = 1'b1;
@@ -43,10 +44,12 @@ task BIT_zp;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
+                    //restroing saved PC to address buses, put operand onto DB
         end
       end
       
       (`Tone) : begin 
+        //check zero flag of and-ed result
 		newT = `Ttwo;
         if (phi1) begin
           //SS,DBADD,SBADD,ANDS,#DAA,~DAA,#DSA,~DSA,ACSB,ADHPCH,PCHADH,PCLADL,ADLPCL,DL/DB
@@ -62,6 +65,7 @@ task BIT_zp;
 					controlSigs[`PCL_ADL] = 1'b1;
 					controlSigs[`ADL_PCL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
+                    //adderhold <= accum & operand, pc ++, next fetched byte go to DB
         end
         else if(phi2) begin
 
@@ -74,6 +78,7 @@ task BIT_zp;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
+                    controlSigs[`LOAD_DBZ] = 1'b1;
         end
       end
       
@@ -95,7 +100,7 @@ task BIT_zp;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
 					controlSigs[`ADL_PCL] = 1'b1;
-
+                    //adderhold *=2
         end
         
         else if(phi2) begin
