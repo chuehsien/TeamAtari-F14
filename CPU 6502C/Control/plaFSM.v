@@ -133,8 +133,8 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcode, statusReg,loadOpcode,
                         if (dummy_state == `execNorm) begin
                             //get controls for the next T.
                             
-                            getControlsNorm(~phi1,~phi2,statusReg[`status_D],opcode, `Ttwo, open_T, next_P1controlSigs);
-                            getControlsNorm(phi1,phi2,statusReg[`status_D],opcode, `Ttwo, open_T , next_P2controlSigs);
+                            getControlsNorm(~phi1,~phi2,statusReg[`status_D],statusReg[`status_C],opcode, `Ttwo, open_T, next_P1controlSigs);
+                            getControlsNorm(phi1,phi2,statusReg[`status_D],statusReg[`status_C],opcode, `Ttwo, open_T , next_P2controlSigs);
 
                         end
                         else if (dummy_state == `execRMW) begin
@@ -194,10 +194,10 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcode, statusReg,loadOpcode,
                 `execNorm: begin //all fixed cycle instructions except BRK
                     if (phi1) SYNC = 1'd0;
                     //get controls for the next T.
-                    getControlsNorm(phi1,phi2,statusReg[`status_D],activeOpcode, curr_T, dummy_T, open_control);
+                    getControlsNorm(phi1,phi2,statusReg[`status_D],statusReg[`status_C],activeOpcode, curr_T, dummy_T, open_control);
                     
-                    getControlsNorm(phi1,phi2,statusReg[`status_D],activeOpcode, dummy_T, open_T, next_P1controlSigs);
-                    getControlsNorm(~phi1,~phi2,statusReg[`status_D],activeOpcode, dummy_T, open_T , next_P2controlSigs);
+                    getControlsNorm(phi1,phi2,statusReg[`status_D],statusReg[`status_C],activeOpcode, dummy_T, open_T, next_P1controlSigs);
+                    getControlsNorm(~phi1,~phi2,statusReg[`status_D],statusReg[`status_C],activeOpcode, dummy_T, open_T , next_P2controlSigs);
                     nextOpcode = activeOpcode;
              
                     next_T = dummy_T;                   
