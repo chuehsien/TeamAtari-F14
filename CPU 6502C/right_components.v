@@ -17,12 +17,7 @@
     11 Sept 2014, 1534hrs: Created modules (chue)
 */
 
-`define status_C 3'd0
-`define status_Z 3'd1
-`define status_I 3'd2
-`define status_D 3'd3
-`define status_V 3'd6
-`define status_N 3'd7
+
 
 /* Tri-State Buffer
  * Much like a transmition gate, 
@@ -58,7 +53,7 @@ module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC)
         // Overflow if (A[7]==B[7]) && (ALU_out[7]!=A[7]) 
         if (SUMS) begin
           {HC, ALU_out[3:0]} = A[3:0] + B[3:0] + I_ADDC;
-          {ACR, ALU_out[7:4]} = A[7:4] + B[7:4] + HC;
+          {ACR, ALU_out[7:4]} = A[7:4] + B[7:4] + HC + ((DAA) ? HC:1'b0);
           AVR = (A[7]==B[7]) & (A[7]!=ALU_out[7]); 
         end
         else if (ANDS)
@@ -374,24 +369,33 @@ module decimalAdjust(rstAll,SBin, DSA, DAA, ACR, HC, phi2,
     
     //internal
     reg [7:0] data;
-    
+    reg iDSA,iDAA;
+    reg iACR,iHC;
+   
+    always @ (posedge phi2) begin
+        iDAA <= DAA;
+        iDSA <= DSA;
+        iACR <= ACR;
+        iHC <= HC;
+    end
     
     //refer to http://imrannazar.com/Binary-Coded-Decimal-Addition-on-Atmel-AVR
     //tada. settled. refer to webstie for more details
     always @ (*) begin
-        if (DAA) begin
-            if (SBin[3:0] > 4'd9 || HC) begin
+        data = SBin;
+        if (iDAA) begin
+            if (SBin[3:0] > 4'd9 || iHC) begin
                 data = SBin + 8'h06;
             end
                 
-            if (ACR || (SBin > 8'h99)) begin
+            if (iACR || (SBin > 8'h99)) begin
                 data = data + 8'h60;
                 // BCD carry has occurred. Do anything??
             end 
         
         end
         
-        else if (DSA)//decimal mode
+        else if (iDSA)//decimal mode
         begin
             if (SBin[3:0] > 4'd9) begin
                 data = SBin - 8'h06;
@@ -400,10 +404,10 @@ module decimalAdjust(rstAll,SBin, DSA, DAA, ACR, HC, phi2,
                 data = data - 8'h60;
             end
         end 
-        else begin
+        //else begin
         //direct pass-through
-            data = SBin;
-        end
+        //    data = SBin;
+        //end
     end
     
     //always @ (posedge phi2) begin
@@ -551,7 +555,7 @@ module statusReg(rstAll,phi1,phi2,load,loadDBZ,flagsALU,flagsDB,
                         V_set,V_clr,
                         D_set,D_clr,
                         DB,ALU,opcode,DBinout,
-                        decMode,status);
+                        status);
     
     input rstAll,phi1,phi2,load,loadDBZ,flagsALU,flagsDB,
                         P_DB, DBZ,DB_N, ACR, AVR, DAA,B,
@@ -562,7 +566,6 @@ module statusReg(rstAll,phi1,phi2,load,loadDBZ,flagsALU,flagsDB,
                         
     input [7:0] DB,ALU,opcode;
     inout [7:0] DBinout;
-    output decMode;
     output [7:0] status; //used by the FSM
     
     wire rstAll,phi1,phi2,load,loadDBZ,flagsALU,flagsDB,
@@ -690,7 +693,7 @@ module statusReg(rstAll,phi1,phi2,load,loadDBZ,flagsALU,flagsDB,
     end
     assign DBinout = (P_DB) ? currVal : 8'bzzzzzzzz;
     assign status = currVal;
-    assign decMode = currVal[`status_D];
+
 endmodule
 
 module prechargeMos(rstAll,phi2,

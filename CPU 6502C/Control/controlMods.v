@@ -92,7 +92,7 @@ endtask
 // take charge of the control signals for normal instructions.
 task getControlsNorm;
 				
-	input phi1,phi2;
+	input phi1,phi2,decMode;
 	input [7:0] opcode;
 	input [6:0] currT;
 	output [6:0] dummy_T;
@@ -147,16 +147,16 @@ task getControlsNorm;
 		`CLI    : CLI    (currT,phi1,phi2,dummy_control,dummy_T);
 		`LSR_abx: LSR_abx(currT,phi1,phi2,dummy_control,dummy_T);
 		`RTS    : RTS    (currT,phi1,phi2,dummy_control,dummy_T);
-		`ADC_izx: ADC_izx(currT,phi1,phi2,dummy_control,dummy_T);
-		`ADC_zp : ADC_zp (currT,phi1,phi2,dummy_control,dummy_T);
+		`ADC_izx: ADC_izx(currT,phi1,phi2,decMode,dummy_control,dummy_T);
+		`ADC_zp : ADC_zp (currT,phi1,phi2,decMode,dummy_control,dummy_T);
 		`ROR_zp : ROR_zp (currT,phi1,phi2,dummy_control,dummy_T);
 		`PLA    : PLA    (currT,phi1,phi2,dummy_control,dummy_T);
-		`ADC_imm: ADC_imm(currT,phi1,phi2,dummy_control,dummy_T);
+		`ADC_imm: ADC_imm(currT,phi1,phi2,decMode,dummy_control,dummy_T);
 		`ROR    : ROR    (currT,phi1,phi2,dummy_control,dummy_T);
 		`JMP_zp : JMP_zp(currT,phi1,phi2,dummy_control,dummy_T);
-		`ADC_abs: ADC_abs(currT,phi1,phi2,dummy_control,dummy_T);
+		`ADC_abs: ADC_abs(currT,phi1,phi2,decMode,dummy_control,dummy_T);
 		`ROR_abs: ROR_abs(currT,phi1,phi2,dummy_control,dummy_T);
-		`ADC_zpx: ADC_zpx(currT,phi1,phi2,dummy_control,dummy_T);
+		`ADC_zpx: ADC_zpx(currT,phi1,phi2,decMode,dummy_control,dummy_T);
 		`ROR_zpx: ROR_zpx(currT,phi1,phi2,dummy_control,dummy_T);
 		`SEI    : SEI    (currT,phi1,phi2,dummy_control,dummy_T);
 		`ROR_abx: ROR_abx(currT,phi1,phi2,dummy_control,dummy_T);
@@ -210,17 +210,17 @@ task getControlsNorm;
 		`CLD    : CLD    (currT,phi1,phi2,dummy_control,dummy_T);
 		`DEC_abx: DEC_abx(currT,phi1,phi2,dummy_control,dummy_T);
 		`CPX_imm: CPX_imm(currT,phi1,phi2,dummy_control,dummy_T);
-		`SBC_izx: SBC_izx(currT,phi1,phi2,dummy_control,dummy_T);
+		`SBC_izx: SBC_izx(currT,phi1,phi2,decMode,dummy_control,dummy_T);
 		`CPX_zp : CPX_zp (currT,phi1,phi2,dummy_control,dummy_T);
-		`SBC_zp : SBC_zp (currT,phi1,phi2,dummy_control,dummy_T);
+		`SBC_zp : SBC_zp (currT,phi1,phi2,decMode,dummy_control,dummy_T);
 		`INC_zp : INC_zp (currT,phi1,phi2,dummy_control,dummy_T);
 		`INX    : INX    (currT,phi1,phi2,dummy_control,dummy_T);
-		`SBC_imm: SBC_imm(currT,phi1,phi2,dummy_control,dummy_T);
+		`SBC_imm: SBC_imm(currT,phi1,phi2,decMode,dummy_control,dummy_T);
 		`NOP    : NOP    (currT,phi1,phi2,dummy_control,dummy_T);
 		`CPX_abs: CPX_abs(currT,phi1,phi2,dummy_control,dummy_T);
-		`SBC_abs: SBC_abs(currT,phi1,phi2,dummy_control,dummy_T);
+		`SBC_abs: SBC_abs(currT,phi1,phi2,decMode,dummy_control,dummy_T);
 		`INC_abs: INC_abs(currT,phi1,phi2,dummy_control,dummy_T);
-		`SBC_zpx: SBC_zpx(currT,phi1,phi2,dummy_control,dummy_T);
+		`SBC_zpx: SBC_zpx(currT,phi1,phi2,decMode,dummy_control,dummy_T);
 		`INC_zpx: INC_zpx(currT,phi1,phi2,dummy_control,dummy_T);
 		`SED    : SED    (currT,phi1,phi2,dummy_control,dummy_T);
 		`INC_abx: INC_abx(currT,phi1,phi2,dummy_control,dummy_T);
@@ -232,7 +232,7 @@ endtask
 // take charge of the control signals for RMW instructions.
 task getControlsRMW;
 
-	input phi1,phi2;
+	input phi1,phi2,decMode;
 	input [7:0] statusReg,opcode;
 	input [6:0] currT;
 	output [6:0] dummy_T;
@@ -255,9 +255,9 @@ task getControlsRMW;
 		`EOR_izy: EOR_izy(currT,phi1,phi2,statusReg[`status_C],dummy_control,dummy_T);
 		`EOR_aby: EOR_aby(currT,phi1,phi2,statusReg[`status_C],dummy_control,dummy_T);
 		`EOR_abx: EOR_abx(currT,phi1,phi2,statusReg[`status_C],dummy_control,dummy_T);
-		`ADC_izy: ADC_izy(currT,phi1,phi2,statusReg[`status_C],dummy_control,dummy_T);
-		`ADC_aby: ADC_aby(currT,phi1,phi2,statusReg[`status_C],dummy_control,dummy_T);
-		`ADC_abx: ADC_abx(currT,phi1,phi2,statusReg[`status_C],dummy_control,dummy_T);
+		`ADC_izy: ADC_izy(currT,phi1,phi2,decMode,statusReg[`status_C],dummy_control,dummy_T);
+		`ADC_aby: ADC_aby(currT,phi1,phi2,decMode,statusReg[`status_C],dummy_control,dummy_T);
+		`ADC_abx: ADC_abx(currT,phi1,phi2,decMode,statusReg[`status_C],dummy_control,dummy_T);
 		`LDA_izy: LDA_izy(currT,phi1,phi2,statusReg[`status_C],dummy_control,dummy_T);
 		`LDA_aby: LDA_aby(currT,phi1,phi2,statusReg[`status_C],dummy_control,dummy_T);
 		`LDY_abx: LDY_abx(currT,phi1,phi2,statusReg[`status_C],dummy_control,dummy_T);
@@ -266,9 +266,9 @@ task getControlsRMW;
 		`CMP_izy: CMP_izy(currT,phi1,phi2,statusReg[`status_C],dummy_control,dummy_T);
 		`CMP_aby: CMP_aby(currT,phi1,phi2,statusReg[`status_C],dummy_control,dummy_T);
 		`CMP_abx: CMP_abx(currT,phi1,phi2,statusReg[`status_C],dummy_control,dummy_T);
-		`SBC_izy: SBC_izy(currT,phi1,phi2,statusReg[`status_C],dummy_control,dummy_T);
-		`SBC_aby: SBC_aby(currT,phi1,phi2,statusReg[`status_C],dummy_control,dummy_T);
-		`SBC_abx: SBC_abx(currT,phi1,phi2,statusReg[`status_C],dummy_control,dummy_T);
+		`SBC_izy: SBC_izy(currT,phi1,phi2,decMode,statusReg[`status_C],dummy_control,dummy_T);
+		`SBC_aby: SBC_aby(currT,phi1,phi2,decMode,statusReg[`status_C],dummy_control,dummy_T);
+		`SBC_abx: SBC_abx(currT,phi1,phi2,decMode,statusReg[`status_C],dummy_control,dummy_T);
 
 		endcase
 	

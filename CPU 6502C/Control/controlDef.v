@@ -99,3 +99,9 @@
 `define BRK_i 3'd3
 `define NONE 3'd4
 
+`define status_C 3'd0
+`define status_Z 3'd1
+`define status_I 3'd2
+`define status_D 3'd3
+`define status_V 3'd6
+`define status_N 3'd7

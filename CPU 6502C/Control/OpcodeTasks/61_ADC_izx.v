@@ -4,7 +4,7 @@
 task ADC_izx;
 
 	input [6:0] T;
-	input phi1,phi2;
+	input phi1,phi2,decMode;
 	output [79:0] controlSigs;
 	output [6:0] newT;
 	reg [6:0] newT;
@@ -51,7 +51,7 @@ task ADC_izx;
 					controlSigs[`DB_ADD] = 1'b1;
 					controlSigs[`SB_ADD] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
-					controlSigs[`nDAA] = 1'b1;
+                    if (!decMode) controlSigs[`nDAA] = 1'b1;
 					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`AC_SB] = 1'b1;
 					controlSigs[`ADH_PCH] = 1'b1;
@@ -63,7 +63,7 @@ task ADC_izx;
 				else if (phi2) begin
 				//SUMS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBDB,PCHADH,PCLADL
 					controlSigs[`SUMS] = 1'b1;
-					controlSigs[`nDAA] = 1'b1;
+					if (!decMode) controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_SB7] = 1'b1;
 					controlSigs[`ADD_SB0to6] = 1'b1;
 					controlSigs[`nDSA] = 1'b1;

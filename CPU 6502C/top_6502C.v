@@ -71,8 +71,8 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
             tranif1             pass2[7:0](SB, DB, controlSigs[`SB_DB]);
             
             wire [7:0] A, B, ALU_out;
-            wire decMode,AVR,ACR,HC; //will be connected to status reg
-            ALU     my_alu(A, B, decMode, controlSigs[`I_ADDC], controlSigs[`SUMS], 
+            wire AVR,ACR,HC; //will be connected to status reg
+            ALU     my_alu(A, B, ~controlSigs[`nDAA], controlSigs[`I_ADDC], controlSigs[`SUMS], 
                         controlSigs[`ANDS], controlSigs[`EORS], controlSigs[`ORS], 
                             controlSigs[`SRS], ALU_out, AVR, ACR, HC);
             
@@ -142,7 +142,7 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
                         controlSigs[`SET_V], controlSigs[`CLR_V],
                         controlSigs[`SET_D], controlSigs[`CLR_D],
                         DB,ALU_out,activeOpcode,DB,
-                        decMode,SR_contents);
+                        SR_contents);
                     
                     
             wire [7:0] dataOutBuf;

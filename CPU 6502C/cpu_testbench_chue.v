@@ -8,7 +8,7 @@
 `include "Control/TDef.v"
 `include "Control/FSMstateDef.v"
 
-`define TICKS 20
+`define TICKS 40
 module testCPU;
 
   /* CPU registers */
@@ -91,7 +91,7 @@ module testCPU;
                 cpu.addHold.adderReg,
                 cpu.ACR,
                 cpu.AVR);
-        //$display("controls: %b",cpu.controlSigs);
+        $display("nDAA: %b, dasb: %x, HC:%x %b %b %b",cpu.controlSigs[`nDAA],cpu.inFromDecAdder,cpu.decAdj.SBin,cpu.decAdj.iDSA,cpu.decAdj.iDAA,cpu.decAdj.iHC);
      //   $display("activeopcode:%x, nextopcode :%x, interrupt:%b ",cpu.fsm.activeOpcode, cpu.fsm.nextOpcode, cpu.pdl.interrupt);
       /*
       //Check that the output is correct
@@ -170,7 +170,7 @@ module testCPU;
     begin
             $display("============================================");
             //$display("~ADH/ABH: %B",cpu.controlSigs[`nADH_ABH]);
-            $display("cycle ab  db sb rw IR pc  a  x  y  s  pd     p    db adh adl alu_a alu_b alu aluHold acr avr");
+            $display("cyc  Eab Edb sb rw IR pc  a  x  y  s  pd     p    db adh adl alu_a alu_b alu aluHold acr avr");
             @(posedge phi1_out);
             #5;
             printStuff(i);
