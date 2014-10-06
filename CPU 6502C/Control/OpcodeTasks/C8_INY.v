@@ -19,7 +19,8 @@ task INY;
 			`Tone: begin
 		newT = `Ttwo;
 				if (phi1) begin
-				//YSB,SS,nDBADD,SBADD,SUMS,#DAA,~DAA,#DSA,~DSA,ADHPCH,PCHADH,PCLADL,ADLPCL
+
+					controlSigs[`I_ADDC] = 1'b1;
 					controlSigs[`Y_SB] = 1'b1;
 					controlSigs[`S_S] = 1'b1;
 					controlSigs[`DB_L_ADD] = 1'b1;
@@ -33,7 +34,8 @@ task INY;
 					controlSigs[`ADL_PCL] = 1'b1;
 				end
 				else if (phi2) begin
-				//SUMS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBDB,PCHADH,PCLADL
+
+					controlSigs[`I_ADDC] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
 					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_SB7] = 1'b1;

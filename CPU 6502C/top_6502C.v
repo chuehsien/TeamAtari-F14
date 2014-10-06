@@ -95,8 +95,8 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
             accum           a(rstAll,inFromDecAdder, controlSigs[`SB_AC], controlSigs[`AC_DB], controlSigs[`AC_SB],
                             DB,SB,updateSR_accum);
                         
-            AddressBusReg   add_hi(rstAll,phi1&controlSigs[`ADH_ABH], ADL, extAB[15:8]);
-            AddressBusReg   add_lo(rstAll,phi1&controlSigs[`ADL_ABL], ADL, extAB[7:0]);
+            AddressBusReg   add_hi(rstAll,phi1&~controlSigs[`nADH_ABH], ADL, extAB[15:8]);
+            AddressBusReg   add_lo(rstAll,phi1&~controlSigs[`nADL_ABL], ADL, extAB[7:0]);
             
             register        x_reg(rstAll,controlSigs[`SB_X],controlSigs[`X_SB],SB,updateSR_x);
             register        y_reg(rstAll,controlSigs[`SB_Y],controlSigs[`Y_SB],SB,updateSR_y);

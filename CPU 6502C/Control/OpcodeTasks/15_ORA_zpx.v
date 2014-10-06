@@ -132,6 +132,7 @@ task ORA_zpx;
         
         else if(phi2) begin
 
+					controlSigs[`nADH_ABH] = 1'b1;
           //SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,#IPC,~IPC
 					controlSigs[`SUMS] = 1'b1;
 					controlSigs[`nDAA] = 1'b1;

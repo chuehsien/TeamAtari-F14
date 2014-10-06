@@ -5,8 +5,8 @@
 `define O_ADH0 6'd3
 `define O_ADH1to7 6'd4
 
-`define ADH_ABH 6'd5
-`define ADL_ABL 6'd6
+`define nADH_ABH 6'd5
+`define nADL_ABL 6'd6
 `define PCL_PCL 6'd7
 `define ADL_PCL 6'd8
 `define nI_PC 6'd9

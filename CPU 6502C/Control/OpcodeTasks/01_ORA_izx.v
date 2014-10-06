@@ -127,14 +127,14 @@ task ORA_izx;
 					controlSigs[`DL_ADL] = 1'b1;
         end
         else if(phi2) begin
-          //SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,#IPC,~IPC,DL/DB
+
+					controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
 					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_ADL] = 1'b1;
 					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
-                    controlSigs[`nADH_ABH] = 1'b1;
         end
       end
       
@@ -142,7 +142,9 @@ task ORA_izx;
 		newT = `Tfive;
         controlSigs[`I_ADDC] = 1'b1;
         if (phi1) begin
-          //SS,ADLADD,0ADD,SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,PCHPCH,#IPC,~IPC,PCLPCL,DL/DB
+
+					controlSigs[`I_ADDC] = 1'b1;
+					controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`S_S] = 1'b1;
 					controlSigs[`ADL_ADD] = 1'b1;
 					controlSigs[`O_ADD] = 1'b1;
@@ -154,25 +156,27 @@ task ORA_izx;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_PCL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
-                    controlSigs[`nADH_ABH] = 1'b1;
         end
           
         else if(phi2) begin
-          //SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,#IPC,~IPC,DL/DB
+
+					controlSigs[`I_ADDC] = 1'b1;
+					controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
 					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_ADL] = 1'b1;
 					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
-                    controlSigs[`nADH_ABH] = 1'b1;
+
         end
       end
       
       (`Tfive) : begin
 		newT = `Tzero;
         if (phi1) begin
-          //SS,DBADD,0ADD,SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,PCHPCH,#IPC,~IPC,PCLPCL,DL/DB
+
+					controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`S_S] = 1'b1;
 					controlSigs[`DB_ADD] = 1'b1;
 					controlSigs[`O_ADD] = 1'b1;
@@ -184,7 +188,7 @@ task ORA_izx;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_PCL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
-                    controlSigs[`nADH_ABH] = 1'b1;
+  
         end
         else if(phi2) begin
           //SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,#IPC,~IPC,DL/ADH

@@ -147,7 +147,9 @@ task LSR_abs;
 					controlSigs[`DL_ADH] = 1'b1;
 			end
 			else if (phi2) begin
-			//SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,#IPC,~IPC,DL/DB
+
+					controlSigs[`nADL_ABL] = 1'b1;
+					controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
 					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_ADL] = 1'b1;
@@ -161,7 +163,9 @@ task LSR_abs;
             newT = `Tzero;
             controlSigs[`nRW] = 1'b1;
 			if (phi1) begin
-			//SS,DBADD,SBADD,SRS,#DAA,~DAA,ADDADL,#DSA,~DSA,PCHPCH,#IPC,~IPC,PCLPCL,DL/DB
+
+					controlSigs[`nADL_ABL] = 1'b1;
+					controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`S_S] = 1'b1;
 					controlSigs[`DB_ADD] = 1'b1;
 					controlSigs[`SB_ADD] = 1'b1;
@@ -175,7 +179,9 @@ task LSR_abs;
 					controlSigs[`DL_DB] = 1'b1;
 			end
 			else if (phi2) begin
-			//SRS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBDB,#IPC,~IPC
+
+					controlSigs[`nADL_ABL] = 1'b1;
+					controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`SRS] = 1'b1;
 					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_SB7] = 1'b1;

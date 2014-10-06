@@ -110,7 +110,8 @@ task STA_izy;
 			`Tthree:begin
 		newT = `Tfour;
 			if (phi1) begin
-				//SS,ADLADD,0ADD,SUMS,#DAA,~DAA,#DSA,~DSA,0ADH0,0ADH17,PCHPCH,#IPC,~IPC,PCLPCL,DL/ADL,DL/DB
+
+					controlSigs[`I_ADDC] = 1'b1;
 					controlSigs[`S_S] = 1'b1;
 					controlSigs[`ADL_ADD] = 1'b1;
 					controlSigs[`O_ADD] = 1'b1;
@@ -126,7 +127,9 @@ task STA_izy;
 					controlSigs[`DL_DB] = 1'b1;
 			end
 			else if (phi2) begin
-				//SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,#IPC,~IPC,DL/DB
+
+					controlSigs[`I_ADDC] = 1'b1;
+					controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
 					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_ADL] = 1'b1;
@@ -138,7 +141,8 @@ task STA_izy;
 			`Tfour:begin
 		newT = `Tfive;
 			if (phi1) begin
-				//YSB,SS,DBADD,SBADD,SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,PCHPCH,#IPC,~IPC,PCLPCL,DL/DB
+
+					controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`Y_SB] = 1'b1;
 					controlSigs[`S_S] = 1'b1;
 					controlSigs[`DB_ADD] = 1'b1;
@@ -153,7 +157,7 @@ task STA_izy;
 					controlSigs[`DL_DB] = 1'b1;
 			end
 			else if (phi2) begin
-				//SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,#IPC,~IPC,DL/ADH,DL/DB
+
 					controlSigs[`SUMS] = 1'b1;
 					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_ADL] = 1'b1;
@@ -166,7 +170,8 @@ task STA_izy;
 			`Tfive:begin
 		newT = `Tzero;
 			if (phi1) begin
-				//SS,DBADD,0ADD,SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,PCHPCH,#IPC,~IPC,PCLPCL,DL/ADH,DL/DB
+
+					controlSigs[`I_ADDC] = 1'b1;
 					controlSigs[`S_S] = 1'b1;
 					controlSigs[`DB_ADD] = 1'b1;
 					controlSigs[`O_ADD] = 1'b1;
@@ -181,7 +186,10 @@ task STA_izy;
 					controlSigs[`DL_DB] = 1'b1;
 			end
 			else if (phi2) begin
-				//SUMS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBADH,#IPC,~IPC
+
+					controlSigs[`I_ADDC] = 1'b1;
+					controlSigs[`nADL_ABL] = 1'b1;
+					controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
 					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_SB7] = 1'b1;
