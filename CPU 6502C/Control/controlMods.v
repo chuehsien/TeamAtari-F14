@@ -98,6 +98,7 @@ task getControlsNorm;
 	output [6:0] dummy_T;
 	output [79:0] dummy_control;
 	
+    
 	reg [6:0] dummy_T;
 	reg [79:0] dummy_control;
 	

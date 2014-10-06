@@ -4,8 +4,7 @@
 task SBC_imm;
 
 	input [6:0] T;
-	input phi1,phi2,decMode;
-    input carry;
+	input phi1,phi2,carry,decMode;
 	output [79:0] controlSigs;
 	output [6:0] newT;
 	reg [6:0] newT;
@@ -25,7 +24,7 @@ task SBC_imm;
 					controlSigs[`SB_ADD] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
 					controlSigs[`nDAA] = 1'b1;
-					if (!decMode) controlSigs[`nDSA] = 1'b1;
+                    if (!decMode) controlSigs[`nDSA] = 1'b1;
                     if (carry) controlSigs[`I_ADDC] = 1'b1;
 					controlSigs[`AC_SB] = 1'b1;
 					controlSigs[`ADH_PCH] = 1'b1;

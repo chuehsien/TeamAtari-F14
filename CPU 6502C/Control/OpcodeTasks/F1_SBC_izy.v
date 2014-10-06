@@ -4,8 +4,7 @@
 task SBC_izy;
 
 	input [6:0] T;
-	input phi1,phi2,decMode;
-	input carry;
+	input phi1,phi2,carry,decMode;
 	output [79:0] controlSigs;
 	output [6:0] newT;
 	reg [6:0] newT;

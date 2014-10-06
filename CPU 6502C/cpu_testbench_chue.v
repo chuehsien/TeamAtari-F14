@@ -91,7 +91,8 @@ module testCPU;
                 cpu.addHold.adderReg,
                 cpu.ACR,
                 cpu.AVR);
-        $display("nDSA: %b, dasb: %x, HC:%x %b %b %b",cpu.controlSigs[`nDSA],cpu.inFromDecAdder,cpu.decAdj.SBin,cpu.decAdj.iDSA,cpu.decAdj.iDAA,cpu.decAdj.iHC);
+        //$display("decMode: %b, controlnDSA: %b, dasb: %x,SBin: %x DSA:%b DAA:%b HC: %b",cpu.fsm.statusReg[`status_D],cpu.controlSigs[`nDSA],cpu.inFromDecAdder,cpu.decAdj.SBin,cpu.decAdj.iDSA,cpu.decAdj.iDAA,cpu.decAdj.iHC);
+        $display("SR_d:%x, nextP1DSA:%b, nextP2DSA:%b",cpu.fsm.statusReg[`status_D],cpu.fsm.next_P1controlSigs[`nDSA],cpu.fsm.next_P2controlSigs[`nDSA]);
      //   $display("activeopcode:%x, nextopcode :%x, interrupt:%b ",cpu.fsm.activeOpcode, cpu.fsm.nextOpcode, cpu.pdl.interrupt);
       /*
       //Check that the output is correct
