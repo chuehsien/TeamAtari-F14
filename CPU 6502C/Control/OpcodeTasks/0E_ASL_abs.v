@@ -156,7 +156,9 @@ task ASL_abs;
         end
         
         else if(phi2) begin
-          //SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,SBDB,#IPC,~IPC,DL/DB
+
+					controlSigs[`nADL_ABL] = 1'b1;
+					controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
 					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_ADL] = 1'b1;
@@ -172,7 +174,9 @@ task ASL_abs;
 		newT = `Tzero;
         controlSigs[`nRW] = 1'b1;
         if (phi1) begin
-          //SS,DBADD,SBADD,SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,SBDB,PCHPCH,#IPC,~IPC,PCLPCL,DL/DB
+
+					controlSigs[`nADL_ABL] = 1'b1;
+					controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`S_S] = 1'b1;
 					controlSigs[`DB_ADD] = 1'b1;
 					controlSigs[`SB_ADD] = 1'b1;
@@ -188,7 +192,9 @@ task ASL_abs;
         end
         
         else if(phi2) begin
-          //SUMS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBDB,#IPC,~IPC
+
+					controlSigs[`nADL_ABL] = 1'b1;
+					controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
 					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_SB7] = 1'b1;
@@ -196,6 +202,7 @@ task ASL_abs;
 					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
+                    controlSigs[`FLAG_ALU] = 1'b1;
         end
         
       end

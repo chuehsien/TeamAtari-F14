@@ -71,6 +71,7 @@ task AND_zpx;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
+                    controlSigs[`FLAG_ALU] = 1'b1;
         end
       end
       
@@ -127,7 +128,8 @@ task AND_zpx;
         end
         
         else if(phi2) begin
-          //SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,#IPC,~IPC
+
+					controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
 					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_ADL] = 1'b1;

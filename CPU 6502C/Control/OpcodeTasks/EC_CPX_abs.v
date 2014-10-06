@@ -45,7 +45,8 @@ task CPX_abs;
 			 `Tone: begin
 		newT = `Ttwo;
 				if (phi1) begin
-				//XSB,SS,nDBADD,SBADD,SUMS,#DAA,~DAA,#DSA,~DSA,ADHPCH,PCHADH,PCLADL,ADLPCL,DL/DB
+
+					controlSigs[`I_ADDC] = 1'b1;
 					controlSigs[`X_SB] = 1'b1;
 					controlSigs[`S_S] = 1'b1;
 					controlSigs[`DB_L_ADD] = 1'b1;
@@ -60,7 +61,8 @@ task CPX_abs;
 					controlSigs[`DL_DB] = 1'b1;
 				end
 				else if (phi2) begin
-				//SUMS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBDB,PCHADH,PCLADL
+
+					controlSigs[`I_ADDC] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
 					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_SB7] = 1'b1;
@@ -69,6 +71,7 @@ task CPX_abs;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
+                    controlSigs[`FLAG_ALU] = 1'b1;
 				end
 			end 
 			`Ttwo: begin

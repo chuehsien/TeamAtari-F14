@@ -70,6 +70,7 @@ task LSR_zpx;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
+                    controlSigs[`FLAG_ALU] = 1'b1;
 				end
 			end 
 			
@@ -121,7 +122,8 @@ task LSR_zpx;
 					controlSigs[`DL_ADL] = 1'b1;
 				end
 				else if (phi2) begin
-				//SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,#IPC,~IPC
+
+					controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
 					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_ADL] = 1'b1;
@@ -134,7 +136,8 @@ task LSR_zpx;
 			`Tfour:begin
 		newT = `Tfive;
 			if (phi1) begin
-			//SS,DBADD,SBADD,SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,PCHPCH,#IPC,~IPC,PCLPCL
+
+					controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`S_S] = 1'b1;
 					controlSigs[`DB_ADD] = 1'b1;
 					controlSigs[`SB_ADD] = 1'b1;
@@ -147,7 +150,9 @@ task LSR_zpx;
 					controlSigs[`PCL_PCL] = 1'b1;
 			end
 			else if (phi2) begin
-			//SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,#IPC,~IPC,DL/DB
+
+					controlSigs[`nADL_ABL] = 1'b1;
+					controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
 					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_ADL] = 1'b1;
@@ -161,7 +166,9 @@ task LSR_zpx;
             controlSigs[`nRW] = 1'b1;
             newT = `Tzero;
 			if (phi1) begin
-			//SS,DBADD,SBADD,SRS,#DAA,~DAA,ADDADL,#DSA,~DSA,PCHPCH,#IPC,~IPC,PCLPCL,DL/DB
+
+					controlSigs[`nADL_ABL] = 1'b1;
+					controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`S_S] = 1'b1;
 					controlSigs[`DB_ADD] = 1'b1;
 					controlSigs[`SB_ADD] = 1'b1;
@@ -175,7 +182,9 @@ task LSR_zpx;
 					controlSigs[`DL_DB] = 1'b1;
 			end
 			else if (phi2) begin
-			//SRS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBDB,#IPC,~IPC
+
+					controlSigs[`nADL_ABL] = 1'b1;
+					controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`SRS] = 1'b1;
 					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_SB7] = 1'b1;
@@ -183,6 +192,7 @@ task LSR_zpx;
 					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
+                    controlSigs[`FLAG_ALU] = 1'b1;
 			end
 			end
 			

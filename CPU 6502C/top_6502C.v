@@ -110,8 +110,10 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
             accum           a(rstAll,phi2,inFromDecAdder, controlSigs[`SB_AC], controlSigs[`AC_DB], controlSigs[`AC_SB],
                             DB,SB,updateSR_accum);
                         
+
             //addressbusreg loads by default every phi1. only disable if controlSig is asserted.
             AddressBusReg   add_hi(rstAll,phi1&~controlSigs[`nADH_ABH], ADH, extAB[15:8]);
+
             AddressBusReg   add_lo(rstAll,phi1&~controlSigs[`nADL_ABL], ADL, extAB[7:0]);
             
             register        x_reg(rstAll,phi2,controlSigs[`SB_X],controlSigs[`X_SB],SB,updateSR_x);

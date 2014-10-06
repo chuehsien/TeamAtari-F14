@@ -42,6 +42,7 @@ task LDA_zp;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
+                    controlSigs[`FLAG_DB] = 1'b1;
 				end
 			end 
 		
