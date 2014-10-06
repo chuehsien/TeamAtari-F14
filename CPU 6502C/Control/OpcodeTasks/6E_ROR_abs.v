@@ -5,6 +5,7 @@ task ROR_abs;
 
 	input [6:0] T;
 	input phi1,phi2;
+    input carry;
 	output [79:0] controlSigs;
 	output [6:0] newT;
 	reg [6:0] newT;
@@ -59,6 +60,7 @@ task ROR_abs;
 					controlSigs[`PCL_ADL] = 1'b1;
 					controlSigs[`ADL_PCL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
+                    if (carry) controlSigs[`I_ADDC] = 1'b1;
 				end
 				else if (phi2) begin
 				//SUMS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBDB,PCHADH,PCLADL
@@ -70,6 +72,7 @@ task ROR_abs;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
+                    if (carry) controlSigs[`I_ADDC] = 1'b1;
 				end
 			end 
 			
