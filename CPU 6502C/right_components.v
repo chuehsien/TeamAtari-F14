@@ -53,7 +53,7 @@ module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC)
         // Overflow if (A[7]==B[7]) && (ALU_out[7]!=A[7]) 
         if (SUMS) begin
           {HC, ALU_out[3:0]} = A[3:0] + B[3:0] + I_ADDC;
-          {ACR, ALU_out[7:4]} = A[7:4] + B[7:4] + HC + ((DAA) ? HC:1'b0);
+          {ACR, ALU_out[7:4]} = A[7:4] + B[7:4] + HC;
           AVR = (A[7]==B[7]) & (A[7]!=ALU_out[7]); 
         end
         else if (ANDS)
@@ -385,7 +385,7 @@ module decimalAdjust(rstAll,SBin, DSA, DAA, ACR, HC, phi2,
         data = SBin;
         if (iDAA) begin
             if (SBin[3:0] > 4'd9 || iHC) begin
-                data = SBin + 8'h06;
+                data = data + 8'h06;
             end
                 
             if (iACR || (SBin > 8'h99)) begin
@@ -397,11 +397,11 @@ module decimalAdjust(rstAll,SBin, DSA, DAA, ACR, HC, phi2,
         
         else if (iDSA)//decimal mode
         begin
-            if (SBin[3:0] > 4'd9) begin
-                data = SBin - 8'h06;
+            if (~iHC) begin //always minus, except when HC = 1.
+                data = data - 8'h06;
             end
-            if (SBin[7:4] > 4'd9) begin
-                data = data - 8'h60;
+            if (~iACR) begin
+            data = data - 8'h60;
             end
         end 
         //else begin

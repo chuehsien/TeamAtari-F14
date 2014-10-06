@@ -7,24 +7,27 @@
 00 //vector_hi
 
 @0002
-f8
+38
+F8
 a9
-75
-69
 44
+e9
+22
 ea
-A2
-44
-A9
-55
-8A
+ea
+ea
+ea
+ea
+ea
 EA
 EA
 EA
-
-@0010
-30
-00
+ea
+ea
+ea
+ea
+ea
+ea
 
 @0030
 88
