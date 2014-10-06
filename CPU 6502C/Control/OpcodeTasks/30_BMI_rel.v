@@ -33,7 +33,7 @@ task BMI_rel;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`ADL_PCL] = 1'b1;
                     controlSigs[`I_ADDC] = 1'b1;
-                    controlSigs[`ADH_ABH] = 1'b1;
+                    controlSigs[`nADH_ABH] = 1'b1;
 				end
 				else if (phi2) begin
 				//SUMS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBADH,#IPC,~IPC,PCLADL,DL/DB
@@ -109,7 +109,7 @@ task BMI_rel;
 					controlSigs[`SB_ADH] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
-                    controlSigs[`ADH_ABH] = 1'b1;
+                    controlSigs[`nADH_ABH] = 1'b1;
 					
 				end	
 			end
@@ -130,7 +130,7 @@ task BMI_rel;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`ADL_PCL] = 1'b1;
                     controlSigs[`I_ADDC] = 1'b1;
-                    controlSigs[`ADH_ABH] = 1'b1;
+                    controlSigs[`nADH_ABH] = 1'b1;
 				end
 				else if (phi2) begin
 				//SUMS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBDB,PCHADH,PCLADL

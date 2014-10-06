@@ -42,8 +42,8 @@ task AND_aby;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
-					controlSigs[`DL_DB] = 1'b1
-                    controlSigs[`I_aDDC] = 1'b1;
+					controlSigs[`DL_DB] = 1'b1;
+                    controlSigs[`I_ADDC] = 1'b1;
 				end
 			end 
 			
@@ -63,7 +63,7 @@ task AND_aby;
 					controlSigs[`PCH_PCH] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_PCL] = 1'b1;
-                    controlSigs[`ADL_ABL] = 1'b1;
+                    controlSigs[`nADL_ABL] = 1'b1;
 			end
 			else if (phi2) begin
 				//SUMS,#DAA,~DAA,#DSA,~DSA,PCHADH,#IPC,~IPC,PCLADL,DL/DB
@@ -194,7 +194,7 @@ task AND_aby;
 					controlSigs[`SB_ADH] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
                     controlSigs[`I_ADDC] = 1'b1;
-                    controlSigs[`ADL_ABL] = 1'b1;
+                    controlSigs[`nADL_ABL] = 1'b1;
 			end	
 			end		
 			

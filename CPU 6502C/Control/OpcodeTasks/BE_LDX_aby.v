@@ -65,7 +65,7 @@ task LDX_aby;
 					controlSigs[`PCH_PCH] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_PCL] = 1'b1;
-                    controlSigs[`ADL_ABL] = 1'b1;
+                    controlSigs[`nADL_ABL] = 1'b1;
 			end
 			else if (phi2) begin
 				//SUMS,#DAA,~DAA,#DSA,~DSA,SBDB,PCHADH,#IPC,~IPC,PCLADL,DL/DB
@@ -198,7 +198,7 @@ task LDX_aby;
 					controlSigs[`SB_ADH] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
                     controlSigs[`I_ADDC] = 1'b1;
-                    controlSigs[`ADL_ABL] = 1'b1;
+                    controlSigs[`nADL_ABL] = 1'b1;
 			end	
 					
 			end

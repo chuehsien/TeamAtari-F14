@@ -33,7 +33,7 @@ task ORA_izy;
 					controlSigs[`PCH_PCH] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_PCL] = 1'b1;
-                    controlSigs[`ADL_ABL] = 1'b1;
+                    controlSigs[`nADL_ABL] = 1'b1;
 				end
 				else if (phi2) begin
 				//SUMS,#DAA,~DAA,#DSA,~DSA,PCHADH,#IPC,~IPC,PCLADL,DL/DB
@@ -168,7 +168,7 @@ task ORA_izy;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
                     controlSigs[`I_ADDC] = 1'b1;
-                    controlSigs[`ADH_ABH] = 1'b1;
+                    controlSigs[`nADH_ABH] = 1'b1;
 			end
             end
 			`Tfour:begin
@@ -188,7 +188,7 @@ task ORA_izy;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_PCL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
-                    controlSigs[`ADH_ABH] = 1'b1;
+                    controlSigs[`nADH_ABH] = 1'b1;
 			end
 			else if (phi2) begin
 				//SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,#IPC,~IPC,DL/ADH,DL/DB
@@ -229,7 +229,7 @@ task ORA_izy;
 					controlSigs[`SB_ADH] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
                     controlSigs[`I_ADDC] = 1'b1;
-                    controlSigs[`ADL_ABL] = 1'b1;
+                    controlSigs[`nADL_ABL] = 1'b1;
 			end
             end
 		endcase
