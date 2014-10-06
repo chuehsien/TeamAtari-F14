@@ -3,6 +3,7 @@
 
 `include "Control/controlDef.v"
 `include "Control/opcodeDef.v"
+
 `include "left_components.v"
 `include "right_components.v"
 `include "Control/plaFSM.v"
@@ -26,15 +27,16 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
             //internal variables
             
             //bus lines
-            wire [7:0] DB, ADL, ADH, SB;
+            trireg [7:0]  DB, ADL, ADH, SB;
             
             //control sigs
-            wire [62:0] controlSigs;
+            wire [79:0] controlSigs;
             wire rstAll;
             
             //interrupt sigs
             wire nmiHandled, irqHandled, resHandled, nmiPending, irqPending, resPending;
             
+            assign RW = ~controlSigs[`nRW];
 
             //clock
             wire phi1,phi2;
@@ -54,29 +56,29 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
             
             
             wire [7:0] inFromPC_hi, outToIncre_hi, outToPCH;
-            PcSelectReg hi_1(controlSigs[`PCH_PCH], controlSigs[`ADH_PCH], inFromPC_hi, ADL, 
+            PcSelectReg hi_1(controlSigs[`PCH_PCH], controlSigs[`ADH_PCH], inFromPC_hi, ADH, 
                         outToIncre_hi);           
             increment   hi_2(PCLC,outToIncre_hi, ,outToPCH);
-            PC          hi_3(rstAll,phi2, controlSigs[`PCH_DB], controlSigs[`PCH_ADH],outToPCH,DB, ADL,inFromPC_hi);
+            PC          hi_3(rstAll,phi2, controlSigs[`PCH_DB], controlSigs[`PCH_ADH],outToPCH,DB, ADH,inFromPC_hi);
                
-            prechargeMos        pcMos1(phi2,ADH); 
-            prechargeMos        pcMos2(phi2,ADL);
-            prechargeMos        pcMos3(phi2,DB);
-            prechargeMos        pcMos4(phi2,SB);
-            opendrainMosADL     od_lo(controlSigs[`O_ADL0],controlSigs[`O_ADL1],controlSigs[`O_ADL2],ADL);
-            opendrainMosADH     od_hi(controlSigs[`O_ADH0],controlSigs[`O_ADH1to7],ADH);
+            prechargeMos        pcMos1(rstAll,phi2,ADH); 
+            prechargeMos        pcMos2(rstAll,phi2,ADL);
+            prechargeMos        pcMos3(rstAll,phi2,DB);
+            prechargeMos        pcMos4(rstAll,phi2,SB);
+            opendrainMosADL     od_lo(rstAll,controlSigs[`O_ADL0],controlSigs[`O_ADL1],controlSigs[`O_ADL2],ADL);
+            opendrainMosADH     od_hi(rstAll,controlSigs[`O_ADH0],controlSigs[`O_ADH1to7],ADH);
             tranif1             pass1[7:0](SB, ADH, controlSigs[`SB_ADH]);
             tranif1             pass2[7:0](SB, DB, controlSigs[`SB_DB]);
             
             wire [7:0] A, B, ALU_out;
             wire decMode,AVR,ACR,HC; //will be connected to status reg
-            ALU     alu(A, B, decMode, controlSigs[`I_ADDC], controlSigs[`SUMS], 
+            ALU     my_alu(A, B, decMode, controlSigs[`I_ADDC], controlSigs[`SUMS], 
                         controlSigs[`ANDS], controlSigs[`EORS], controlSigs[`ORS], 
                             controlSigs[`SRS], ALU_out, AVR, ACR, HC);
             
             
             //registers
-            SPreg   sp(rstAll,controlSigs[`S_S], controlSigs[`SB_S], controlSigs[`S_ADL], 
+            SPreg   sp(rstAll,phi2,controlSigs[`S_S], controlSigs[`SB_S], controlSigs[`S_ADL], 
                         controlSigs[`S_SB], SB, ADL, SB);
                         
             wire [7:0] nDB;
@@ -91,15 +93,29 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
             
             wire [7:0] inFromDecAdder;
             wire updateSR_accum, updateSR_x, updateSR_y;
+            /*
+            wire DAAmode, DSAmode;
+            assign DAAmode = SR_contents[`status_D] & 
+                                (activeOpcode == `ADC_imm ||
+                                activeOpcode == `ADC_zp ||
+                                activeOpcode == `ADC_zpx ||
+                                activeOpcode == `ADC_ ||
+                                activeOpcode == `ADC_imm ||
+                                activeOpcode == `ADC_imm ||
+                                activeOpcode == `ADC_imm ||
+                                
+            activeOpcode*/
+            
             decimalAdjust   decAdj(rstAll,SB, ~controlSigs[`nDSA], ~controlSigs[`nDAA], ACR, HC, phi2,inFromDecAdder);
-            accum           a(rstAll,inFromDecAdder, controlSigs[`SB_AC], controlSigs[`AC_DB], controlSigs[`AC_SB],
+            accum           a(rstAll,phi2,inFromDecAdder, controlSigs[`SB_AC], controlSigs[`AC_DB], controlSigs[`AC_SB],
                             DB,SB,updateSR_accum);
                         
-            AddressBusReg   add_hi(rstAll,phi1&controlSigs[`ADH_ABH], ADL, extAB[15:8]);
-            AddressBusReg   add_lo(rstAll,phi1&controlSigs[`ADL_ABL], ADL, extAB[7:0]);
+            //addressbusreg loads by default every phi1. only disable if controlSig is asserted.
+            AddressBusReg   add_hi(rstAll,phi1&~controlSigs[`nADH_ABH], ADH, extAB[15:8]);
+            AddressBusReg   add_lo(rstAll,phi1&~controlSigs[`nADL_ABL], ADL, extAB[7:0]);
             
-            register        x_reg(rstAll,controlSigs[`SB_X],controlSigs[`X_SB],SB,updateSR_x);
-            register        y_reg(rstAll,controlSigs[`SB_Y],controlSigs[`Y_SB],SB,updateSR_y);
+            register        x_reg(rstAll,phi2,controlSigs[`SB_X],controlSigs[`X_SB],SB,updateSR_x);
+            register        y_reg(rstAll,phi2,controlSigs[`SB_Y],controlSigs[`Y_SB],SB,updateSR_y);
             
             //unsure about the inputs...
             wire DBZ,DB_N;
@@ -116,14 +132,15 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
             assign BRKins = (real_opcode == `BRK || real_opcode == `PHP);
             //need to assert B in SR when performing BRK/PHP.
             wire [7:0] SR_contents;
-            statusReg SR(rstAll,phi2,updateSR, controlSigs[`P_DB], DBZ, ACR, AVR, ~controlSigs[`nDAA], BRKins,
+            wire [7:0] activeOpcode;
+            statusReg SR(rstAll,phi1,phi2,controlSigs[`DB_P],controlSigs[`FLAG_DBZ],controlSigs[`FLAG_ALU],controlSigs[`FLAG_DB],
+                        controlSigs[`P_DB], DBZ, DB_N, ACR, AVR, ~controlSigs[`nDAA], BRKins,
                         controlSigs[`SET_C], controlSigs[`CLR_C],
                         controlSigs[`SET_I], controlSigs[`CLR_I],
                         controlSigs[`SET_V], controlSigs[`CLR_V],
                         controlSigs[`SET_D], controlSigs[`CLR_D],
-                        DB_N, 
-                        DB,
-                    DB,decMode,SR_contents);
+                        DB,ALU_out,activeOpcode,DB,
+                        decMode,SR_contents);
                     
                     
             wire [7:0] dataOutBuf;
@@ -136,11 +153,14 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
             
             assign interrupt = resPending | nmiPending | irqPending;
             predecodeRegister   pdr(phi2,extDB,predecodeOut);
-            predecodeLogic      pdl(predecodeOut,interrupt,real_outToIR,effective_outToIR);
+            predecodeLogic      pdl(rstAll,predecodeOut,interrupt,real_opcode,effective_opcode,newOpcode);
             
-            wire loadIR, T1next;
-            assign loadIR = T1next & phi1 & RDY;
-            instructionRegister ir_reg(loadIR, real_outToIR,effective_outToIR,real_opcode, effective_opcode);
+            wire loadOpcode,T1now;
+            
+            and #2 andgate(loadOpcode,phi2,T1now);
+            //wire loadIR, T1next;
+            //assign loadIR = T1next & RDY;
+            //instructionRegister ir_reg(phi1, loadIR, real_outToIR,effective_outToIR,real_opcode, effective_opcode);
 
             interruptResetControl iHandler(NMI_L, IRQ_L, RES_L, nmiHandled, irqHandled, resHandled,
                             nmiPending,irqPending,resPending);
@@ -152,10 +172,15 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
             assign masked_irq =  irqPending & (~SR_contents[`status_I]);
             
             // finally, control logic
-            plaFSM      fsm(phi1,phi2,nmiPending,masked_irq,resPending,RDYout,effective_opcode,SR_contents,
-                                controlSigs,SYNC,T1next,nmiHandled, irqHandled, resHandled,rstAll);
+            plaFSM      fsm(phi1,phi2,nmiPending,masked_irq,resPending,RDYout,effective_opcode,SR_contents,loadOpcode,
+                                controlSigs,SYNC,T1now,nmiHandled, irqHandled, resHandled,rstAll,activeOpcode);
                                 
-                        
+                      
+            //busHold   holdDB(rstAll,phi1,phi2,DB,DB);
+            //busHold  holdADH(rstAll,phi1,phi2,ADH,ADH);
+            //busHold  holdADL(rstAll,phi1,phi2,ADL,ADL);
+            //busHold   holdSB(rstAll,phi1,phi2,SB,SB);
+            
 endmodule
 
 

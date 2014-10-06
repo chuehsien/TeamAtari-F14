@@ -1,10 +1,7 @@
 
-`include "Control/opcodeDef.v"
+
 `include "Control/opcodeTasks.v"
 
-`include "Control/controlDef.v"
-`include "Control/TDef.v"
-`include "Control/FSMstateDef.v"
 
 `define status_C 3'd0
 `define status_Z 3'd1
@@ -78,13 +75,13 @@ task getControlsBrk;
     input [2:0] active_interrupt;
 	input [6:0] currT;
 	output [6:0] dummy_T;
-	output [62:0] dummy_control;
+	output [79:0] dummy_control;
 	
 	reg [6:0] dummy_T;
-	reg [62:0] dummy_control;
+	reg [79:0] dummy_control;
 	
 	begin
-		dummy_control = 63'd0;
+		dummy_control = 80'd0;
 		dummy_T = 7'dx;
         BRK(currT,phi1,phi2,active_interrupt,dummy_control,dummy_T);
         
@@ -99,13 +96,13 @@ task getControlsNorm;
 	input [7:0] opcode;
 	input [6:0] currT;
 	output [6:0] dummy_T;
-	output [62:0] dummy_control;
+	output [79:0] dummy_control;
 	
 	reg [6:0] dummy_T;
-	reg [62:0] dummy_control;
+	reg [79:0] dummy_control;
 	
 	begin
-		dummy_control = 63'd0;
+		dummy_control = 80'd0;
 		dummy_T = 7'dx;
 		case (opcode)
 		`ORA_izx: ORA_izx(currT,phi1,phi2,dummy_control,dummy_T);
@@ -239,13 +236,13 @@ task getControlsRMW;
 	input [7:0] statusReg,opcode;
 	input [6:0] currT;
 	output [6:0] dummy_T;
-	output [62:0] dummy_control;
+	output [79:0] dummy_control;
 	
 	reg [6:0] dummy_T;
-	reg [62:0] dummy_control;
+	reg [79:0] dummy_control;
 	
 	begin
-		dummy_control = 63'd0;
+		dummy_control = 80'd0;
 		dummy_T = 7'dx;
 		case (opcode)
 		
@@ -285,14 +282,14 @@ task getControlsBranch;
 	input [7:0] statusReg,opcode;
 	input [6:0] currT;
 	output [6:0] dummy_T;
-	output [62:0] dummy_control;
+	output [79:0] dummy_control;
 	
 	reg [6:0] dummy_T;
-	reg [62:0] dummy_control;
+	reg [79:0] dummy_control;
 	
 	
 	begin
-		dummy_control = 63'd0;
+		dummy_control = 80'd0;
 		dummy_T = 7'dx;
 		case (opcode)
 			
@@ -312,14 +309,12 @@ endtask
 
 task findLeftOverSig;
     input [7:0] opcode;
-    input [6:0] currT;
     output [7:0] leftOverSigNum;
     
     begin
-    leftOverSigNum = 8'd0;
+    leftOverSigNum = 8'hxx;
     
-        if ((currT == `Tone) && 
-            (opcode == `ADC_abs || opcode == `ADC_abx || opcode == `ADC_aby || opcode == `ADC_imm || 
+        if  (opcode == `ADC_abs || opcode == `ADC_abx || opcode == `ADC_aby || opcode == `ADC_imm || 
              opcode == `ADC_izx || opcode == `ADC_izy || opcode == `ADC_zp  || opcode == `ADC_zpx ||
              opcode == `SBC_abs || opcode == `SBC_abx || opcode == `SBC_aby || opcode == `SBC_imm || 
              opcode == `SBC_izx || opcode == `SBC_izy || opcode == `SBC_zp  || opcode == `SBC_zpx ||
@@ -327,14 +322,14 @@ task findLeftOverSig;
              opcode == `AND_izx || opcode == `AND_izy || opcode == `AND_zp  || opcode == `AND_zpx ||
              opcode == `ORA_imm || opcode == `ORA_abs || opcode == `ORA_abx || opcode == `ORA_aby ||
              opcode == `ORA_izx || opcode == `ORA_izy || opcode == `ORA_zp  || opcode == `ORA_zpx ||
-             opcode == `ASL     || opcode == `LSR     || opcode == `ROL     || opcode == `ROR     ) )begin
+             opcode == `ASL     || opcode == `LSR     || opcode == `ROL     || opcode == `ROR     ) begin
                 leftOverSigNum = `SB_AC;
              end
              
              
         else if (opcode == `INX || opcode == `DEX) leftOverSigNum = `SB_X;
         else if (opcode == `INY || opcode == `DEY) leftOverSigNum = `SB_Y;
-        else leftOverSigNum = 8'hxx;
+        else leftOverSigNum = `NO_SIG;
              
     end
 endtask

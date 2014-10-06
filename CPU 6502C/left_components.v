@@ -23,41 +23,61 @@ module predecodeRegister(phi2,extDataBus,
     input phi2;
     input [7:0] extDataBus;
     output [7:0] outToIR;
+
+    wire phi2;
+    wire [7:0] extDataBus;
     reg [7:0] outToIR;
+
     
     always @ (posedge phi2) begin
-        outToIR <= extDataBus;
+        outToIR <= extDataBus;      
     end
-                        
+
 endmodule
 
-module predecodeLogic(irIn, interrupt,
-                        realOpcode, irOut);
-                        
+module predecodeLogic(rstAll,irIn, interrupt,
+                        realOpcode, irOut,loadOpcode);
+    
+    input rstAll;
     input [7:0] irIn;
     input interrupt;
     output [7:0] realOpcode,irOut;
+    output loadOpcode;
     
+    wire rstAll;
+    wire [7:0] irIn;
+    wire interrupt;
     wire [7:0] realOpcode, irOut;
+    reg loadOpcode;
     
-    assign irOut = (~interrupt) ? irIn : 8'd0;
+    assign irOut = (~interrupt) ? irIn : 8'd00;
     assign realOpcode = irIn;
     
+    always @ (irOut) begin
+        loadOpcode = ~loadOpcode;
+    end
+    
+    always @ (posedge rstAll) begin
+        loadOpcode = 1'b0;
+    end
 endmodule
                         
-module instructionRegister(en, realIR, effectiveIR, 
+module instructionRegister(phi1, en, realIR, effectiveIR, 
                         real_out, effective_out);
                 
-    input en;
+    input phi1,en;
     input [7:0] realIR, effectiveIR; 
     output [7:0] real_out, effective_out;
     
+    wire phi1,en;
     wire [7:0] realIR, effectiveIR; 
     reg [7:0]  real_out, effective_out;
     
-    always @ (posedge en) begin
-        effective_out<= effectiveIR;
-        real_out <= effective_out;
+    always @ (posedge phi1) begin
+        if (en) begin
+            effective_out<= effectiveIR;
+            real_out <= effective_out;
+        end
     end
     
     
@@ -241,7 +261,7 @@ module interruptResetControl(NMI_L, IRQ_L, RES_L, nmiHandled, irqHandled, resHan
     
     
     // process and send to FSM
-    always @(*) begin
+    always @(nmiPending or irqPending or resPending) begin
         
         intg = nmiPending & irqPending; //if nmi and irq both asserted, nmi takes priority.
         nmi = intg | nmiPending;

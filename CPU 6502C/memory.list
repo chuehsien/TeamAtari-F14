@@ -1,12 +1,58 @@
 //Comments are allowed 
 // Byte addressable memory list
-A9   // This is first address i.e 16'h0000, LDA imm
-AA   // This is second address i.e 16'h0001
-A0   // LDY imm
-BB
-C8   // INY
-4C   // JMP
-02 
-@5555        // Jump to new address 16'h5555
-//DD    This is address 16'h5555
-//EE    This is address 16'h5556
+
+
+@fffc
+02 //vector_lo
+00 //vector_hi
+
+@0002
+a9
+00
+01
+10
+a8
+05
+55
+06
+55
+08
+09
+55
+0A
+0D
+55
+44
+ea
+
+@55
+12
+34
+45
+45
+
+
+@0020
+80
+20
+ea
+ea
+
+@01f0
+11
+22
+33
+44
+55
+66
+77
+88
+99
+aa
+bb
+cc
+dd
+ee
+ff
+
+

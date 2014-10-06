@@ -26,16 +26,16 @@ module testCPU;
 
     //Setting up the clock to run
     always begin
-        #100 phi0_in = ~phi0_in;
+        #10 phi0_in = ~phi0_in;
     end
   
     top_6502C cpu(.RDY(RDY), .IRQ_L(IRQ_L), .NMI_L(NMI_L), .RES_L(RES_L), .SO(SO), .phi0_in(phi0_in), 
                             .extDB(extDB), .phi1_out(phi1_out), .SYNC(SYNC), .extAB(extAB), .phi2_out(phi2_out), .RW(RW));
   
     wire we_L, re_L;
-    assign we_L = ~RW;
-    assign re_L = RW;
-    memory256x256 mem(.clock(phi1_out), .enable(1'b1), .we_L(we_L), .re_L(re_L), .address(extAB), .data(extDB));
+    assign we_L = RW;
+    assign re_L = ~RW; //RW=1 => read mode.
+    memory256x256 mem(.clock(phi2_out), .enable(1'b1), .we_L(we_L), .re_L(re_L), .address(extAB), .data(extDB));
 
   
   
@@ -68,31 +68,31 @@ module testCPU;
         //$display("phi1: %d, active_int: %b,currT: %b, dummy_T: %b, open_T: %b, open_controls:%b, P1:%b, P2: %b ",
         //        phi1_out,cpu.fsm.active_interrupt, cpu.fsm.curr_T,cpu.fsm.dummy_T,cpu.fsm.open_T,
          //       cpu.fsm.open_control,cpu.fsm.next_P1controlSigs,cpu.fsm.next_P2controlSigs);
-        $display("@%03x %04x %02x %02x %x %02x %04x %02x %02x %02x %02x %08b %02x %02x  %02x  %02x    %02x    %02x     %02x    %b   %b",
+        $display("@%03x %04x %02x %02x %x %02x %04x %02x %02x %02x %02x %02x %08b %02x %02x  %02x  %02x    %02x    %02x     %02x    %b   %b",
                 i,
-                {cpu.ADH,cpu.ADL},     
-                cpu.DB,
+                cpu.extAB,
+                cpu.extDB,
                 cpu.SB,
                 RW,
-                cpu.effective_opcode,
+                cpu.fsm.opcode,
                 {cpu.hi_3.currPC,cpu.lo_3.currPC},
                 cpu.a.currAccum,
                 cpu.x_reg.currVal,
                 cpu.y_reg.currVal,
                 cpu.sp.latchOut,
-                cpu.SR_contents,
                 cpu.predecodeOut,
-                cpu.ADL,
+                cpu.SR_contents,
+                cpu.DB,
                 cpu.ADH,
+                cpu.ADL,
                 cpu.A,
                 cpu.B,
                 cpu.ALU_out,
                 cpu.addHold.adderReg,
                 cpu.ACR,
                 cpu.AVR);
-                
-      $display("E_Add: %04x, E_Data: %02x (%s,%s)",cpu.extAB,cpu.extDB,FSM_string, T_string);
-        $display("");
+        //$display("controls: %b",cpu.controlSigs);
+     //   $display("activeopcode:%x, nextopcode :%x, interrupt:%b ",cpu.fsm.activeOpcode, cpu.fsm.nextOpcode, cpu.pdl.interrupt);
       /*
       //Check that the output is correct
       //ALTERNATIVE: check that certain outputs correspond to expected values
@@ -149,28 +149,39 @@ module testCPU;
     initial begin
   
     phi0_in = 1'b0;
+  
     RDY = 1'b1;
+    IRQ_L = 1'b1;
+    NMI_L = 1'b1;
     RES_L = 1'b1;
-    #20
+    SO = 1'b1;
+    
+    #2
     RES_L = 1'b0;
-    #20
+    #2
     @(posedge phi1_out);
-    #50 RES_L = 1'b1;
+    #2 RES_L = 1'b1;
+    printStuff(0);
+    @(negedge phi1_out);
+    #2
     printStuff(0);
     
     for (i=1; i<`TICKS; i=i+1)
     begin
             $display("============================================");
-            $display("cycle ab  db sb rw IR pc  a  x  y  s      p    pd adl adh alu_a alu_b alu aluHold acr avr");
+            //$display("~ADH/ABH: %B",cpu.controlSigs[`nADH_ABH]);
+            $display("cycle ab  db sb rw IR pc  a  x  y  s  pd     p    db adh adl alu_a alu_b alu aluHold acr avr");
             @(posedge phi1_out);
-            #20
+            #5;
             printStuff(i);
 
             
             @(negedge phi1_out);
-            #20
+            #5;
             printStuff(i);   
             
+            $display("(%s,%s,%x)",FSM_string, T_string,cpu.fsm.activeOpcode);
+            $display("");
             
     end
     

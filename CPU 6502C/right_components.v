@@ -34,7 +34,7 @@
 module TRIBUF (A, EN, Y);
 	input A, EN;
 	output Y;
-	bufif1 (weak1, highz0) g(Y,A,EN);
+	bufif1 g(Y,A,EN);
 endmodule
 
 
@@ -69,7 +69,7 @@ module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC)
           ALU_out = A | B;
         else if (SRS) begin// which to shift? A or B? can we just default to A.
           //ALU_out = {1'b0, ALU_out[7:1]};
-          ALU_out = {1'b0, A[7:1]};
+          ALU_out = {I_ADDC, A[7:1]};
           // need to shift out the carry i thk.
           ACR = A[0];
         end
@@ -98,7 +98,7 @@ module AdderHoldReg(rstAll,phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes, ADL,SB);
     end
   
     TRIBUF adl[7:0](adderReg, ADD_ADL, ADL);
-    TRIBUF sb1[6:0](adderReg[6:0], ADD_ADL0to6, SB[6:0]);
+    TRIBUF sb1[6:0](adderReg[6:0], ADD_SB0to6, SB[6:0]);
     TRIBUF sb2(adderReg[7], ADD_SB7, SB[7]);
   
 endmodule
@@ -211,25 +211,27 @@ module inputDataLatch(rstAll, phi1, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
     
     // internal
     reg [7:0] DBreg, ADLreg, ADHreg; 
-    reg [7:0] data;
+    reg [7:0] dataDB,dataADL,dataADH;
   
-    TRIBUF db [7:0](DBreg,DL_DB,DB);
-    TRIBUF adl [7:0](ADLreg,DL_ADL,ADL);
-    TRIBUF adh [7:0](ADHreg,DL_ADH,ADH);
+    //TRIBUF db [7:0](dataDB,DL_DB,DB);
+    //TRIBUF adl [7:0](dataADL,DL_ADL,ADL);
+    //TRIBUF adh [7:0](dataADH,DL_ADH,ADH);
   
-    always @ (posedge phi2) begin
-            data <= extDataBus;
-    end
+    bufif1 db[7:0](DB,dataDB,DL_DB);
+    bufif1 adl[7:0](ADL,dataADL,DL_ADL);
+    bufif1 adh[7:0](ADH,dataADH,DL_ADH);
     
-    always @ (posedge phi1) begin
-        DBreg <= (DL_DB) ? data : 8'bZZZZZZZZ;
-        ADLreg <= (DL_ADL) ? data : 8'bZZZZZZZZ;
-        ADHreg <= (DL_ADH) ? data : 8'bZZZZZZZZ;
-            
+    always @ (posedge phi2) begin
+            dataDB <= extDataBus;
+            dataADL <= extDataBus;
+            dataADH <= extDataBus;
     end
+  
     
     always @ (posedge rstAll) begin
-        data <= 8'h00;
+        dataDB <= 8'h00;
+        dataADL <= 8'h00;
+        dataADH <= 8'h00;
     end
 endmodule
 
@@ -299,6 +301,9 @@ module PC(rstAll, phi2, PCL_DB, PCL_ADL,inFromIncre,
     
     reg [7:0] currPC;
     TRIBUF db[7:0](currPC, PCL_DB, DB);
+    //bufif1 (strong1,strong0) testbuf[7:0](DB,PCL_DB,currPC);
+    
+    //buf weird[7:0](DB,currPC);
     TRIBUF adl[7:0](currPC, PCL_ADL, ADL);
 
     assign PCout = currPC;
@@ -325,14 +330,14 @@ module inverter(DB,
     
 endmodule
 
-module SPreg(rstAll,S_S, SB_S, S_ADL, S_SB, SBin,
+module SPreg(rstAll,phi2,S_S, SB_S, S_ADL, S_SB, SBin,
             ADL, SB);
             
-    input rstAll,S_S, SB_S, S_ADL, S_SB;
+    input rstAll,phi2,S_S, SB_S, S_ADL, S_SB;
     input [7:0] SBin;
     inout [7:0] ADL, SB;
     
-    wire rstAll, S_S, SB_S, S_ADL, S_SB;
+    wire rstAll, phi2,S_S, SB_S, S_ADL, S_SB;
     wire [7:0] SBin;
     wire [7:0] ADL, SB;
     
@@ -343,7 +348,7 @@ module SPreg(rstAll,S_S, SB_S, S_ADL, S_SB, SBin,
     
     
     
-    always @ (SB_S) begin
+    always @ (posedge phi2) begin
         if (SB_S) latchOut = SBin;
     end
     
@@ -365,7 +370,7 @@ module decimalAdjust(rstAll,SBin, DSA, DAA, ACR, HC, phi2,
     wire rstAll;
     wire [7:0] SBin;
     wire DSA,DAA,ACR,HC,phi2;
-    reg [7:0] dataOut;
+    wire [7:0] dataOut;
     
     //internal
     reg [7:0] data;
@@ -394,12 +399,17 @@ module decimalAdjust(rstAll,SBin, DSA, DAA, ACR, HC, phi2,
             if (SBin[7:4] > 4'd9) begin
                 data = data - 8'h60;
             end
-        end    
+        end 
+        else begin
+        //direct pass-through
+            data = SBin;
+        end
     end
     
-    always @ (posedge phi2) begin
-        dataOut <= data;
-    end
+    //always @ (posedge phi2) begin
+    //    dataOut <= data;
+    //end
+    assign dataOut = data;
     always @ (posedge rstAll) begin
         data <= 8'h00;
     end
@@ -407,16 +417,16 @@ module decimalAdjust(rstAll,SBin, DSA, DAA, ACR, HC, phi2,
     
 endmodule
 
-module accum(rstAll,inFromDecAdder, SB_AC, AC_DB, AC_SB,
+module accum(rstAll,phi2,inFromDecAdder, SB_AC, AC_DB, AC_SB,
             DB,SB,updateSR);
     
-    input rstAll;
+    input rstAll,phi2;
     input [7:0] inFromDecAdder;
     input SB_AC, AC_DB, AC_SB;
     inout [7:0] DB, SB;
     output updateSR; //prompt SR to update itself according what's on the bus.
     
-    wire rstAll;
+    wire rstAll,phi2;
     wire [7:0] inFromDecAdder;
     wire SB_AC, AC_DB, AC_SB;
     wire [7:0] DB, SB;
@@ -428,7 +438,7 @@ module accum(rstAll,inFromDecAdder, SB_AC, AC_DB, AC_SB,
     assign SB = (AC_SB) ? currAccum : 8'bzzzzzzzz;
         
     
-    always @ (SB_AC) begin
+    always @ (posedge phi2) begin
         if (SB_AC) begin
             currAccum = inFromDecAdder;
             updateSR = 1'b1;
@@ -499,14 +509,14 @@ endmodule
 
 
 //used for x and y registers
-module register(rstAll,load, bus_en,
+module register(rstAll,phi2, load, bus_en,
             SB,updateSR);
     
-    input rstAll,load, bus_en;
+    input rstAll,phi2, load, bus_en;
     inout [7:0] SB;
     output updateSR; //prompt SR to update reg according to what's on the bus.
     
-    wire rstAll,load, bus_en;
+    wire rstAll,phi2, load, bus_en;
     wire [7:0] SB;
     reg updateSR;
     
@@ -514,7 +524,7 @@ module register(rstAll,load, bus_en,
     
     assign SB = (bus_en) ? currVal : 8'bzzzzzzzz;
     
-    always @(load) begin
+    always @(posedge phi2) begin
         if (load) begin
             currVal = SB;
             updateSR = 1'b1;
@@ -534,34 +544,35 @@ endmodule
 //this needs to push out B bit when its a BRK.
 //the x_set and x_clr are edge triggered.
 //everything else is ticked in when 'update' is asserted.
-module statusReg(rstAll,phi2,update, P_DB, DBZ, ACR, AVR, DAA,B,
+module statusReg(rstAll,phi1,phi2,load,loadDBZ,flagsALU,flagsDB,
+                        P_DB, DBZ, DB_N, ACR, AVR, DAA, B,
                         C_set, C_clr,
                         I_set,I_clr, 
                         V_set,V_clr,
                         D_set,D_clr,
-                        DB_N, 
-                        DBin,
-                    DBinout,decMode,status);
+                        DB,ALU,opcode,DBinout,
+                        decMode,status);
     
-    input rstAll,phi2,update, P_DB, DBZ, ACR, AVR, DAA,B,
+    input rstAll,phi1,phi2,load,loadDBZ,flagsALU,flagsDB,
+                        P_DB, DBZ,DB_N, ACR, AVR, DAA,B,
                         C_set, C_clr,
                         I_set,I_clr, 
                         V_set,V_clr,
-                        D_set,D_clr,
-                        DB_N;
+                        D_set,D_clr; 
                         
-    input [7:0] DBin;
+    input [7:0] DB,ALU,opcode;
     inout [7:0] DBinout;
     output decMode;
     output [7:0] status; //used by the FSM
     
-    wire rstAll, phi2,update, P_DB, DBZ, ACR, AVR, DAA,B,
-                        C_set, C_clr,
-                        I_set,I_clr, 
-                        V_set,V_clr,
-                        D_set,D_clr,
-                        DB_N;
-    wire [7:0] DBin;
+    wire rstAll,phi1,phi2,load,loadDBZ,flagsALU,flagsDB,
+                    P_DB, DBZ,DB_N, ACR, AVR, DAA,B,
+                    C_set, C_clr,
+                    I_set,I_clr, 
+                    V_set,V_clr,
+                    D_set,D_clr; 
+
+    wire [7:0] DB,ALU,opcode;
     wire [7:0] DBinout;
     wire decMode;
     wire [7:0] status;
@@ -605,19 +616,75 @@ module statusReg(rstAll,phi2,update, P_DB, DBZ, ACR, AVR, DAA,B,
     always @ (B) begin
         currVal[4] = B;
     end
-    
-    always @ (posedge update) begin
-       
-        currVal[`status_C] <= ACR;
-        currVal[`status_Z] <= DBZ;
-        //currVal[`status_I] <= IR5;
-        currVal[`status_D] <= DAA;
-        //currVal[4] <= ((opcode == `BRK || opcode == `PHP) ? 1'b1 : 1'b0); //trying to inject B in..
-        currVal[5] <= 1'b1; //default
-        currVal[`status_V] <= AVR;
-        currVal[`status_N] <= DB_N;
+    always @ (posedge phi2) begin
+        if (opcode == `TAX || opcode == `TAY || opcode == `TSX || 
+        opcode == `TXA || opcode == `TXS || opcode == `TYA)
+        
+        currVal[`status_Z] <= ~(|ALU);
+        currVal[`status_N] <= ALU[7];
+        
     end
     
+    always @ (posedge phi1) begin
+        if (loadDBZ) currVal[`status_Z] <= DBZ;
+        
+        if (flagsALU) begin
+                     
+            if (opcode == `ADC_abs || opcode == `ADC_abx || opcode == `ADC_aby || opcode == `ADC_imm || 
+             opcode == `ADC_izx || opcode == `ADC_izy || opcode == `ADC_zp  || opcode == `ADC_zpx ||
+             opcode == `SBC_abs || opcode == `SBC_abx || opcode == `SBC_aby || opcode == `SBC_imm || 
+             opcode == `SBC_izx || opcode == `SBC_izy || opcode == `SBC_zp  || opcode == `SBC_zpx )begin
+
+                //ADC, SBC - NZCV (ALU)
+                currVal[`status_C] <= ACR;
+                currVal[`status_V] <= AVR;
+                currVal[`status_Z] <= ~(|ALU);
+                currVal[`status_N] <= ALU[7];
+            end
+            
+            else if (opcode == `ORA_izx ||opcode == `ORA_izy ||opcode == `ORA_aby ||opcode == `ORA_abx ||
+                    opcode == `ORA_abs ||opcode == `ORA_imm ||opcode == `ORA_zp || `ORA_zpx||
+                    opcode == `AND_izx ||opcode == `AND_izy ||opcode == `AND_aby ||opcode == `AND_abx ||
+                    opcode == `AND_abs ||opcode == `AND_imm ||opcode == `AND_zp || `AND_zpx||
+                    opcode == `EOR_izx ||opcode == `EOR_izy ||opcode == `EOR_aby ||opcode == `EOR_abx ||
+                    opcode == `EOR_abs ||opcode == `EOR_imm ||opcode == `EOR_zp || `EOR_zpx) begin
+                    
+                //AND,EOR,ORA,=NZ (ALU)
+                currVal[`status_Z] <= ~(|ALU);
+                currVal[`status_N] <= ALU[7];
+            end
+            
+            else begin//opcode == NZC 
+                //ASL - NZC (ALU)
+                //CMP,CPX,CPY - NZC (ALU)
+                //LSR, ROL, ROR - NZC (ALU)
+                currVal[`status_C] <= ACR;
+                currVal[`status_V] <= AVR;
+                currVal[`status_Z] <= ~(|ALU);
+                currVal[`status_N] <= ALU[7];
+            end
+
+        end
+
+        if (flagsDB) begin
+
+            //INC,INX,INY,DEC,DEX,DEY,LDA,LDX,LDY - NZ 
+         
+            if (opcode == `BIT_zp || opcode == `BIT_abs) begin
+                currVal[`status_N] <= DB[7];
+                currVal[`status_V] <= DB[6];
+            end
+            else begin
+                currVal[`status_Z] <= ~(|DB);
+                currVal[`status_N] <= DB[7];
+            end
+        end
+    end
+
+    
+    always @ (posedge phi2) begin
+        if (load) currVal <= DB;
+    end
     always @ (posedge rstAll) begin
         currVal = 8'b0010_0000;
     end
@@ -626,17 +693,18 @@ module statusReg(rstAll,phi2,update, P_DB, DBZ, ACR, AVR, DAA,B,
     assign decMode = currVal[`status_D];
 endmodule
 
-module prechargeMos(phi2,
+module prechargeMos(rstAll,phi2,
                     bus);
-    
+    input rstAll;
     input phi2;
     output [7:0] bus;
     
+    wire rstAll;
     wire phi2;
     wire [7:0] bus;
     
     reg [7:0] pullupReg;
-    always @ (phi2) begin
+    always @ (posedge rstAll) begin
         pullupReg = 8'hff;
     end
     
@@ -677,17 +745,18 @@ module prechargeMos(phi2,
    */
 endmodule
 
-module opendrainMosADL(O_ADL0, O_ADL1, O_ADL2,
+module opendrainMosADL(rstAll,O_ADL0, O_ADL1, O_ADL2,
                     bus);
-    
+    input rstAll;
     input O_ADL0, O_ADL1, O_ADL2;
     output [7:0] bus;
-                    
+                 
+    wire rstAll;
     wire O_ADL0, O_ADL1, O_ADL2;
     wire [7:0] bus;
     
    reg pulldownReg0,pulldownReg1,pulldownReg2;
-    always @ (*) begin
+    always @ (posedge rstAll) begin
         pulldownReg0 = 1'b0;
         pulldownReg1 = 1'b0;
         pulldownReg2 = 1'b0;
@@ -701,19 +770,20 @@ module opendrainMosADL(O_ADL0, O_ADL1, O_ADL2,
 endmodule
 
 
-module opendrainMosADH(O_ADH0, O_ADH17,
+module opendrainMosADH(rstAll,O_ADH0, O_ADH17,
                     bus);
-    
+    input rstAll;
     input O_ADH0, O_ADH17;
     output [7:0] bus;
     
+    wire rstAll;
     wire O_ADH0, O_ADH17;
     wire [7:0] bus;
     
     reg pulldownReg0;
     reg [6:0] pulldownReg17;
     
-    always @ (*) begin
+    always @ (posedge rstAll) begin
         pulldownReg0 = 1'b0;
         pulldownReg17 = 7'b000_0000;
     end
@@ -723,4 +793,32 @@ module opendrainMosADH(O_ADH0, O_ADH17,
     
 endmodule
 
+// holds bus value over ticks, when drivers get off.
+// only for each phi1 tick, restore the prev value. otherwise lines go crazy when precharge mosfets turn off.
+module busHold(rstAll,phi1,phi2,busIn,busOut);
+    input rstAll;
+    input phi1,phi2;
+    input [7:0] busIn;
+    output [7:0] busOut;
+    
+    wire rstAll;
+    wire phi1,phi2;
+    wire [7:0] busIn,busOut;
+    
+    reg [7:0] busReg;
+    
+    always @ (busIn) begin
+        busReg = busIn;
+    end
+    always @ (posedge phi1) begin
+        
+    end
+    
+    buf (weak1,weak0) buffer[7:0](busOut,busReg);
+    
+    always @ (posedge rstAll) begin
+        busReg <= 8'h00;
+    end
+    
+endmodule
 
