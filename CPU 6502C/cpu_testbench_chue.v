@@ -8,7 +8,7 @@
 `include "Control/TDef.v"
 `include "Control/FSMstateDef.v"
 
-`define TICKS 40
+`define TICKS 30
 module testCPU;
 
   /* CPU registers */
@@ -20,6 +20,7 @@ module testCPU;
     wire [7:0] extDB; //Data Bus
 
     integer i;
+    reg [15:0] j;
     reg[8*15:0] T_string;
     reg[8*10:0] FSM_string;
     /* Memory registers */
@@ -68,7 +69,7 @@ module testCPU;
         //$display("phi1: %d, active_int: %b,currT: %b, dummy_T: %b, open_T: %b, open_controls:%b, P1:%b, P2: %b ",
         //        phi1_out,cpu.fsm.active_interrupt, cpu.fsm.curr_T,cpu.fsm.dummy_T,cpu.fsm.open_T,
          //       cpu.fsm.open_control,cpu.fsm.next_P1controlSigs,cpu.fsm.next_P2controlSigs);
-        $display("@%03x %04x %02x %02x %x %02x %04x %02x %02x %02x %02x %02x %08b %02x %02x  %02x  %02x    %02x    %02x     %02x    %b   %b",
+        $display("@%03x %04x %02x %02x %x %02x %04x %02x %02x %02x %02x %02x %08b %02x %02x  %02x  %02x    %02x    %02x     %02x    %b   %b  %b   %b   %b",
                 i,
                 cpu.extAB,
                 cpu.extDB,
@@ -90,9 +91,15 @@ module testCPU;
                 cpu.ALU_out,
                 cpu.addHold.adderReg,
                 cpu.ACR,
-                cpu.AVR);
+                cpu.AVR,
+                NMI_L,
+                IRQ_L,
+                RES_L);
+        $display("NMI_L %b, nmiControlOut %b, fsmNmi: %b, active_interrupt: %d",
+                cpu.NMI_L, cpu.nmiPending,cpu.fsmNMI,cpu.fsm.active_interrupt);
+        $display("NMIpending:%b, intg: %b",cpu.iHandler.nmiPending,cpu.iHandler.intg);
         //$display("decMode: %b, controlnDSA: %b, dasb: %x,SBin: %x DSA:%b DAA:%b HC: %b",cpu.fsm.statusReg[`status_D],cpu.controlSigs[`nDSA],cpu.inFromDecAdder,cpu.decAdj.SBin,cpu.decAdj.iDSA,cpu.decAdj.iDAA,cpu.decAdj.iHC);
-        $display("SR_d:%x, nextP1DSA:%b, nextP2DSA:%b",cpu.fsm.statusReg[`status_D],cpu.fsm.next_P1controlSigs[`nDSA],cpu.fsm.next_P2controlSigs[`nDSA]);
+        //$display("SR_d:%x, nextP1DSA:%b, nextP2DSA:%b",cpu.fsm.statusReg[`status_D],cpu.fsm.next_P1controlSigs[`nDSA],cpu.fsm.next_P2controlSigs[`nDSA]);
      //   $display("activeopcode:%x, nextopcode :%x, interrupt:%b ",cpu.fsm.activeOpcode, cpu.fsm.nextOpcode, cpu.pdl.interrupt);
       /*
       //Check that the output is correct
@@ -144,8 +151,14 @@ module testCPU;
         else FSM_string = "error";
         end
     endtask
+    
 
-
+    always @ (j) begin
+        if (j == 16'd25) NMI_L = 1'b0;
+        if (j == 16'd29) NMI_L = 1'b1;
+        if (j == 16'd34) RES_L = 1'b0;
+        if (j == 16'd38) RES_L = 1'b1;
+    end
 
     initial begin
   
@@ -156,7 +169,6 @@ module testCPU;
     NMI_L = 1'b1;
     RES_L = 1'b1;
     SO = 1'b1;
-    
     #2
     RES_L = 1'b0;
     #2
@@ -166,22 +178,27 @@ module testCPU;
     @(negedge phi1_out);
     #2
     printStuff(0);
+    j = 2; //used to count half cycles
     
     for (i=1; i<`TICKS; i=i+1)
     begin
             $display("============================================");
             //$display("~ADH/ABH: %B",cpu.controlSigs[`nADH_ABH]);
-            $display("cyc  Eab Edb sb rw IR pc  a  x  y  s  pd     p    db adh adl alu_a alu_b alu aluHold acr avr");
+            $display("cyc  Eab Edb sb rw IR pc  a  x  y  s  pd     p    db adh adl alu_a alu_b alu aluHold acr avr nmi irq res");
             @(posedge phi1_out);
+            j = j + 1;
+
             #5;
             printStuff(i);
-
             
             @(negedge phi1_out);
+            j = j + 1;
+ 
             #5;
             printStuff(i);   
             
-            $display("(%s,%s,%x)",FSM_string, T_string,cpu.fsm.activeOpcode);
+            
+            $display("(halfcycle:%d, %s,%s,%x)",j,FSM_string, T_string,cpu.fsm.activeOpcode);
             $display("");
             
     end
@@ -190,5 +207,7 @@ module testCPU;
   
     $finish;
     end
+    
+
 
 endmodule

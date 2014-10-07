@@ -47,12 +47,12 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcode, statusReg,loadOpcode,
     
     reg rstNow;
     
-    wire interruptPending;
+    //wire interruptPending;
     
     assign T1now = (curr_T == `Tone || curr_T == `T1NoBranch || 
                 curr_T == `T1BranchNoCross || curr_T == `T1BranchCross); //might be wrong!
                       
-    assign interruptPending = nmi|irq;
+    //assign interruptPending = nmi|irq;
     /*
     //may not need this chunk if predecode logic handled it.
     always @ (curr_state) begin
@@ -85,6 +85,15 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcode, statusReg,loadOpcode,
         
         
         if (RDY) begin
+        
+            if (active_interrupt == `NONE && curr_state == `FSMfetch) begin
+                if (rst) active_interrupt = `RST_i;
+                else if (nmi) active_interrupt = `NMI_i;
+                else if (irq) active_interrupt = `IRQ_i;
+                else active_interrupt = `NONE;
+            end
+            
+            
             case(curr_state)
                 `FSMinit: begin 
              
@@ -282,16 +291,18 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcode, statusReg,loadOpcode,
                 if(leftOverSig!== `NO_SIG) next_P1controlSigs[leftOverSig] = 1'b1;
             end
         
-            if (next_T == `Tzero || next_T == `TzeroNoCrossPg || next_T == `TzeroCrossPg) begin
+            //if (next_T == `Tzero || next_T == `TzeroNoCrossPg || next_T == `TzeroCrossPg) begin
                 //check for interrupts
                 //hierarchy of interrupts
-                if (active_interrupt == `NONE) begin
+             /*   if (!(irqHandled || nmiHandled || rstHandled) && //if not recently finished handling
+                     active_interrupt == `NONE &&
+                     curr_state == `FSMfetch) begin
                     if (rst) active_interrupt = `RST_i;
                     else if (nmi) active_interrupt = `NMI_i;
                     else if (irq) active_interrupt = `IRQ_i;
                     else active_interrupt = `NONE;
-                end
-            end
+                end*/
+            //end
         
         end
      

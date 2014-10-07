@@ -153,7 +153,8 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
             wire [7:0] predecodeOut, outToIR;
             wire interrupt;
             
-            assign interrupt = resPending | nmiPending | irqPending;
+            wire fsmNMI,fsmIRQ,fsmRES;
+            assign interrupt = fsmRES | fsmNMI | fsmIRQ;
             predecodeRegister   pdr(phi2,extDB,predecodeOut);
             predecodeLogic      pdl(rstAll,predecodeOut,interrupt,real_opcode,effective_opcode,newOpcode);
             
@@ -163,18 +164,21 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
             //wire loadIR, T1next;
             //assign loadIR = T1next & RDY;
             //instructionRegister ir_reg(phi1, loadIR, real_outToIR,effective_outToIR,real_opcode, effective_opcode);
-
-            interruptResetControl iHandler(NMI_L, IRQ_L, RES_L, nmiHandled, irqHandled, resHandled,
+            wire outNMI_L,outIRQ_L,outRES_L;
+            interruptLatch   iHandlerLatch(rstAll,phi1,~(SR_contents[`status_I]),NMI_L,IRQ_L,RES_L,outNMI_L,outIRQ_L,outRES_L);
+            interruptResetControl iHandler(rstAll,outNMI_L,outIRQ_L,outRES_L, nmiHandled, irqHandled, resHandled,
                             nmiPending,irqPending,resPending);
             
             wire RDYout; //this is the one which affects the FSM.
             readyControl rdy_control(phi2, RDY, nRW, RDYout);
             
-            wire masked_irq;
-            assign masked_irq =  irqPending & (~SR_contents[`status_I]);
+
             
             // finally, control logic
-            plaFSM      fsm(phi1,phi2,nmiPending,masked_irq,resPending,RDYout,effective_opcode,SR_contents,loadOpcode,
+            inoutLatch3  fsmInterruptLatch(rstAll,phi1,nmiPending,irqPending,resPending,nmiHandled, irqHandled, resHandled,
+                                fsmNMI,fsmIRQ,fsmRES);
+            
+            plaFSM      fsm(phi1,phi2,fsmNMI,fsmIRQ,fsmRES,RDYout,effective_opcode,SR_contents,loadOpcode,
                                 controlSigs,SYNC,T1now,nmiHandled, irqHandled, resHandled,rstAll,activeOpcode);
                                 
                       

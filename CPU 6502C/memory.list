@@ -3,25 +3,29 @@
 
 
 @fffc
-02 //vector_lo
-00 //vector_hi
+02 //res_vector_lo
+00 //res_vector_hi
+
+
+@fffa //nmi vector
+30
+00
+
+@fffe //irq/brk vector
+50
+00
 
 @0002
 ea
-ea
+58
+A9
+77
 a9
-40
-e9
-41
+23
 ea
 ea
 ea
 ea
-ea
-ea
-EA
-EA
-EA
 ea
 ea
 ea
@@ -30,36 +34,36 @@ ea
 ea
 
 @0030
-88
-
-@55
-12
-34
-45
-45
-
-
-@0020
-80
-20
-ea
-ea
-
-@01f0
-11
-22
-33
-44
-55
-66
-77
-88
+a9
+30
+a0
+30
+a2
+30
+69
 99
-aa
-bb
-cc
-dd
-ee
-ff
+ea
+ea
+ea
+ea
+ea
+ea
+ea
 
 
+
+@0050
+a9
+50
+a2
+50
+a0
+50
+e9
+88
+ea
+ea
+ea
+ea
+ea
+ea
