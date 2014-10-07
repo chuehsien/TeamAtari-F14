@@ -621,10 +621,11 @@ module statusReg(rstAll,phi1,phi2,load,loadDBZ,flagsALU,flagsDB,
     end
     always @ (posedge phi2) begin
         if (opcode == `TAX || opcode == `TAY || opcode == `TSX || 
-        opcode == `TXA || opcode == `TXS || opcode == `TYA)
+        opcode == `TXA || opcode == `TXS || opcode == `TYA) begin
         
         currVal[`status_Z] <= ~(|ALU);
         currVal[`status_N] <= ALU[7];
+        end
         
     end
     

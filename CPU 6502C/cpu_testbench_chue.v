@@ -95,9 +95,10 @@ module testCPU;
                 NMI_L,
                 IRQ_L,
                 RES_L);
-        $display("NMI_L %b, nmiControlOut %b, fsmNmi: %b, active_interrupt: %d",
-                cpu.NMI_L, cpu.nmiPending,cpu.fsmNMI,cpu.fsm.active_interrupt);
-        $display("NMIpending:%b, intg: %b",cpu.iHandler.nmiPending,cpu.iHandler.intg);
+        $display("SRLOAD:%b, flagsalu:%b, flagsdb:%b, Nflag: %b, OP:%x",cpu.SR.load,cpu.SR.flagsALU,cpu.SR.flagsDB,cpu.SR.currVal[`status_N],cpu.activeOpcode);
+        //$display("NMI_L %b, nmiControlOut %b, fsmNmi: %b, active_interrupt: %d",
+        //        cpu.NMI_L, cpu.nmiPending,cpu.fsmNMI,cpu.fsm.active_interrupt);
+        //$display("NMIpending:%b, intg: %b",cpu.iHandler.nmiPending,cpu.iHandler.intg);
         //$display("decMode: %b, controlnDSA: %b, dasb: %x,SBin: %x DSA:%b DAA:%b HC: %b",cpu.fsm.statusReg[`status_D],cpu.controlSigs[`nDSA],cpu.inFromDecAdder,cpu.decAdj.SBin,cpu.decAdj.iDSA,cpu.decAdj.iDAA,cpu.decAdj.iHC);
         //$display("SR_d:%x, nextP1DSA:%b, nextP2DSA:%b",cpu.fsm.statusReg[`status_D],cpu.fsm.next_P1controlSigs[`nDSA],cpu.fsm.next_P2controlSigs[`nDSA]);
      //   $display("activeopcode:%x, nextopcode :%x, interrupt:%b ",cpu.fsm.activeOpcode, cpu.fsm.nextOpcode, cpu.pdl.interrupt);
@@ -154,10 +155,10 @@ module testCPU;
     
 
     always @ (j) begin
-        if (j == 16'd25) NMI_L = 1'b0;
-        if (j == 16'd29) NMI_L = 1'b1;
-        if (j == 16'd34) RES_L = 1'b0;
-        if (j == 16'd38) RES_L = 1'b1;
+       // if (j == 16'd25) NMI_L = 1'b0;
+        //if (j == 16'd29) NMI_L = 1'b1;
+        //if (j == 16'd34) RES_L = 1'b0;
+        //if (j == 16'd38) RES_L = 1'b1;
     end
 
     initial begin
