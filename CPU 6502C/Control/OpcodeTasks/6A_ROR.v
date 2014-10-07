@@ -5,7 +5,7 @@ task ROR;
 
 	input [6:0] T;
 	input phi1,phi2;
-    input carry;
+    input statusC;
 	output [79:0] controlSigs;
 	output [6:0] newT;
 	reg [6:0] newT;
@@ -34,7 +34,7 @@ task ROR;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
 					controlSigs[`ADL_PCL] = 1'b1;
-                    if (carry) controlSigs[`I_ADDC] = 1'b1;
+                    if (statusC) controlSigs[`I_ADDC] = 1'b1;
 				end
 				else if (phi2) begin
 				//SRS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBDB,PCHADH,PCLADL
@@ -47,7 +47,7 @@ task ROR;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
                     controlSigs[`FLAG_ALU] = 1'b1;
-                    if (carry) controlSigs[`I_ADDC] = 1'b1;
+                    if (statusC) controlSigs[`I_ADDC] = 1'b1;
 				end
 			
 			end
