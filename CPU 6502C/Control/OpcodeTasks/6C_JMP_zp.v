@@ -18,7 +18,8 @@ task JMP_zp;
 			 `Tzero: begin
 		newT = `Tone;
 				if (phi1) begin
-				//SS,DBADD,0ADD,SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,PCHPCH,#IPC,~IPC,PCLPCL,DL/DB
+
+					controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`S_S] = 1'b1;
 					controlSigs[`DB_ADD] = 1'b1;
 					controlSigs[`O_ADD] = 1'b1;

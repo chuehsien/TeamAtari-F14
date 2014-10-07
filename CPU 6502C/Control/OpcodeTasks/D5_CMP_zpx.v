@@ -18,7 +18,8 @@ task CMP_zpx;
 			 `Tzero: begin
 		newT = `Tone;
 				if (phi1) begin
-				//SS,DBADD,SBADD,SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,PCHPCH,#IPC,~IPC,PCLPCL
+
+					controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`S_S] = 1'b1;
 					controlSigs[`DB_ADD] = 1'b1;
 					controlSigs[`SB_ADD] = 1'b1;

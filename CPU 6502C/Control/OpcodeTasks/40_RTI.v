@@ -20,7 +20,8 @@ task RTI;
       (`Tzero) : begin
 		newT = `Tone;
         if (phi1) begin
-          //SBS,DBADD,0ADD,SUMS,#DAA,~DAA,ADDSB7,ADDSB06,ADDADL,#DSA,~DSA,PCHPCH,#IPC,~IPC,PCLPCL,DL/DB
+
+					controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`SB_S] = 1'b1;
 					controlSigs[`DB_ADD] = 1'b1;
 					controlSigs[`O_ADD] = 1'b1;

@@ -20,7 +20,9 @@ task ROR_abs;
             newT = `Tone;
             controlSigs[`nRW] = 1'b1;
 				if (phi1) begin
-				//SS,DBADD,SBADD,SUMS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBDB,PCHPCH,#IPC,~IPC,PCLPCL
+
+					controlSigs[`nADL_ABL] = 1'b1;
+					controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`S_S] = 1'b1;
 					controlSigs[`DB_ADD] = 1'b1;
 					controlSigs[`SB_ADD] = 1'b1;

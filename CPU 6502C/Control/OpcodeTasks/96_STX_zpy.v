@@ -19,7 +19,8 @@ task STX_zpy;
             newT = `Tone;
             controlSigs[`nRW] = 1'b1;
 				if (phi1) begin
-				//XSB,SS,DBADD,SBADD,SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,SBDB,PCHPCH,#IPC,~IPC,PCLPCL
+
+					controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`X_SB] = 1'b1;
 					controlSigs[`S_S] = 1'b1;
 					controlSigs[`DB_ADD] = 1'b1;
