@@ -158,7 +158,7 @@ task ROR_abx;
 
 					controlSigs[`I_ADDC] = 1'b1;
 					controlSigs[`nADL_ABL] = 1'b1;
-					controlSigs[`nADH_ABH] = 1'b1;
+					if(!carry) controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
 					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_SB7] = 1'b1;

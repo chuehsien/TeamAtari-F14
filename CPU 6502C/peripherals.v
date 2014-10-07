@@ -44,9 +44,9 @@ module memory256x256 (clock, enable, we_L, re_L,address,
     
 	always @(posedge clock) begin
     
-		if (enable & ~we_L) begin
+		if (enable && ~we_L) begin
       // $display("we're storing data at %h", address);
-			mem[address] <= data;
+			mem[address] = data;
         end
     /*
     else if (~re_L) begin

@@ -8,7 +8,7 @@
 `include "Control/TDef.v"
 `include "Control/FSMstateDef.v"
 
-`define TICKS 30
+`define TICKS 1000
 module testCPU;
 
   /* CPU registers */
@@ -36,7 +36,7 @@ module testCPU;
     wire we_L, re_L;
     assign we_L = RW;
     assign re_L = ~RW; //RW=1 => read mode.
-    memory256x256 mem(.clock(phi2_out), .enable(1'b1), .we_L(we_L), .re_L(re_L), .address(extAB), .data(extDB));
+    memory256x256 mem(.clock(phi1_out), .enable(1'b1), .we_L(we_L), .re_L(re_L), .address(extAB), .data(extDB));
 
   
   
@@ -69,7 +69,7 @@ module testCPU;
         //$display("phi1: %d, active_int: %b,currT: %b, dummy_T: %b, open_T: %b, open_controls:%b, P1:%b, P2: %b ",
         //        phi1_out,cpu.fsm.active_interrupt, cpu.fsm.curr_T,cpu.fsm.dummy_T,cpu.fsm.open_T,
          //       cpu.fsm.open_control,cpu.fsm.next_P1controlSigs,cpu.fsm.next_P2controlSigs);
-        $display("@%03x %04x %02x %02x %x %02x %04x %02x %02x %02x %02x %02x %08b %02x %02x  %02x  %02x    %02x    %02x     %02x    %b   %b  %b   %b   %b",
+        $display("@%03x %04x %02x %02x %x %02x %04x %02x %02x %02x %02x %02x %08b %02x  %02x %02x  %02x  %02x    %02x    %02x     %02x    %b   %b  %b   %b   %b",
                 i,
                 cpu.extAB,
                 cpu.extDB,
@@ -83,6 +83,7 @@ module testCPU;
                 cpu.sp.latchOut,
                 cpu.predecodeOut,
                 cpu.SR_contents,
+                cpu.dor.data,
                 cpu.DB,
                 cpu.ADH,
                 cpu.ADL,
@@ -95,7 +96,12 @@ module testCPU;
                 NMI_L,
                 IRQ_L,
                 RES_L);
-        $display("SRLOAD:%b, flagsalu:%b, flagsdb:%b, Nflag: %b, OP:%x",cpu.SR.load,cpu.SR.flagsALU,cpu.SR.flagsDB,cpu.SR.currVal[`status_N],cpu.activeOpcode);
+        
+        
+
+
+        
+        //$display("SRLOAD:%b, flagsalu:%b, flagsdb:%b, Nflag: %b, OP:%x",cpu.SR.load,cpu.SR.flagsALU,cpu.SR.flagsDB,cpu.SR.currVal[`status_N],cpu.activeOpcode);
         //$display("NMI_L %b, nmiControlOut %b, fsmNmi: %b, active_interrupt: %d",
         //        cpu.NMI_L, cpu.nmiPending,cpu.fsmNMI,cpu.fsm.active_interrupt);
         //$display("NMIpending:%b, intg: %b",cpu.iHandler.nmiPending,cpu.iHandler.intg);
@@ -185,13 +191,12 @@ module testCPU;
     begin
             $display("============================================");
             //$display("~ADH/ABH: %B",cpu.controlSigs[`nADH_ABH]);
-            $display("cyc  Eab Edb sb rw IR pc  a  x  y  s  pd     p    db adh adl alu_a alu_b alu aluHold acr avr nmi irq res");
+            $display("cyc  Eab Edb sb rw IR pc  a  x  y  s  pd     p    dor db adh adl alu_a alu_b alu aluHold acr avr nmi irq res");
             @(posedge phi1_out);
             j = j + 1;
 
             #5;
             printStuff(i);
-            
             @(negedge phi1_out);
             j = j + 1;
  
@@ -199,13 +204,18 @@ module testCPU;
             printStuff(i);   
             
             
-            $display("(halfcycle:%d, %s,%s,%x)",j,FSM_string, T_string,cpu.fsm.activeOpcode);
-            $display("");
+            $display("(halfcycle:%d, %s,%s,%x) Cout:%b Cin:%b, nADL:%b nADH: %b",j,FSM_string, T_string,cpu.fsm.activeOpcode,
+                    cpu.ACR,cpu.controlSigs[`I_ADDC],cpu.controlSigs[`nADL_ABL],cpu.controlSigs[`nADH_ABH]);
+            //$display("");
             
     end
     
   
-  
+    $display("$0200: %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X",
+            mem.mem[16'h0200],mem.mem[16'h0201],mem.mem[16'h0202],mem.mem[16'h0203],
+            mem.mem[16'h0204],mem.mem[16'h0205],mem.mem[16'h0206],mem.mem[16'h0207],
+            mem.mem[16'h0208],mem.mem[16'h0209],mem.mem[16'h020a],mem.mem[16'h020b],
+            mem.mem[16'h020c],mem.mem[16'h020d],mem.mem[16'h020e],mem.mem[16'h020f],mem.mem[16'h0210]);
     $finish;
     end
     

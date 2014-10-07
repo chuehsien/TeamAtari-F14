@@ -7,11 +7,11 @@ This is the top FSM modules which implements the opcode -> controlSignal state m
 `include "Control/TDef.v"
 
 
-module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcode, statusReg,loadOpcode, 
+module plaFSM(phi1,phi2,nmi,irq,rst,RDY,ACR, opcode, statusReg,loadOpcode, 
                 controlSigs, SYNC, T1now, nmiHandled, irqHandled, rstHandled, rstAll,activeOpcode);
      
     `include "Control/controlMods.v"      
-    input phi1,phi2,nmi,irq,rst,RDY; //RDY is external input
+    input phi1,phi2,nmi,irq,rst,RDY,ACR; //RDY is external input
     input [7:0] opcode, statusReg;
     input loadOpcode;
     output [79:0] controlSigs;
@@ -19,7 +19,7 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcode, statusReg,loadOpcode,
     output nmiHandled, irqHandled, rstHandled, rstAll;
     output [7:0] activeOpcode;
     
-    wire phi1,phi2,nmi,irq,rst,RDY;
+    wire phi1,phi2,nmi,irq,rst,RDY,ACR;
     wire [7:0] opcode;
     wire [7:0] statusReg;
     wire loadOpcode;
@@ -142,24 +142,24 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcode, statusReg,loadOpcode,
                         if (dummy_state == `execNorm) begin
                             //get controls for the next T.
                             
-                            getControlsNorm(~phi1,~phi2,statusReg[`status_D],statusReg[`status_C],opcode, `Ttwo, open_T, next_P1controlSigs);
-                            getControlsNorm(phi1,phi2,statusReg[`status_D],statusReg[`status_C],opcode, `Ttwo, open_T , next_P2controlSigs);
+                            getControlsNorm(~phi1,~phi2,statusReg[`status_D],ACR,statusReg[`status_C],opcode, `Ttwo, open_T, next_P1controlSigs);
+                            getControlsNorm(phi1,phi2,statusReg[`status_D],ACR,statusReg[`status_C],opcode, `Ttwo, open_T , next_P2controlSigs);
 
                         end
                         else if (dummy_state == `execRMW) begin
                             //get controls for the next T.
                             //getControlsRMW(phi1,phi2,statusReg, opcode, curr_T, dummy_T , open_control);
                             
-                            getControlsRMW(~phi1,~phi2,statusReg[`status_D],statusReg,opcode, `Ttwo, open_T, next_P1controlSigs); // get next T
-                            getControlsRMW(phi1,phi2,statusReg[`status_D],statusReg,opcode, `Ttwo, open_T , next_P2controlSigs); //get controls for new T
+                            getControlsRMW(~phi1,~phi2,statusReg[`status_D],ACR,statusReg[`status_C],opcode, `Ttwo, open_T, next_P1controlSigs); // get next T
+                            getControlsRMW(phi1,phi2,statusReg[`status_D],ACR,statusReg[`status_C],opcode, `Ttwo, open_T , next_P2controlSigs); //get controls for new T
                            
                         end
                         else if (dummy_state == `execBranch) begin
                             //get controls for the next T.
                             //getControlsBranch(phi1,phi2,statusReg, opcode, curr_T, dummy_T , open_control);
                             
-                            getControlsBranch(~phi1,~phi2,statusReg,opcode, `Ttwo, open_T, next_P1controlSigs); // get next T
-                            getControlsBranch(phi1,phi2,statusReg,opcode, `Ttwo, open_T , next_P2controlSigs); //get controls for new T
+                            getControlsBranch(~phi1,~phi2,ACR,statusReg,opcode, `Ttwo, open_T, next_P1controlSigs); // get next T
+                            getControlsBranch(phi1,phi2,ACR,statusReg,opcode, `Ttwo, open_T , next_P2controlSigs); //get controls for new T
                             
                             
                         end
@@ -203,10 +203,10 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcode, statusReg,loadOpcode,
                 `execNorm: begin //all fixed cycle instructions except BRK
                     if (phi1) SYNC = 1'd0;
                     //get controls for the next T.
-                    getControlsNorm(phi1,phi2,statusReg[`status_D],statusReg[`status_C],activeOpcode, curr_T, dummy_T, open_control);
+                    getControlsNorm(phi1,phi2,statusReg[`status_D],ACR,statusReg[`status_C],activeOpcode, curr_T, dummy_T, open_control);
                     
-                    getControlsNorm(phi1,phi2,statusReg[`status_D],statusReg[`status_C],activeOpcode, dummy_T, open_T, next_P1controlSigs);
-                    getControlsNorm(~phi1,~phi2,statusReg[`status_D],statusReg[`status_C],activeOpcode, dummy_T, open_T , next_P2controlSigs);
+                    getControlsNorm(phi1,phi2,statusReg[`status_D],ACR,statusReg[`status_C],activeOpcode, dummy_T, open_T, next_P1controlSigs);
+                    getControlsNorm(~phi1,~phi2,statusReg[`status_D],ACR,statusReg[`status_C],activeOpcode, dummy_T, open_T , next_P2controlSigs);
                     nextOpcode = activeOpcode;
              
                     next_T = dummy_T;                   
@@ -250,10 +250,10 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcode, statusReg,loadOpcode,
                 `execRMW: begin
                     if (phi1) SYNC = 1'd0;
                     //get controls for the next T.
-                    getControlsRMW(phi1,phi2,statusReg[`status_D],statusReg, activeOpcode, curr_T, dummy_T , open_control);
+                    getControlsRMW(phi1,phi2,statusReg[`status_D],ACR,statusReg[`status_C], activeOpcode, curr_T, dummy_T , open_control);
                     
-                    getControlsRMW(phi1,phi2,statusReg[`status_D],statusReg,activeOpcode, dummy_T, open_T, next_P1controlSigs); // get next T
-                    getControlsRMW(~phi1,~phi2,statusReg[`status_D],statusReg,activeOpcode, dummy_T, open_T , next_P2controlSigs); //get controls for new T
+                    getControlsRMW(phi1,phi2,statusReg[`status_D],ACR,statusReg[`status_C],activeOpcode, dummy_T, open_T, next_P1controlSigs); // get next T
+                    getControlsRMW(~phi1,~phi2,statusReg[`status_D],ACR,statusReg[`status_C],activeOpcode, dummy_T, open_T , next_P2controlSigs); //get controls for new T
                     nextOpcode = activeOpcode;
                     
                     next_T = dummy_T;
@@ -268,10 +268,10 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY, opcode, statusReg,loadOpcode,
                 `execBranch: begin
                     if (phi1) SYNC = 1'd0;
                     //get controls for the next T.
-                    getControlsBranch(phi1,phi2,statusReg, activeOpcode, curr_T, dummy_T , open_control);
+                    getControlsBranch(phi1,phi2,ACR,statusReg, activeOpcode, curr_T, dummy_T , open_control);
                     
-                    getControlsBranch(phi1,phi2,statusReg,activeOpcode, dummy_T, open_T, next_P1controlSigs); // get next T
-                    getControlsBranch(~phi1,~phi2,statusReg,activeOpcode, dummy_T, open_T , next_P2controlSigs); //get controls for new T
+                    getControlsBranch(phi1,phi2,ACR,statusReg,activeOpcode, dummy_T, open_T, next_P1controlSigs); // get next T
+                    getControlsBranch(~phi1,~phi2,ACR,statusReg,activeOpcode, dummy_T, open_T , next_P2controlSigs); //get controls for new T
                     nextOpcode = activeOpcode;
                     
                     next_T = dummy_T;

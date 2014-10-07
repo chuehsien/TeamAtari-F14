@@ -165,26 +165,24 @@ module dataBusTristate(en, dataIn,
 endmodule
 
 // latched on phi1, driven onto data pins in phi2(if write is done).
-module dataOutReg(rstAll, phi1, phi2, dataIn,
+module dataOutReg(rstAll, phi2, en, dataIn,
                 dataOut);
                 
-    input rstAll,phi1, phi2;
+    input rstAll,phi2,en;
     input [7:0] dataIn;
     output [7:0] dataOut;
     
-    wire rstAll,phi1,phi2;
+    wire rstAll,phi2,en;
     wire [7:0] dataIn;
-    reg [7:0] dataOut;
+    wire [7:0] dataOut;
     
     reg [7:0] data;
     
-    always @(posedge phi1) begin
+    always @(posedge phi2) begin
         data <= dataIn;
     end
     
-    always @(posedge phi2) begin
-        dataOut <= data;
-    end
+    assign dataOut = (en) ? data : 8'hzz;
 
     always @ (posedge rstAll) begin
         data <= 8'h00;
@@ -461,15 +459,15 @@ module accum(rstAll,phi2,inFromDecAdder, SB_AC, AC_DB, AC_SB,
 endmodule
 
 
-module AddressBusReg(rstAll,ld, dataIn,
+module AddressBusReg(rstAll,phi1,ld, dataIn,
                 dataOut);
 
-    input rstAll;
+    input rstAll,phi1;
     input ld;
     input [7:0] dataIn;
     output [7:0] dataOut;
 
-    wire rstAll;
+    wire rstAll,phi1;
     wire ld;
     wire [7:0] dataIn;
     wire [7:0] dataOut;
@@ -477,8 +475,8 @@ module AddressBusReg(rstAll,ld, dataIn,
     reg [7:0] data;
     
     assign dataOut = data;
-    always @ (posedge ld) begin
-        data <= dataIn;
+    always @ (posedge phi1) begin
+        if (ld)data <= dataIn;
     end
     
     always @ (posedge rstAll) begin

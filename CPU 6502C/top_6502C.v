@@ -112,9 +112,9 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
                         
 
             //addressbusreg loads by default every phi1. only disable if controlSig is asserted.
-            AddressBusReg   add_hi(rstAll,phi1&~controlSigs[`nADH_ABH], ADH, extAB[15:8]);
+            AddressBusReg   add_hi(rstAll,phi1,~controlSigs[`nADH_ABH], ADH, extAB[15:8]);
 
-            AddressBusReg   add_lo(rstAll,phi1&~controlSigs[`nADL_ABL], ADL, extAB[7:0]);
+            AddressBusReg   add_lo(rstAll,phi1,~controlSigs[`nADL_ABL], ADL, extAB[7:0]);
             
             register        x_reg(rstAll,phi2,controlSigs[`SB_X],controlSigs[`X_SB],SB,updateSR_x);
             register        y_reg(rstAll,phi2,controlSigs[`SB_Y],controlSigs[`Y_SB],SB,updateSR_y);
@@ -131,10 +131,10 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
             //                            DB, opcode,DB, statusReg);
             wire BRKins;
             wire [7:0] real_outToIR, effective_outToIR, real_opcode, effective_opcode;
-            assign BRKins = (real_opcode == `BRK || real_opcode == `PHP);
+            wire [7:0] activeOpcode;
+            assign BRKins = (activeOpcode == `BRK || activeOpcode == `PHP);
             //need to assert B in SR when performing BRK/PHP.
             wire [7:0] SR_contents;
-            wire [7:0] activeOpcode;
             statusReg SR(rstAll,phi1,phi2,controlSigs[`DB_P],controlSigs[`FLAG_DBZ],controlSigs[`FLAG_ALU],controlSigs[`FLAG_DB],
                         controlSigs[`P_DB], DBZ, DB_N, ACR, AVR, ~controlSigs[`nDAA], BRKins,
                         controlSigs[`SET_C], controlSigs[`CLR_C],
@@ -146,8 +146,8 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
                     
                     
             wire [7:0] dataOutBuf;
-            dataOutReg          dor(rstAll, phi1, phi2, DB, dataOutBuf);
-            dataBusTristate     dataBuf(controlSigs[`nRW] & phi2, dataOutBuf,extDB);
+            dataOutReg          dor(rstAll, phi2, controlSigs[`nRW] & phi2, DB, extDB);
+            //dataBusTristate     dataBuf(, dataOutBuf,extDB);
             
             //moving on to left side...
             wire [7:0] predecodeOut, outToIR;
@@ -178,7 +178,7 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
             inoutLatch3  fsmInterruptLatch(rstAll,phi1,nmiPending,irqPending,resPending,nmiHandled, irqHandled, resHandled,
                                 fsmNMI,fsmIRQ,fsmRES);
             
-            plaFSM      fsm(phi1,phi2,fsmNMI,fsmIRQ,fsmRES,RDYout,effective_opcode,SR_contents,loadOpcode,
+            plaFSM      fsm(phi1,phi2,fsmNMI,fsmIRQ,fsmRES,RDYout,ACR,effective_opcode,SR_contents,loadOpcode,
                                 controlSigs,SYNC,T1now,nmiHandled, irqHandled, resHandled,rstAll,activeOpcode);
                                 
                       

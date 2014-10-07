@@ -4,7 +4,7 @@
 task INC_abx;
 
 	input [6:0] T;
-	input phi1,phi2;
+	input phi1,phi2,carry;
 	output [79:0] controlSigs;
 	output [6:0] newT;
 	reg [6:0] newT;
@@ -156,7 +156,7 @@ task INC_abx;
 
 					controlSigs[`I_ADDC] = 1'b1;
 					controlSigs[`nADL_ABL] = 1'b1;
-					controlSigs[`nADH_ABH] = 1'b1;
+					if(!carry) controlSigs[`nADH_ABH] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
 					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_SB7] = 1'b1;
