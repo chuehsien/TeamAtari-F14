@@ -8,7 +8,7 @@
 `include "Control/TDef.v"
 `include "Control/FSMstateDef.v"
 
-`define TICKS 1000
+`define TICKS 2000
 module testCPU;
 
   /* CPU registers */
@@ -69,7 +69,8 @@ module testCPU;
         //$display("phi1: %d, active_int: %b,currT: %b, dummy_T: %b, open_T: %b, open_controls:%b, P1:%b, P2: %b ",
         //        phi1_out,cpu.fsm.active_interrupt, cpu.fsm.curr_T,cpu.fsm.dummy_T,cpu.fsm.open_T,
          //       cpu.fsm.open_control,cpu.fsm.next_P1controlSigs,cpu.fsm.next_P2controlSigs);
-        $display("@%03x %04x %02x %02x %x %02x %04x %02x %02x %02x %02x %02x %08b %02x  %02x %02x  %02x  %02x    %02x    %02x     %02x    %b   %b  %b   %b   %b",
+  /*
+  $display("@%03x %04x %02x %02x %x %02x %04x %02x %02x %02x %02x %02x %08b %02x  %02x %02x  %02x  %02x    %02x    %02x     %02x    %b   %b  %b   %b   %b",
                 i,
                 cpu.extAB,
                 cpu.extDB,
@@ -96,7 +97,7 @@ module testCPU;
                 NMI_L,
                 IRQ_L,
                 RES_L);
-        
+        */
         
 
 
@@ -189,14 +190,19 @@ module testCPU;
     
     for (i=1; i<`TICKS; i=i+1)
     begin
-            $display("============================================");
+           //$display("============================================");
             //$display("~ADH/ABH: %B",cpu.controlSigs[`nADH_ABH]);
-            $display("cyc  Eab Edb sb rw IR pc  a  x  y  s  pd     p    dor db adh adl alu_a alu_b alu aluHold acr avr nmi irq res");
+          //$display("cyc  Eab Edb sb rw IR pc  a  x  y  s  pd     p    dor db adh adl alu_a alu_b alu aluHold acr avr nmi irq res");
             @(posedge phi1_out);
             j = j + 1;
 
             #5;
             printStuff(i);
+            
+            //$display("(halfcycle:%d, %s,%s,%x) nextP1control:%x, leftOverSig:%d, eAB:%x eDB:%x A:%x X:%x Y:%x RW:%b aluflag:%b,dbflag:%b,SR:%b",j,FSM_string, T_string,cpu.fsm.activeOpcode,
+            //   cpu.fsm.next_P1controlSigs,cpu.fsm.leftOverSig,extAB,extDB,cpu.a.currAccum,cpu.x_reg.currVal,cpu.y_reg.currVal,RW,cpu.controlSigs[`FLAG_ALU],cpu.controlSigs[`FLAG_DB],cpu.SR_contents);
+                    
+                    
             @(negedge phi1_out);
             j = j + 1;
  
@@ -204,8 +210,8 @@ module testCPU;
             printStuff(i);   
             
             
-            $display("(halfcycle:%d, %s,%s,%x) Cout:%b Cin:%b, nADL:%b nADH: %b",j,FSM_string, T_string,cpu.fsm.activeOpcode,
-                    cpu.ACR,cpu.controlSigs[`I_ADDC],cpu.controlSigs[`nADL_ABL],cpu.controlSigs[`nADH_ABH]);
+            $display("(halfcycle:%d, %s,%s,%x) eAB:%x eDB:%x A:%x X:%x Y:%x RW:%b aluflag:%b,dbflag:%b,SR:%b",j,FSM_string, T_string,cpu.fsm.activeOpcode,
+               extAB,extDB,cpu.a.currAccum,cpu.x_reg.currVal,cpu.y_reg.currVal,RW,cpu.controlSigs[`FLAG_ALU],cpu.controlSigs[`FLAG_DB],cpu.SR_contents);
             //$display("");
             
     end

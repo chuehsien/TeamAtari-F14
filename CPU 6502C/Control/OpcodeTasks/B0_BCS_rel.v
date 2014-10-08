@@ -63,7 +63,6 @@ task BCS_rel;
 					controlSigs[`ADD_SB7] = 1'b1;
 					controlSigs[`ADD_SB0to6] = 1'b1;
 					controlSigs[`nDSA] = 1'b1;
-					controlSigs[`SB_AC] = 1'b1;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`ADH_PCH] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
@@ -86,14 +85,20 @@ task BCS_rel;
 			if (carry) newT = `Tzero;
 			else newT = `T1BranchNoCross;
 				if(phi1) begin
-				//SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,SBADH,PCHADH,#IPC,~IPC
+				//SS,ADLADD,SBADD,SUMS,#DAA,~DAA,#DSA,~DSA,SBDB,ADHPCH,PCHADH,#IPC,~IPC,PCLADL,ADLPCL,DL/DB
+					controlSigs[`S_S] = 1'b1;
+					controlSigs[`ADL_ADD] = 1'b1;
+					controlSigs[`SB_ADD] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
 					controlSigs[`nDAA] = 1'b1;
-					controlSigs[`ADD_ADL] = 1'b1;
 					controlSigs[`nDSA] = 1'b1;
-					controlSigs[`SB_ADH] = 1'b1;
+					controlSigs[`SB_DB] = 1'b1;
+					controlSigs[`ADH_PCH] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
-					controlSigs[`nI_PC] = 1'b1;
+                    controlSigs[`nI_PC] = 1'b1;
+					controlSigs[`PCL_ADL] = 1'b1;
+					controlSigs[`ADL_PCL] = 1'b1;
+                    controlSigs[`DL_DB] = 1'b1;
 				end
 				else if (phi2) begin
 				//SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,SBADH,PCHADH,#IPC,~IPC

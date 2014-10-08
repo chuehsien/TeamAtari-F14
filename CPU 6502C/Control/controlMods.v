@@ -323,6 +323,8 @@ task findLeftOverSig;
              opcode == `AND_izx || opcode == `AND_izy || opcode == `AND_zp  || opcode == `AND_zpx ||
              opcode == `ORA_imm || opcode == `ORA_abs || opcode == `ORA_abx || opcode == `ORA_aby ||
              opcode == `ORA_izx || opcode == `ORA_izy || opcode == `ORA_zp  || opcode == `ORA_zpx ||
+             opcode == `EOR_imm || opcode == `EOR_abs || opcode == `EOR_abx || opcode == `EOR_aby ||
+             opcode == `EOR_izx || opcode == `EOR_izy || opcode == `EOR_zp  || opcode == `EOR_zpx ||
              opcode == `ASL     || opcode == `LSR     || opcode == `ROL     || opcode == `ROR     ) begin
                 leftOverSigNum = `SB_AC;
              end

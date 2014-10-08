@@ -64,7 +64,7 @@ task ROR_zp;
 					controlSigs[`PCL_ADL] = 1'b1;
 					controlSigs[`ADL_PCL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
-                    if (statusC) controlSigs[`I_ADDC] = 1'b1;
+                    
 				end
 				else if (phi2) begin
 				//SUMS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBDB,PCHADH,PCLADL
@@ -76,7 +76,7 @@ task ROR_zp;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
-                    if (statusC) controlSigs[`I_ADDC] = 1'b1;
+  
 				end
 			
 			end
@@ -158,6 +158,7 @@ task ROR_zp;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_PCL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
+                    if (statusC) controlSigs[`I_ADDC] = 1'b1;
 				end
 				else if (phi2) begin
 
@@ -172,6 +173,7 @@ task ROR_zp;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
                     controlSigs[`FLAG_ALU] = 1'b1;
+                    if (statusC) controlSigs[`I_ADDC] = 1'b1;
 				end
 			
 			end

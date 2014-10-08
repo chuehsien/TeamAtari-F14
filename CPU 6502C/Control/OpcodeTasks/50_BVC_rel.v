@@ -62,7 +62,6 @@ task BVC_rel;
 					controlSigs[`ADD_SB7] = 1'b1;
 					controlSigs[`ADD_SB0to6] = 1'b1;
 					controlSigs[`nDSA] = 1'b1;
-					controlSigs[`SB_AC] = 1'b1;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`ADH_PCH] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;

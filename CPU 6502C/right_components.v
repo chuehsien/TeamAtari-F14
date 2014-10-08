@@ -64,9 +64,9 @@ module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC)
           ALU_out = A | B;
         else if (SRS) begin// which to shift? A or B? can we just default to A.
           //ALU_out = {1'b0, ALU_out[7:1]};
-          ALU_out = {I_ADDC, A[7:1]};
+          ALU_out = {I_ADDC, B[7:1]};
           // need to shift out the carry i thk.
-          ACR = A[0];
+          ACR = B[0];
         end
     
   end
@@ -546,7 +546,7 @@ endmodule
 //this needs to push out B bit when its a BRK.
 //the x_set and x_clr are edge triggered.
 //everything else is ticked in when 'update' is asserted.
-module statusReg(rstAll,phi1,phi2,load,loadDBZ,flagsALU,flagsDB,
+module statusReg(rstAll,phi1,phi2,DB_P,loadDBZ,flagsALU,flagsDB,
                         P_DB, DBZ, DB_N, ACR, AVR, DAA, B,
                         C_set, C_clr,
                         I_set,I_clr, 
@@ -555,7 +555,7 @@ module statusReg(rstAll,phi1,phi2,load,loadDBZ,flagsALU,flagsDB,
                         DB,ALU,opcode,DBinout,
                         status);
     
-    input rstAll,phi1,phi2,load,loadDBZ,flagsALU,flagsDB,
+    input rstAll,phi1,phi2,DB_P,loadDBZ,flagsALU,flagsDB,
                         P_DB, DBZ,DB_N, ACR, AVR, DAA,B,
                         C_set, C_clr,
                         I_set,I_clr, 
@@ -566,7 +566,7 @@ module statusReg(rstAll,phi1,phi2,load,loadDBZ,flagsALU,flagsDB,
     inout [7:0] DBinout;
     output [7:0] status; //used by the FSM
     
-    wire rstAll,phi1,phi2,load,loadDBZ,flagsALU,flagsDB,
+    wire rstAll,phi1,phi2,DB_P,loadDBZ,flagsALU,flagsDB,
                     P_DB, DBZ,DB_N, ACR, AVR, DAA,B,
                     C_set, C_clr,
                     I_set,I_clr, 
@@ -628,10 +628,10 @@ module statusReg(rstAll,phi1,phi2,load,loadDBZ,flagsALU,flagsDB,
     end
     
     always @ (posedge phi1) begin
+        
         if (loadDBZ) currVal[`status_Z] <= DBZ;
         
         if (flagsALU) begin
-                     
             if (opcode == `ADC_abs || opcode == `ADC_abx || opcode == `ADC_aby || opcode == `ADC_imm || 
              opcode == `ADC_izx || opcode == `ADC_izy || opcode == `ADC_zp  || opcode == `ADC_zpx ||
              opcode == `SBC_abs || opcode == `SBC_abx || opcode == `SBC_aby || opcode == `SBC_imm || 
@@ -645,13 +645,14 @@ module statusReg(rstAll,phi1,phi2,load,loadDBZ,flagsALU,flagsDB,
             end
             
             else if (opcode == `ORA_izx ||opcode == `ORA_izy ||opcode == `ORA_aby ||opcode == `ORA_abx ||
-                    opcode == `ORA_abs ||opcode == `ORA_imm ||opcode == `ORA_zp || `ORA_zpx||
+                    opcode == `ORA_abs ||opcode == `ORA_imm ||opcode == `ORA_zp || opcode == `ORA_zpx||
                     opcode == `AND_izx ||opcode == `AND_izy ||opcode == `AND_aby ||opcode == `AND_abx ||
-                    opcode == `AND_abs ||opcode == `AND_imm ||opcode == `AND_zp || `AND_zpx||
+                    opcode == `AND_abs ||opcode == `AND_imm ||opcode == `AND_zp || opcode == `AND_zpx||
                     opcode == `EOR_izx ||opcode == `EOR_izy ||opcode == `EOR_aby ||opcode == `EOR_abx ||
-                    opcode == `EOR_abs ||opcode == `EOR_imm ||opcode == `EOR_zp || `EOR_zpx) begin
+                    opcode == `EOR_abs ||opcode == `EOR_imm ||opcode == `EOR_zp || opcode == `EOR_zpx) begin
                     
                 //AND,EOR,ORA,=NZ (ALU)
+
                 currVal[`status_Z] <= ~(|ALU);
                 currVal[`status_N] <= ALU[7];
             end
@@ -685,7 +686,7 @@ module statusReg(rstAll,phi1,phi2,load,loadDBZ,flagsALU,flagsDB,
 
     
     always @ (posedge phi2) begin
-        if (load) currVal <= DB;
+        if (DB_P) currVal <= DB;
     end
     always @ (posedge rstAll) begin
         currVal = 8'b0010_0000;

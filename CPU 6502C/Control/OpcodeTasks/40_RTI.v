@@ -174,6 +174,7 @@ task RTI;
 					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
+                    controlSigs[`DB_P] = 1'b1;
         end
         end
 		(`Tfive) : begin 
@@ -194,6 +195,7 @@ task RTI;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_PCL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
+                    controlSigs[`DB_P] = 1'b1;
         end
         
         else if(phi2) begin

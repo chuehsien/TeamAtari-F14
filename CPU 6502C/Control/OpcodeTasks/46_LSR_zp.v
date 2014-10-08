@@ -37,6 +37,7 @@ task LSR_zp;
 					controlSigs[`PCH_PCH] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_PCL] = 1'b1;
+
         end
         else if(phi2) begin
           //SUMS,#DAA,~DAA,#DSA,~DSA,PCHADH,#IPC,~IPC,PCLADL,DL/DB
@@ -138,6 +139,8 @@ task LSR_zp;
 					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
+                    controlSigs[`nADL_ABL] = 1'b1;
+                    controlSigs[`nADH_ABH] = 1'b1;
         end
       end
 	  
@@ -157,6 +160,8 @@ task LSR_zp;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_PCL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
+                    controlSigs[`nADL_ABL] = 1'b1;
+                    controlSigs[`nADH_ABH] = 1'b1;
         end
         else if(phi2) begin
           //SRS,#DAA,~DAA,ADDSB7,ADDSB06,ADDADL,#DSA,~DSA,SBDB,#IPC,~IPC
@@ -169,6 +174,8 @@ task LSR_zp;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
                     controlSigs[`FLAG_ALU] = 1'b1;
+                    controlSigs[`nADL_ABL] = 1'b1;
+                    controlSigs[`nADH_ABH] = 1'b1;
         end
       end
     

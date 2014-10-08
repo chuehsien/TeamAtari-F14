@@ -20,7 +20,6 @@ task CMP_imm;
 		newT = `Ttwo;
 				if (phi1) begin
 
-					controlSigs[`I_ADDC] = 1'b1;
 					controlSigs[`S_S] = 1'b1;
 					controlSigs[`DB_L_ADD] = 1'b1;
 					controlSigs[`SB_ADD] = 1'b1;
@@ -33,10 +32,10 @@ task CMP_imm;
 					controlSigs[`PCL_ADL] = 1'b1;
 					controlSigs[`ADL_PCL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
+                    controlSigs[`I_ADDC] = 1'b1;
 				end
 				else if (phi2) begin
 
-					controlSigs[`I_ADDC] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
 					controlSigs[`nDAA] = 1'b1;
 					controlSigs[`ADD_SB7] = 1'b1;
@@ -46,6 +45,7 @@ task CMP_imm;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
                     controlSigs[`FLAG_ALU] = 1'b1;
+                    controlSigs[`I_ADDC] = 1'b1;
 				end
 			
 			end
