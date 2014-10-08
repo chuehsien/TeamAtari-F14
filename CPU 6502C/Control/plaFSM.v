@@ -293,7 +293,7 @@ module plaFSM(phi1,phi2,nmi,irq,rst,RDY,ACR, opcode, statusReg,loadOpcode,
             if (next_T == `Ttwo) begin
                 // handle leftover instructions (SBAC, SBX, SBY)
                 findLeftOverSig(activeOpcode,leftOverSig);
-                if (leftOverSig !== `NO_SIG) next_P1controlSigs[leftOverSig] = 1'b1;
+                if (leftOverSig != `NO_SIG) next_P1controlSigs[leftOverSig] = 1'b1;
             end
         
             //if (next_T == `Tzero || next_T == `TzeroNoCrossPg || next_T == `TzeroCrossPg) begin

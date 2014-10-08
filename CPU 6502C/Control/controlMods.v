@@ -62,7 +62,7 @@ task instructionType;
 	else if (opcode == `BRK)
         dummy_state = `execBrk;
     
-    else dummy_state = 3'bxxx;
+    else dummy_state = 3'b000;
 	
 	end
 	
@@ -82,7 +82,7 @@ task getControlsBrk;
 	
 	begin
 		dummy_control = 80'd0;
-		dummy_T = 7'dx;
+		dummy_T = `emptyT;
         BRK(currT,phi1,phi2,active_interrupt,dummy_control,dummy_T);
         
     end
@@ -104,7 +104,7 @@ task getControlsNorm;
 	
 	begin
 		dummy_control = 80'd0;
-		dummy_T = 7'dx;
+		dummy_T = `emptyT;
 		case (opcode)
 		`ORA_izx: ORA_izx(currT,phi1,phi2,dummy_control,dummy_T);
 		`ORA_zp : ORA_zp (currT,phi1,phi2,dummy_control,dummy_T);
@@ -244,7 +244,7 @@ task getControlsRMW;
 	
 	begin
 		dummy_control = 80'd0;
-		dummy_T = 7'dx;
+		dummy_T = `emptyT;
 		case (opcode)
 		
 		`ORA_izy: ORA_izy(currT,phi1,phi2,carry,dummy_control,dummy_T);
@@ -291,7 +291,7 @@ task getControlsBranch;
 	
 	begin
 		dummy_control = 80'd0;
-		dummy_T = 7'dx;
+		dummy_T = `emptyT;
 		case (opcode)
 			
 			`BPL_rel: BPL_rel(currT,phi1,phi2,carry,~statusReg[`status_N],dummy_control,dummy_T);
@@ -313,7 +313,7 @@ task findLeftOverSig;
     output [7:0] leftOverSigNum;
     
     begin
-    leftOverSigNum = 8'hxx;
+    leftOverSigNum = `NO_SIG;
     
         if  (opcode == `ADC_abs || opcode == `ADC_abx || opcode == `ADC_aby || opcode == `ADC_imm || 
              opcode == `ADC_izx || opcode == `ADC_izy || opcode == `ADC_zp  || opcode == `ADC_zpx ||

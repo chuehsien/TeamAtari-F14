@@ -58,30 +58,10 @@ module predecodeLogic(rstAll,irIn, interrupt,
     end
     
     always @ (posedge rstAll) begin
-        loadOpcode = 1'b0;
+        loadOpcode <= 1'b0;
     end
 endmodule
                         
-module instructionRegister(phi1, en, realIR, effectiveIR, 
-                        real_out, effective_out);
-                
-    input phi1,en;
-    input [7:0] realIR, effectiveIR; 
-    output [7:0] real_out, effective_out;
-    
-    wire phi1,en;
-    wire [7:0] realIR, effectiveIR; 
-    reg [7:0]  real_out, effective_out;
-    
-    always @ (posedge phi1) begin
-        if (en) begin
-            effective_out<= effectiveIR;
-            real_out <= effective_out;
-        end
-    end
-    
-    
-endmodule
 
 module inoutLatch3(rstAll, phi1,data1,data2,data3,done1,done2,done3,
                     out1,out2,out3);

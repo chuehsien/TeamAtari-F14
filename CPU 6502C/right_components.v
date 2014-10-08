@@ -342,7 +342,7 @@ module SPreg(rstAll,phi2,S_S, SB_S, S_ADL, S_SB, SBin,
     
     
     always @ (posedge phi2) begin
-        if (SB_S) latchOut = SBin;
+        if (SB_S) latchOut <= SBin;
     end
     
     always @ (posedge rstAll) begin
@@ -442,11 +442,11 @@ module accum(rstAll,phi2,inFromDecAdder, SB_AC, AC_DB, AC_SB,
     
     always @ (posedge phi2) begin
         if (SB_AC) begin
-            currAccum = inFromDecAdder;
-            updateSR = 1'b1;
+            currAccum <= inFromDecAdder;
+            updateSR <= 1'b1;
         end
         else begin
-            updateSR = 1'b0;
+            updateSR <= 1'b0;
         end
     
     end
@@ -528,12 +528,12 @@ module register(rstAll,phi2, load, bus_en,
     
     always @(posedge phi2) begin
         if (load) begin
-            currVal = SB;
-            updateSR = 1'b1;
+            currVal <= SB;
+            updateSR <= 1'b1;
         end
         else begin
-            currVal = currVal;
-            updateSR = 1'b0;
+            currVal <= currVal;
+            updateSR <= 1'b0;
         end
     end
     
@@ -689,7 +689,7 @@ module statusReg(rstAll,phi1,phi2,DB_P,loadDBZ,flagsALU,flagsDB,
         if (DB_P) currVal <= DB;
     end
     always @ (posedge rstAll) begin
-        currVal = 8'b0010_0000;
+        currVal <= 8'b0010_0000;
     end
     assign DBinout = (P_DB) ? currVal : 8'bzzzzzzzz;
     assign status = currVal;
@@ -708,7 +708,7 @@ module prechargeMos(rstAll,phi2,
     
     reg [7:0] pullupReg;
     always @ (posedge rstAll) begin
-        pullupReg = 8'hff;
+        pullupReg <= 8'hff;
     end
     
     bufif1 (weak1, highz0) a[7:0](bus,pullupReg,phi2);
@@ -760,9 +760,9 @@ module opendrainMosADL(rstAll,O_ADL0, O_ADL1, O_ADL2,
     
    reg pulldownReg0,pulldownReg1,pulldownReg2;
     always @ (posedge rstAll) begin
-        pulldownReg0 = 1'b0;
-        pulldownReg1 = 1'b0;
-        pulldownReg2 = 1'b0;
+        pulldownReg0 <= 1'b0;
+        pulldownReg1 <= 1'b0;
+        pulldownReg2 <= 1'b0;
     end
     
     
@@ -787,41 +787,12 @@ module opendrainMosADH(rstAll,O_ADH0, O_ADH17,
     reg [6:0] pulldownReg17;
     
     always @ (posedge rstAll) begin
-        pulldownReg0 = 1'b0;
-        pulldownReg17 = 7'b000_0000;
+        pulldownReg0 <= 1'b0;
+        pulldownReg17 <= 7'b000_0000;
     end
     
     bufif1 (highz1, supply0) a(bus[0],pulldownReg0,O_ADH0);
     bufif1 (highz1, supply0) b[6:0](bus[7:1],pulldownReg17,O_ADH17);
-    
-endmodule
-
-// holds bus value over ticks, when drivers get off.
-// only for each phi1 tick, restore the prev value. otherwise lines go crazy when precharge mosfets turn off.
-module busHold(rstAll,phi1,phi2,busIn,busOut);
-    input rstAll;
-    input phi1,phi2;
-    input [7:0] busIn;
-    output [7:0] busOut;
-    
-    wire rstAll;
-    wire phi1,phi2;
-    wire [7:0] busIn,busOut;
-    
-    reg [7:0] busReg;
-    
-    always @ (busIn) begin
-        busReg = busIn;
-    end
-    always @ (posedge phi1) begin
-        
-    end
-    
-    buf (weak1,weak0) buffer[7:0](busOut,busReg);
-    
-    always @ (posedge rstAll) begin
-        busReg <= 8'h00;
-    end
     
 endmodule
 
