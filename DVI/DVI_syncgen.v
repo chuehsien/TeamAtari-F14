@@ -1,15 +1,16 @@
 // Synchronization module for DVI
 // last updated: 10/07/2014 0300H
 
-module SyncGen(clock, rst, vs, hs, x, y, border);
+module SyncGen(clock, rst, vs, hs, border);
 
   input clock;
   input rst;
   output reg vs, hs;
-  output reg [11:0] x, y;
   output reg border;
 
   `include "DVI_parameters.v"
+  
+  reg [11:0] x, y;
   
   always @(posedge clock) begin
 
@@ -37,7 +38,7 @@ module SyncGen(clock, rst, vs, hs, x, y, border);
   always @(*) begin
     hs = (x >= (XRES + XFPORCH)) && (x < (XRES + XFPORCH + XSYNC));
     vs = (y >= (YRES + YFPORCH)) && (y < (YRES + YFPORCH + YSYNC));
-    border = (x >= XRES) || (y >= YRES);
+    border = (x <= (XBPORCH+LMARGIN)) || (x > (XBPORCH+LMARGIN+XDISPLAY)) || (y <= (YBPORCH+TMARGIN)) || (y > (YBPORCH+TMARGIN+YDISPLAY));
   end
 
 endmodule

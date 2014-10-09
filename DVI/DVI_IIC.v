@@ -10,7 +10,7 @@ module IIC_init(clk, reset, pclk_gt_65MHz, SDA, SCL, done);
   inout SCL;
   output done;
 
-  parameter CLK_RATE_MHZ = 200,
+  parameter CLK_RATE_MHZ = 25,
             SCK_PERIOD_US = 30,
             TRANSITION_CYCLE = (CLK_RATE_MHZ * SCK_PERIOD_US) / 2,
             TRANSITION_CYCLE_MSB = 11;
@@ -52,7 +52,7 @@ module IIC_init(clk, reset, pclk_gt_65MHz, SDA, SCL, done);
   reg [31:0] bit_count;
   reg [SDA_BUFFER_MSB:0] SDA_BUFFER;
   wire transition; 
-  
+
   assign SDA = SDA_out;
   assign SCL = SCL_out;
   assign transition = (cycle_count == TRANSITION_CYCLE); 
