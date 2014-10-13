@@ -202,6 +202,11 @@ module instructionRegister(currT,RDY,phi1,phi2,OPin,OPout,prevOP);
     output reg [7:0] prevOP = `BRK;
     
     reg en = 1'b0;
+    
+    (* clock_signal = "yes" *)
+    wire tick,tock;
+    
+    
     assign tick = (currT == `Tone || currT == `T1NoBranch ||
                         currT == `T1BranchNoCross || currT == `T1BranchCross) & phi2 & RDY;
     always @ (tick) begin

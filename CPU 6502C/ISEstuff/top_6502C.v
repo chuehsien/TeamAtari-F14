@@ -215,6 +215,7 @@ module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,
 `endif    
 */
             wire [7:0] prevOpcode;
+            (* clock_signal = "yes" *)
             wire [6:0] currT;
             instructionRegister ir_reg(currT,RDY,phi1,phi2, opcodeToIR, opcode, prevOpcode);
             

@@ -534,7 +534,9 @@ module statusReg(rstAll,phi1,phi2,DB_P,loadDBZ,flagsALU,flagsDB,
         currVal[4] = B;
     end
     
+    (* clock_signal = "yes" *)
     wire phi2OrRstAll;
+    
     assign phi2OrRstAll = phi2 | rstAll;
 
     assign DBinout = (P_DB) ? currVal : 8'bzzzzzzzz;
