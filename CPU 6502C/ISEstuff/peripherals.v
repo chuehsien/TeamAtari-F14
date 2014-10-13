@@ -17,6 +17,32 @@
 
 
 
+module clockDivider(inClk,outClk);
+    input inClk;
+    output outClk;
+    
+    parameter DIVIDE = 100;
+
+
+    reg [15:0] counter = 1'b0;
+    reg outClk = 1'b0;
+
+    always @ (posedge inClk) begin
+        
+        if (counter == DIVIDE) begin
+            outClk <= ~outClk;
+            counter <= 1'b0;
+        end
+        else begin
+            outClk <= outClk;
+            counter <= counter + 1;
+        end
+
+    end
+
+    
+endmodule
+
 
 module passBuffer(in,en,out);
     input [7:0] in;

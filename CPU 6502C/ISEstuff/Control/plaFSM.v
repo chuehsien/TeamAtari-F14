@@ -61,7 +61,7 @@ module plaFSM(phi1,phi2,RDY,nextT, rst,brkNow,
                     intHandled = 1'b1;
                 end    
                 else begin
-                    nextState <= currState;
+                    nextState = currState;
                     intHandled = 1'b0;
                 end
  

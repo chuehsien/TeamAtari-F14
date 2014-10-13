@@ -21,6 +21,10 @@ module testCPU(USER_CLK,
 			   GPIO_SW_S,			   
 			   GPIO_SW_N,
                GPIO_SW_W,
+               GPIO_DIP_SW1,
+               GPIO_DIP_SW2,
+               GPIO_DIP_SW3,
+               
 				GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7,
 			   GPIO_LED_N, GPIO_LED_W,GPIO_LED_S,
 				LCD_FPGA_RS, LCD_FPGA_RW, LCD_FPGA_E,
@@ -29,7 +33,10 @@ module testCPU(USER_CLK,
 	input	   USER_CLK;
 	/* switch C is reset, E is clear, S is resetFSM, W is nextString */
 	input	   GPIO_SW_C, GPIO_SW_E, GPIO_SW_S,  GPIO_SW_N, GPIO_SW_W;
-	
+	input GPIO_DIP_SW1,
+               GPIO_DIP_SW2,
+               GPIO_DIP_SW3;
+               
 	output 	GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7;
 	output 	GPIO_LED_N, GPIO_LED_W,GPIO_LED_S;
 	output	LCD_FPGA_RS,LCD_FPGA_RW,LCD_FPGA_E;
@@ -64,12 +71,14 @@ module testCPU(USER_CLK,
     wire [15:0] extAB; //Address Bus Low and High
     wire [7:0] extDB; //Data Bus
 	 
+    wire cpuClock;
+    clockDivider #(100) divide(USER_CLK,phi0_in);
 	assign RDY = ~GPIO_SW_C;
-	assign IRQ_L = 1'b1;
-	assign NMI_L = 1'b1;
-	assign RES_L = 1'b1;
+	assign IRQ_L = GPIO_DIP_SW3;
+	assign NMI_L = GPIO_DIP_SW2;
+	assign RES_L = GPIO_DIP_SW1;
 	assign SO = 1'b1;
-	assign phi0_in = ~GPIO_SW_S; //pressing button => phi1 tick.
+	//assign phi0_in = ~GPIO_SW_S; //pressing button => phi1 tick.
 	assign writeStart = GPIO_SW_N;
 	assign GPIO_LED_N = writeDone;
 	assign GPIO_LED_W = initDone;
