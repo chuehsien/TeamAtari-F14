@@ -1,13 +1,10 @@
 // Dedicated Dual Data Rate Output (ODDR) modules for DVI
-// last updated: 10/07/2014 1800H
+// last updated: 10/13/2014 2200H
 
-`define test 12'd1
+module DVI_ODDR(data, offset, border, clock, hs, vs, DVI_XCLK_P, DVI_XCLK_N, DVI_DE, DVI_V, DVI_H, DVI_D);
 
-module DVI_ODDR(border, clock, hs, vs, DVI_XCLK_P, DVI_XCLK_N, DVI_DE, DVI_V, DVI_H, DVI_D);
-
-  //input [63:0] data;
-  //input offset;
-  
+  input [63:0] data;
+  input offset;
   input border;
   input clock;
   input hs, vs;
@@ -24,23 +21,18 @@ module DVI_ODDR(border, clock, hs, vs, DVI_XCLK_P, DVI_XCLK_N, DVI_DE, DVI_V, DV
   
   wire dvi_xclk_p_nodly, dvi_xclk_n_nodly;
   wire [7:0] red_p, green_p, blue_p;
-   
-  //wire first_pixel, second_pixel;
+  wire first_pixel, second_pixel;
   
-  //assign first_pixel = (offset == 1'b0);
-	//assign second_pixel = (offset == 1'b1);
+  assign first_pixel = ~offset;
+	assign second_pixel = offset;
   
   // Pixel assignment
-  //assign red_p   = (border) ? 8'h00 : (second_pixel) ? data[63:56] : (first_pixel) ? data[31:24] : 8'hff;
-	//assign green_p = (border) ? 8'h00 : (second_pixel) ? data[55:48] : (first_pixel) ? data[23:16] : 8'h00;
-	//assign blue_p  = (border) ? 8'hff : (second_pixel) ? data[47:40] : (first_pixel) ? data[15:8] : 8'h00;
-  
-  assign red_p   = (border) ? 8'h00 : 8'hFF;
-	assign green_p = (border) ? 8'h00 : 8'hFF;
-	assign blue_p  = (border) ? 8'h00 : 8'hFF;
+  assign red_p   = (border) ? 8'h00 : (first_pixel) ? data[23:16] : (second_pixel) ? data[55:48] : 8'h00;
+	assign green_p = (border) ? 8'h00 : (first_pixel) ?  data[15:8] : (second_pixel) ? data[47:40] : 8'h00;
+	assign blue_p  = (border) ? 8'h00 : (first_pixel) ?   data[7:0] : (second_pixel) ? data[39:32] : 8'h00;
   
   // FSM to clock in RGB pixels
-  always @(negedge clock) begin
+  always @(posedge clock) begin
 		red <= red_p;
 		green <= green_p;
 		blue <= blue_p;
