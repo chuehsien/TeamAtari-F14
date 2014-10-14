@@ -38,7 +38,8 @@ module SyncGen(clock, rst, vs, hs, border);
   always @(*) begin
     hs = (x >= (XRES + XFPORCH)) && (x < (XRES + XFPORCH + XSYNC));
     vs = (y >= (YRES + YFPORCH)) && (y < (YRES + YFPORCH + YSYNC));
-    border = (x <= (XBPORCH+LMARGIN)) || (x > (XBPORCH+LMARGIN+XDISPLAY)) || (y <= (YBPORCH+TMARGIN)) || (y > (YBPORCH+TMARGIN+YDISPLAY));
+    border = (x <= (XBPORCH+LMARGIN)) || (x > (XBPORCH+LMARGIN+XDISPLAY)) || 
+             (y <= (YBPORCH+TMARGIN)) || (y > (YBPORCH+TMARGIN+YDISPLAY));
   end
 
 endmodule

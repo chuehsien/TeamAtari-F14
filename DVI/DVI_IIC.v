@@ -1,5 +1,5 @@
 // Synchronization module for DVI
-// last updated: 10/07/2014 0300H
+// last updated: 10/13/2014 2200H
 
 module IIC_init(clk, reset, pclk_gt_65MHz, SDA, SCL, done);
 
