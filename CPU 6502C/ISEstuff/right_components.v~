@@ -199,14 +199,14 @@ module dataOutReg(rstAll, phi2, en, dataIn,
     
 endmodule
 
-module inputDataLatch(rstAll, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
+module inputDataLatch(rstAll, phi1, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
                         DB,ADL,ADH);
     
-    input rstAll, phi2, DL_DB, DL_ADL, DL_ADH;
+    input rstAll,phi1, phi2, DL_DB, DL_ADL, DL_ADH;
     input [7:0] extDataBus;
     inout [7:0] DB, ADL, ADH;
     
-    wire rstAll,phi2,DL_DB, DL_ADL, DL_ADH;
+    wire rstAll,phi1,phi2,DL_DB, DL_ADL, DL_ADH;
     wire [7:0] extDataBus;
     wire [7:0] DB, ADL, ADH; 
     

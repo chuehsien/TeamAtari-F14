@@ -15,23 +15,57 @@
   30 Sep 2014,  1927hrs: amended memory module to be writable (ben)
 */
 
+module debounce(
+    input clk,
+    input button_i,
+    output button_debounced_o
+    );
+
+    parameter MIN_DELAY = 50; // minimum number of cycles to count
+    parameter W_COUNTER = 20;
+    reg [W_COUNTER:0] counter; // one bit wider than min_delay
+
+    assign button_debounced_o = counter[W_COUNTER];
+
+    always @(posedge clk) begin
+        if (!button_i) begin
+        // if button sensor is showing 'off' state, reset the counter
+            counter <= 0;
+        end 
+        else if (!counter[W_COUNTER]) begin
+            counter <= counter + 1'b1;
+        end
+    end
+
+endmodule
+
+
+
 
 
 module clockDivider(inClk,outClk);
+    parameter DIVIDE = 3;
+    
+function integer log2;
+    input [31:0] value;
+    for (log2=0; value>0; log2=log2+1)
+    value = value>>1;
+endfunction
+
+    parameter width = log2(DIVIDE);
+        
     input inClk;
     output outClk;
+
     
-    parameter DIVIDE = 100;
-
-
-    reg [15:0] counter = 1'b0;
+    reg [width-1:0] counter = 0;
     reg outClk = 1'b0;
 
     always @ (posedge inClk) begin
         
         if (counter == DIVIDE) begin
             outClk <= ~outClk;
-            counter <= 1'b0;
+            counter <= 0;
         end
         else begin
             outClk <= outClk;

@@ -19,4 +19,3 @@ NET  GPIO_DIP_SW5         LOC="AE27";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm 
 NET  GPIO_DIP_SW6         LOC="AE26";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
 NET  GPIO_DIP_SW7         LOC="AC25";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
 NET  GPIO_DIP_SW8         LOC="AC24";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-

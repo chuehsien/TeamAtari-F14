@@ -5,7 +5,7 @@
 */
 `include "top_6502C.v"
 `include "lcd_control.v"
-`include "testFSM.v"
+//`include "peripherals.v"
 /*
 description:
 press west button to reset lcd
@@ -15,7 +15,7 @@ press north button to display current eDB on lcd.
 press east button to clear lcd.
 the lower byte of eAB is always on the leds.
 */
-module CPUtest(USER_CLK, 
+module topCPUtest(USER_CLK, 
 			   GPIO_SW_C,			   
 			   GPIO_SW_E,			   
 			   GPIO_SW_S,			   
@@ -125,11 +125,8 @@ module CPUtest(USER_CLK,
 									 .initDone(butOut), .writeStart(writeStart),
 									 .dataHi(extDB[7:4]),.dataLo(extDB[3:0]),
 									 .writeDone(writeDone));
-    wire [6:0] currT;
-    wire [1:0] currState;
-    wire [7:0] DB;
     //fsm to translate stuff on DB into readable format and tick the lcd.
-	top_6502C cpu(.currT(currT),.currState(currState),.DB(DB),.RDY(RDY), .IRQ_L(IRQ_L), .NMI_L(NMI_L), .RES_L(RES_L), .SO(SO), .phi0_in(phi0_in), 
+	top_6502C cpu(.RDY(RDY), .IRQ_L(IRQ_L), .NMI_L(NMI_L), .RES_L(RES_L), .SO(SO), .phi0_in(phi0_in), 
                             .extDB(extDB), .phi1_out(phi1_out), .SYNC(SYNC), .extAB(extAB), .phi2_out(phi2_out), .RW(RW));
 
     
@@ -150,19 +147,17 @@ module CPUtest(USER_CLK,
     TRIG14,
     TRIG15;
     
-    wire chipClk;
-    clockDivider    #(2000000) mainClock2(USER_CLK,chipClk);
     
     wire [35 : 0] CONTROL;
     chipscope_ila ila(
     CONTROL,
-    chipClk,
+    phi0_in,
     extAB[15:8],
     extAB[7:0],
-    extDB,
-    {1'b0,currT},
-    {6'b0,currState},
-    DB,
+    TRIG2,
+    TRIG3,
+    TRIG4,
+    TRIG5,
     TRIG6,
     TRIG7,
     TRIG8,
@@ -175,7 +170,7 @@ module CPUtest(USER_CLK,
     TRIG15);
     
     
- chipscope_icon icon(
+module chipscope_icon(
     CONTROL);
     
     

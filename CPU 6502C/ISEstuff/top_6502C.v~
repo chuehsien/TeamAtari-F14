@@ -14,12 +14,9 @@
 
 `include "Control/plaFSM.v"
 
-module top_6502C(currT,currState,DB,RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,	
+module top_6502C(RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,	
                 phi1_out, SYNC, extAB, phi2_out, RW);
-			output [6:0] currT;
-            output [1:0] currState;
-            output [7:0] DB;
-            
+			
 			input RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in;
 			inout [7:0] extDB;
             
@@ -75,14 +72,14 @@ module top_6502C(currT,currState,DB,RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB
             PULLUP dbup[7:0]		(.O(DB));
             PULLUP sbup[7:0]		(.O(SB));
             */
-            (* OPEN_DRAIN = "TRUE" *) wire drain;  //configure NET "drain" OPEN_DRAIN;
-            //reg drain = 1'b0;
+           // wire drain; (* OPEN_DRAIN = "TRUE" *) //configure NET "drain" OPEN_DRAIN;
+            reg drain = 1'b0;
             bufif1  buflo0(ADL[0],drain,controlSigs[`O_ADL0]);
             bufif1	buflo1(ADL[1],drain,controlSigs[`O_ADL1]);
             bufif1	buflo2(ADL[2],drain,controlSigs[`O_ADL2]);
             
-            (* OPEN_DRAIN = "TRUE" *) wire [6:0] drain7; //configure NET "drain7" OPEN_DRAIN;
-            //reg drain7 = 7'b0000000;
+           // wire [6:0] drain7; (* OPEN_DRAIN = "TRUE" *) //configure NET "drain7" OPEN_DRAIN;
+            reg drain7 = 7'b0000000;
             bufif1	bufhi0(ADH[0],drain,controlSigs[`O_ADH0]);
             bufif1	bufhi17[6:0](ADH[7:1],drain7,controlSigs[`O_ADH1to7]);
 			
@@ -235,7 +232,7 @@ module top_6502C(currT,currState,DB,RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB
             interruptLatch   iHandlerLatch(rstAll,phi1,~(SR_contents[`status_I]),NMI_L,IRQ_L,RES_L,outNMI_L,outIRQ_L,outRES_L); //latches signals from outside world
             interruptControl iHandler(rstAll,outNMI_L,outIRQ_L,outRES_L,nmiPending,irqPending,resPending); //handles edge triggered stuff
             PLAinterruptControl  plaInt(phi1,rstAll,nmiPending,resPending,irqPending,intHandled,activeInt); //latches incoming interrupts and keeps track of current interrupt.
-            plaFSM      fsm(currState,phi1,phi2,RDYout,newT, resPending,brkNow,currT,intHandled, rstAll);          
+            plaFSM      fsm(phi1,phi2,RDYout,newT, resPending,brkNow,currT,intHandled, rstAll);          
             
             
             readyControl rdy_control(phi2, RDY, controlSigs[`nRW], RDYout);
