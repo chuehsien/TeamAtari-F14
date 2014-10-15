@@ -78,20 +78,25 @@ endfunction
 endmodule
 
 
-module passBuffer(in,en,out);
-    input [7:0] in;
-    input en;
-    output [7:0] out;
-    
-    wire [7:0] in;
-    wire en;
-	 wire [7:0] out;
+// Assert 'en' to connect the left and right data buses
+module transBuf(en, left, right);
 
-    bufif1 buffer[7:0](out,en,in);
-    //assign out = (en) ? in : 8'hzz;
+    input en;
+    inout [7:0] left, right;
+    
+    wire enLeft, enRight;
+    assign enLeft = (left != 8'hF);
+    assign enRight = (right != 8'hF);
+    
+    wire notEq;
+    assign notEq = (left != right);
+    
+    bufif1 LtoR(right, left, (en & notEq & enLeft));
+    bufif1 RtoL(left, right, (en & notEq & enRight));
     
 endmodule
-    
+
+
 
 // 6502 can address up to 65K memory. (16 bits)
 module memory256x256 (clock, enable, we_L, re_L,address,
