@@ -174,28 +174,20 @@ endmodule
 
 
 // latched on phi1, driven onto data pins in phi2(if write is done).
-module dataOutReg(rstAll, phi2, en, dataIn,
+module dataOutReg(phi2, en, dataIn,
                 dataOut);
                 
-    input rstAll,phi2,en;
+    input phi2,en;
     input [7:0] dataIn;
     output [7:0] dataOut;
     
-    wire rstAll,phi2,en;
+    wire phi2,en;
     wire [7:0] dataIn;
-    wire [7:0] dataOut;
+    reg [7:0] dataOut = 8'h00;
     
-    reg [7:0] data = 8'h00;
-    
-    always @(posedge phi2 or posedge rstAll) begin
-        data <= (rstAll) ? 8'h00 :
-                    ((phi2) ? dataIn : data);
-                    
-                  
+    always @(posedge phi2) begin
+        dataOut <= (en) ? dataIn : 8'hzz;                             
     end
-    
-    assign dataOut = (en) ? data : 8'hzz;
-
     
 endmodule
 
@@ -441,26 +433,22 @@ module accum(rstAll,phi2,inFromDecAdder, SB_AC, AC_DB, AC_SB,
 endmodule
 
 
-module AddressBusReg(rstAll,phi1,ld, dataIn,
+module AddressBusReg(phi1,ld, dataIn,
                 dataOut);
 
-    input rstAll,phi1;
+    input phi1;
     input ld;
     input [7:0] dataIn;
     output [7:0] dataOut;
 
-    wire rstAll,phi1;
+    wire phi1;
     wire ld;
     wire [7:0] dataIn;
-    wire [7:0] dataOut;
-    
-    reg [7:0] data = 8'h00;
-    
-    assign dataOut = data;
-    always @ (posedge phi1 or posedge rstAll) begin
 
-        data <= (rstAll) ? 8'h00 :
-                    (ld) ? dataIn:data;
+    reg [7:0] dataOut = 8'h00;
+    
+    always @ (posedge phi1) begin
+        dataOut <= (ld) ? dataIn : dataOut;
     end
    
     
@@ -696,13 +684,18 @@ module prechargeMos(rstAll,phi2,
     wire phi2;
     wire [7:0] bus;
     
+    wire [7:0] pull;
+    PULLUP inst[7:0](.O(pull));
+    
+/*
     reg [7:0] pullupReg = 8'h00;
     always @ (posedge rstAll) begin
         pullupReg = 8'hff;
     end
-    
-    bufif1 (weak1, highz0) a[7:0](bus,pullupReg,1'b1);
    
+    bufif1 (weak1, highz0) a[7:0](bus,pullupReg,1'b1);
+ */
+    buf a[7:0](bus,pull); 
 endmodule
 
 module opendrainMosADL(rstAll,O_ADL0, O_ADL1, O_ADL2,
@@ -714,7 +707,7 @@ module opendrainMosADL(rstAll,O_ADL0, O_ADL1, O_ADL2,
     wire rstAll;
     wire O_ADL0, O_ADL1, O_ADL2;
     wire [7:0] bus;
-    
+  /*  
    reg pulldownReg0,pulldownReg1,pulldownReg2 = 1'b0;
     always @ (posedge rstAll) begin
         pulldownReg0 = 1'b0;
@@ -726,7 +719,16 @@ module opendrainMosADL(rstAll,O_ADL0, O_ADL1, O_ADL2,
     bufif1 (highz1, supply0) a(bus[0],pulldownReg0,O_ADL0);
     bufif1 (highz1, supply0) b(bus[1],pulldownReg1,O_ADL1);
     bufif1 (highz1, supply0) c(bus[2],pulldownReg2,O_ADL2);
+    */
+
+    wire pull;
+    assign pull = 1'b0;
     
+    bufif1 a(bus[0],pull,O_ADL0);
+    bufif1 b(bus[1],pull,O_ADL1);
+    bufif1 c(bus[2],pull,O_ADL2);
+
+
 endmodule
 
 
@@ -739,7 +741,7 @@ module opendrainMosADH(rstAll,O_ADH0, O_ADH17,
     wire rstAll;
     wire O_ADH0, O_ADH17;
     wire [7:0] bus;
-    
+   /* 
     reg pulldownReg0 = 1'b0;
     reg [6:0] pulldownReg17 = 7'b0000000;
     
@@ -750,6 +752,14 @@ module opendrainMosADH(rstAll,O_ADH0, O_ADH17,
     
     bufif1 (highz1, supply0) a(bus[0],pulldownReg0,O_ADH0);
     bufif1 (highz1, supply0) b[6:0](bus[7:1],pulldownReg17,O_ADH17);
+    */
+
+    wire pull;
+    //bufif1 d(pull,1'b0,1'b1);
+    assign pull = 1'b0;
+    bufif1 a(bus[0],pull,O_ADH0);
+    bufif1 b[6:0](bus[7:1],pull,O_ADH17);
+
     
 endmodule
 

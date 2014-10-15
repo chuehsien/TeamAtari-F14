@@ -13,18 +13,17 @@ module plaFSM(currState,phi1,phi2,RDY,nextT, rst,brkNow,
     //internal
     reg [1:0] currState, nextState = `FSMinit;
     reg [6:0] prevT = `emptyT;
-    
+    reg nextIntHandled;
     always @ (*) begin
         
         
         case (currState) 
             `FSMinit: begin
+                nextIntHandled = 1'b0;
                 if (nextT == `Tone) begin //finished BRK setup sequence
-                    intHandled = 1'b1;
                     nextState = `FSMfetch;
                 end
-                else begin
-                    intHandled = 1'b0;
+                else begin 
                     nextState = currState;
                 end
                 
@@ -32,7 +31,7 @@ module plaFSM(currState,phi1,phi2,RDY,nextT, rst,brkNow,
             end
             
             `FSMfetch: begin
-                intHandled = 1'b0;
+                nextIntHandled = 1'b0;
                 if (brkNow) begin //timing issues. new opcode havent clock in.
                     nextState = `FSMexecBrk;
                 end
@@ -42,7 +41,7 @@ module plaFSM(currState,phi1,phi2,RDY,nextT, rst,brkNow,
             end
             
             `FSMexecNorm: begin
-                intHandled = 1'b0;
+                nextIntHandled = 1'b0;
                 
                 if (nextT == `Tone || nextT == `T1NoBranch ||
                     nextT == `T1BranchNoCross || nextT == `T1BranchCross)
@@ -55,14 +54,14 @@ module plaFSM(currState,phi1,phi2,RDY,nextT, rst,brkNow,
             end
             
             `FSMexecBrk: begin
+                nextIntHandled = 1'b0;
                 if (nextT == `Tone || nextT == `T1NoBranch ||
                     nextT == `T1BranchNoCross || nextT == `T1BranchCross) begin
                     nextState = `FSMfetch;
-                    intHandled = 1'b1;
+                    nextIntHandled = 1'b1;
                 end    
                 else begin
                     nextState = currState;
-                    intHandled = 1'b0;
                 end
  
                 //rstAll = 1'b0;
@@ -78,12 +77,13 @@ module plaFSM(currState,phi1,phi2,RDY,nextT, rst,brkNow,
                 currT <= `Ttwo; //T2 of BRK.    
                 currState <= `FSMinit;
                 rstAll <= 1'b1;
-                
+                intHandled <= nextIntHandled;
             end
             else begin
                 currT <= nextT;
                 currState <= nextState;
                 rstAll <= 1'b0;
+                intHandled <= nextIntHandled;
             end
         end
     

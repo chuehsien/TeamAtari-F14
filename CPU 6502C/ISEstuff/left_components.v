@@ -11,13 +11,17 @@ module clockGen(phi0_in,
     wire phi0_in;
     wire phi1_out,phi2_out,phi1_extout,phi2_extout;
     
-    wire phi2_a,phi2_b,phi2_c;
+    wire phi2_a,phi2_b,phi2_c,phi2_d,phi2_e,phi2_f,phi2_g;
     buf a(phi1_out,phi0_in);
     not b(phi2_a,phi1_out);
     
     buf bufa(phi2_b,phi2_a);
     buf bufb(phi2_c,phi2_b);
-    buf bufc(phi2_out,phi2_c);
+    buf bufc(phi2_d,phi2_c);
+    buf bufd(phi2_e,phi2_d);
+    buf bufe(phi2_f,phi2_e);
+    buf buff(phi2_g,phi2_f);
+    buf bufg(phi2_out,phi2_g);
 
     
     assign phi1_extout = phi1_out;

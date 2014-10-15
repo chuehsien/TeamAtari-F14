@@ -44,7 +44,7 @@ endmodule
 
 
 module clockDivider(inClk,outClk);
-    parameter DIVIDE = 3;
+    parameter DIVIDE = 500;
     
 function integer log2;
     input [31:0] value;
@@ -63,7 +63,7 @@ endfunction
 
     always @ (posedge inClk) begin
         
-        if (counter == DIVIDE) begin
+        if (counter == DIVIDE-1) begin
             outClk <= ~outClk;
             counter <= 0;
         end
@@ -85,14 +85,15 @@ module transBuf(en, left, right);
     inout [7:0] left, right;
     
     wire enLeft, enRight;
-    assign enLeft = (left != 8'hF);
-    assign enRight = (right != 8'hF);
+    assign enLeft = (left != 8'hFF);
+    assign enRight = (right != 8'hFF);
     
-    wire notEq;
+    wire notEq,bothDriven;
     assign notEq = (left != right);
+    assign bothDriven = enLeft & enRight;
     
-    bufif1 LtoR(right, left, (en & notEq & enLeft));
-    bufif1 RtoL(left, right, (en & notEq & enRight));
+    bufif1 LtoR[7:0](right, left, (~bothDriven & en & notEq & enLeft));
+    bufif1 RtoL[7:0](left, right, (~bothDriven & en & notEq & enRight));
     
 endmodule
 

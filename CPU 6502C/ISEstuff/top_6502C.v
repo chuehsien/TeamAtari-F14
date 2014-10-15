@@ -14,11 +14,15 @@
 
 `include "Control/plaFSM.v"
 
-module top_6502C(currT,currState,DB,RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,	
+module top_6502C(ALUout,holdHi,holdLo,activeInt,adCon,currT,currState,DB,SB,ADH,ADL,RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,	
                 phi1_out, SYNC, extAB, phi2_out, RW);
-			output [6:0] currT;
+            output [7:0] ALUout;
+            output holdHi, holdLo;
+            output [2:0] activeInt;
+            output [7:0] adCon;			
+            output [6:0] currT;
             output [1:0] currState;
-            output [7:0] DB;
+            output [7:0] DB,SB,ADH,ADL;
             
 			input RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in;
 			inout [7:0] extDB;
@@ -32,11 +36,12 @@ module top_6502C(currT,currState,DB,RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB
             wire [15:0] extAB;
             wire phi1_out, SYNC, phi2_out, RW;
             
+            assign ALUout = ALU_out;
             //internal variables
             
             //bus lines
 `ifdef syn				
-			(* PULLUP = "TRUE" *) wire [7:0]  DB, ADL, ADH, SB; 
+			wire [7:0]  DB, ADL, ADH, SB; 
 `else
             trireg [7:0]  DB, ADL, ADH, SB;
 `endif            
@@ -46,7 +51,8 @@ module top_6502C(currT,currState,DB,RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB
 
             
             assign RW = ~controlSigs[`nRW];
-
+            assign holdHi = controlSigs[`nADH_ABH];
+            assign holdLo = controlSigs[`nADL_ABL];
             //clock
             wire phi1,phi2;
 			clockGen clock(phi0_in,phi1,phi2,phi1_out,phi2_out);
@@ -74,7 +80,7 @@ module top_6502C(currT,currState,DB,RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB
             PULLUP adlup[7:0]		(.O(ADL));
             PULLUP dbup[7:0]		(.O(DB));
             PULLUP sbup[7:0]		(.O(SB));
-            */
+            
             (* OPEN_DRAIN = "TRUE" *) wire drain;  //configure NET "drain" OPEN_DRAIN;
             //reg drain = 1'b0;
             bufif1  buflo0(ADL[0],drain,controlSigs[`O_ADL0]);
@@ -85,13 +91,23 @@ module top_6502C(currT,currState,DB,RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB
             //reg drain7 = 7'b0000000;
             bufif1	bufhi0(ADH[0],drain,controlSigs[`O_ADH0]);
             bufif1	bufhi17[6:0](ADH[7:1],drain7,controlSigs[`O_ADH1to7]);
-			
+			*/
+            prechargeMos        pcMos1(rstAll,phi2,ADH); 
+            prechargeMos        pcMos2(rstAll,phi2,ADL);
+            prechargeMos        pcMos3(rstAll,phi2,DB);
+            prechargeMos        pcMos4(rstAll,phi2,SB);
+            opendrainMosADL     od_lo(rstAll,controlSigs[`O_ADL0],controlSigs[`O_ADL1],controlSigs[`O_ADL2],ADL);
+            opendrainMosADH     od_hi(rstAll,controlSigs[`O_ADH0],controlSigs[`O_ADH1to7],ADH);
+
+            assign adCon = {controlSigs[`O_ADH0],controlSigs[`O_ADH1to7],3'd0,controlSigs[`O_ADL0],controlSigs[`O_ADL1],controlSigs[`O_ADL2]};
+
             //how to model tranif?
-            passBuffer SBtoDB(SB,controlSigs[`SB_DB],DB);
-            passBuffer DBtoSB(DB,controlSigs[`SB_DB],SB);
-            
-            passBuffer SBtoADH(SB,controlSigs[`SB_ADH],ADH);
-            passBuffer ADHtoSB(ADH,controlSigs[`SB_ADH],SB);
+            //passBuffer SBtoDB(SB,controlSigs[`SB_DB],DB);
+            //passBuffer DBtoSB(DB,controlSigs[`SB_DB],SB);
+            transBuf ta(controlSigs[`SB_DB], SB, DB);
+            transBuf tb(controlSigs[`SB_ADH], SB, ADH);
+            //passBuffer SBtoADH(SB,controlSigs[`SB_ADH],ADH);
+            //passBuffer ADHtoSB(ADH,controlSigs[`SB_ADH],SB);
 `else				
             prechargeMos        pcMos1(rstAll,phi2,ADH); 
             prechargeMos        pcMos2(rstAll,phi2,ADL);
@@ -154,9 +170,9 @@ module top_6502C(currT,currState,DB,RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB
                         
 
             //addressbusreg loads by default every phi1. only disable if controlSig is asserted.
-            AddressBusReg   add_hi(rstAll,phi1,~controlSigs[`nADH_ABH], ADH, extAB[15:8]);
+            AddressBusReg   add_hi(phi1,~controlSigs[`nADH_ABH], ADH, extAB[15:8]);
 
-            AddressBusReg   add_lo(rstAll,phi1,~controlSigs[`nADL_ABL], ADL, extAB[7:0]);
+            AddressBusReg   add_lo(phi1,~controlSigs[`nADL_ABL], ADL, extAB[7:0]);
             
             register        x_reg(rstAll,phi2,controlSigs[`SB_X],controlSigs[`X_SB],SB);
             register        y_reg(rstAll,phi2,controlSigs[`SB_Y],controlSigs[`Y_SB],SB);
@@ -193,7 +209,7 @@ module top_6502C(currT,currState,DB,RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB
 
                     
                     
-            dataOutReg          dor(rstAll, phi2, controlSigs[`nRW] & phi2, DB, extDB);
+            dataOutReg          dor(phi2, controlSigs[`nRW], DB, extDB);
             //dataBusTristate     dataBuf(, dataOutBuf,extDB);
             
             //moving on to left side...

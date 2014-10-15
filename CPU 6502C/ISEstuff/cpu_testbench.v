@@ -77,16 +77,16 @@ module CPUtest(USER_CLK,
    
     wire [7:0] memOut;
    
-    wire inClk,memClk; //tager inClk = 1.79 * 2 = 3.6Mhz
+    wire memClk; //tager inClk = 1.79 * 2 = 3.6Mhz
     
     //clockDivider    #(3) mainClock(USER_CLK,inClk); 
-    clockDivider    #(10000000) mainClock(USER_CLK,inClk); //now its 10Mhz, slow to down to 1Hz. divide by 3300.
+    clockDivider    #(10000000) cpuClock(USER_CLK,memClk); //now its 10Mhz, slow down to 1Hz. divide by 3300.
+    clockDivider    #(2) memClock(memClk,phi0_in);
     
     
-    
-    clockDivider #(2) cpuClock(inClk,phi0_in);
-    buf memClock(memClk,inClk);
-    
+    //clockDivider #(2) cpuClock(inClk,phi0_in);
+    //buf memClock(memClk,inClk);
+
     blkMem mem(
       .clka(memClk), // input clka
       .wea(~we_L), // input [0 : 0] wea
@@ -96,11 +96,11 @@ module CPUtest(USER_CLK,
     );
 	bufif1 busDriver[7:0](extDB,memOut,RW);
     
-    assign RDY = GPIO_SW_C;
+    assign RDY = 1'b1;
 	assign IRQ_L = GPIO_DIP_SW1;
 	assign NMI_L = GPIO_DIP_SW2;
 	assign RES_L = GPIO_DIP_SW3;
-	assign SO = 1'b1;
+	assign SO = GPIO_SW_S;
 	//assign phi0_in = ~GPIO_SW_S; //pressing button => phi1 tick.
 	
 	assign GPIO_LED_N = writeDone;
@@ -127,9 +127,11 @@ module CPUtest(USER_CLK,
 									 .writeDone(writeDone));
     wire [6:0] currT;
     wire [1:0] currState;
-    wire [7:0] DB;
+    wire [7:0] DB,ADH,ADL,SB,adCon,ALUout;
+    wire [2:0] activeInt;
+    wire holdHi,holdLo;
     //fsm to translate stuff on DB into readable format and tick the lcd.
-	top_6502C cpu(.currT(currT),.currState(currState),.DB(DB),.RDY(RDY), .IRQ_L(IRQ_L), .NMI_L(NMI_L), .RES_L(RES_L), .SO(SO), .phi0_in(phi0_in), 
+	top_6502C cpu(.ALUout(ALUOut),.holdHi(holdHi),.holdLo(holdLo),.activeInt(activeInt),.adCon(adCon),.currT(currT),.currState(currState),.DB(DB),.SB(SB),.ADH(ADH),.ADL(ADL),.RDY(RDY), .IRQ_L(IRQ_L), .NMI_L(NMI_L), .RES_L(RES_L), .SO(SO), .phi0_in(phi0_in), 
                             .extDB(extDB), .phi1_out(phi1_out), .SYNC(SYNC), .extAB(extAB), .phi2_out(phi2_out), .RW(RW));
 
     
@@ -151,7 +153,7 @@ module CPUtest(USER_CLK,
     TRIG15;
     
     wire chipClk;
-    clockDivider    #(2000000) mainClock2(USER_CLK,chipClk);
+    clockDivider    #(500000) mainClock2(USER_CLK,chipClk);
     
     wire [35 : 0] CONTROL;
     chipscope_ila ila(
@@ -163,15 +165,15 @@ module CPUtest(USER_CLK,
     {1'b0,currT},
     {6'b0,currState},
     DB,
-    TRIG6,
-    TRIG7,
-    TRIG8,
-    TRIG9,
-    TRIG10,
-    TRIG11,
-    TRIG12,
-    TRIG13,
-    TRIG14,
+    ADH,
+    ADL,
+    SB,
+    {7'd0,phi1_out},
+    {RW,activeInt,RDY,IRQ_L,NMI_L,RES_L},
+    adCon,
+    {holdHi,6'd0,holdLo},
+    ALUout,
+    {phi0_in,6'd0,memClk},
     TRIG15);
     
     
