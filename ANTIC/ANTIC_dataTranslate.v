@@ -14,15 +14,21 @@
 `define loadMSR4        3'b011
 `define loadMSR5        3'b100
 
+`define noPlayfield       2'b00
+`define narrowPlayfield   2'b01
+`define standardPlayfield 2'b10
+`define widePlayfield     2'b11
+
 // To translate display list commands into AN[2:0] bits to GTIA
-module dataTranslate(IR, IR_rdy, Fphi0, RST, vblank, AN, loadIR, loadDLISTL, loadDLISTH, 
+module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, AN, loadIR, loadDLISTL, loadDLISTH, 
                      DLISTjump, DLISTend, loadPtr, loadMSRL, loadMSRH);
   
   input [7:0] IR;
   input IR_rdy;
   input Fphi0;
-  input RST;
+  input rst;
   input vblank;
+  input [7:0] DMACTL;
   output reg [2:0] AN;
   output reg loadIR;
   output reg loadDLISTL;
@@ -46,11 +52,14 @@ module dataTranslate(IR, IR_rdy, Fphi0, RST, vblank, AN, loadIR, loadDLISTL, loa
   reg loadMSR_hold;
   reg [2:0] loadMSRstate;
   reg loadMSRbit;
+  reg [6:0] numBytes;
   
   wire loadDLIST;
   wire loadMSR;
+  wire [1:0] playfieldWidth;
   assign loadDLIST = (loadDLISTH | loadDLISTL);
   assign loadMSR = (loadMSRH | loadMSRL);
+  assign playfieldWidth = DMACTL[1:0];
   
   // 1. Retrieve data from RAM via DMA
   // 2. Evaluate retrieved data
@@ -60,7 +69,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, RST, vblank, AN, loadIR, loadDLISTL, loa
     // Will be overwritten if bits are sent on this clock cycle
     AN <= 3'bzzz;
   
-    if (RST) begin
+    if (rst) begin
       // Initialize registers
       holdMode <= 1'b0;
       newBlank <= 1'b1;
@@ -318,7 +327,8 @@ module dataTranslate(IR, IR_rdy, Fphi0, RST, vblank, AN, loadIR, loadDLISTL, loa
         // * TODO: Add Interrupt Routine: DLI modifier bit = IR[7]
         
         if (~holdMode) begin
-          case (mode)  
+          
+          case (mode)
           
             /* Mode 2: Character, 32/40/48 bytes per mode line, 8 TV scan lines per mode line, 1.5 color
              *
@@ -341,6 +351,30 @@ module dataTranslate(IR, IR_rdy, Fphi0, RST, vblank, AN, loadIR, loadDLISTL, loa
             4'h2:
               begin
               
+                // Set the byte-width of the mode line
+                if (playfieldWidth == `narrowPlayfield)
+                  numBytes <= 7'd32;
+                else if (playfieldWidth == `standardPlayfield)
+                  numBytes <= 7'd40;
+                else if (playfieldWidth == `widePlayfield)
+                  numBytes <= 7'd48;
+                else
+                  numBytes <= 7'd0;
+                
+                // Repeat for the number of bytes in the mode line
+                if (numBytes != 7'd0) begin
+                  numBytes <= numBytes - 7'd1;
+                
+                
+                end
+                
+                // Mode line complete
+                else begin
+                
+                
+                
+                end
+                
               end
             
             // Mode 3: Character, 32/40/48 bytes per mode line, 10 TV scan lines per mode line, 1.5 color
@@ -372,6 +406,11 @@ module dataTranslate(IR, IR_rdy, Fphi0, RST, vblank, AN, loadIR, loadDLISTL, loa
               begin
               
               end
+            
+            
+            
+            
+            
             
             // Mode 8: Map, 8/10/12 bytes per mode line, 8 TV scan lines per mode line, 4 color
             4'h8:
