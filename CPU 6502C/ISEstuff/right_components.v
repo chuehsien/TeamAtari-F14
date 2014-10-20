@@ -40,7 +40,18 @@ module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC)
   output reg [7:0] ALU_out = 8'h00;
   output reg AVR, ACR, HC = 1'b0; 
   
+  /*
+  wire [8:0] result;
+  assign result = (A + B) & 9'h1ff;
+  wire [4:0] halfResult;
+  assign halfResult = (A[3:0] + B[3:0]) & 5'h1f;
   
+  
+    assign ACR = (SUMS) ? ((result>>8)&1'b1) : 
+               ((SRS) ? B[0] : 1'b0);
+               
+    assign HC =
+    */
   always @ (*) begin
 
     AVR = 1'b0;
@@ -433,11 +444,11 @@ module accum(rstAll,phi2,inFromDecAdder, SB_AC, AC_DB, AC_SB,
 endmodule
 
 
-module AddressBusReg(phi1,ld, dataIn,
+module AddressBusReg(phi1,hold, dataIn,
                 dataOut);
 
     input phi1;
-    input ld;
+    input hold;
     input [7:0] dataIn;
     output [7:0] dataOut;
 
@@ -448,18 +459,22 @@ module AddressBusReg(phi1,ld, dataIn,
     reg [7:0] dataOut = 8'h00;
     
     always @ (posedge phi1) begin
-        dataOut <= (ld) ? dataIn : dataOut;
+        if (hold) dataOut <= dataOut;
+        else dataOut <= dataIn;
+        
+        //dataOut <= (ld) ? dataIn : dataOut;
     end
    
     
 endmodule
 
 //used for x and y registers
-module register(rstAll,phi2, load, bus_en,
+module register(rstAll,phi2, load, bus_en,SBin,
             SB);
     
     input rstAll,phi2, load, bus_en;
-    inout [7:0] SB;
+    input [7:0] SBin;
+    output [7:0] SB;
    
     wire rstAll,phi2, load, bus_en;
     wire [7:0] SB;
@@ -470,7 +485,7 @@ module register(rstAll,phi2, load, bus_en,
     
     always @(posedge phi2 or posedge rstAll) begin
             currVal <= (rstAll) ? 8'h00 :
-                        ((phi2 & load) ? SB : currVal);
+                        ((phi2 & load) ? SBin : currVal);
 
     end
    

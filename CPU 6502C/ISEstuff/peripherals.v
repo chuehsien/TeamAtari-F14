@@ -15,6 +15,14 @@
   30 Sep 2014,  1927hrs: amended memory module to be writable (ben)
 */
 
+module triState(out,in,en);
+    inout out;
+    input in;
+    input en;
+    
+    assign out = (en) ? in : 1'bz;
+    
+endmodule
 module debounce(
     input clk,
     input button_i,
@@ -33,7 +41,7 @@ module debounce(
             counter <= 0;
         end 
         else if (!counter[W_COUNTER]) begin
-            counter <= counter + 1'b1;
+            counter <= counter + 1'd1;
         end
     end
 
@@ -41,7 +49,68 @@ endmodule
 
 
 
+module clockHalf(inClk,outClk);
+    input inClk;
+    output reg outClk = 1'b0;
+    
+    always @ (posedge inClk) begin
+        outClk <= ~outClk;
+    end
+    
+endmodule
 
+module clockone4(inClk,outClk);
+    input inClk;
+    output outClk;
+    
+    reg [1:0] count;
+    
+    always @ (posedge inClk) begin
+        count <= count + 1;
+    end
+    
+    assign outClk = count[1];
+    
+endmodule
+
+module clockone256(inClk,outClk);
+    input inClk;
+    output outClk;
+    
+    reg [7:0] count;
+    
+    always @ (posedge inClk) begin
+            count <= count + 1;
+    end
+    
+    assign outClk = count[7];
+endmodule
+
+module clockone1024(inClk,outClk);
+    input inClk;
+    output outClk;
+    
+    reg [9:0] count;
+    
+    always @ (posedge inClk) begin
+        count <= count + 1;
+    end
+    
+    assign outClk = count[9];
+endmodule
+
+module clockone2048(inClk,outClk);
+    input inClk;
+    output outClk;
+    
+    reg [10:0] count;
+    
+    always @ (posedge inClk) begin
+        count <= count + 1;
+    end
+    
+    assign outClk = count[10];
+endmodule
 
 module clockDivider(inClk,outClk);
     parameter DIVIDE = 500;
@@ -58,12 +127,12 @@ endfunction
     output outClk;
 
     
-    reg [width-1:0] counter = 0;
+    reg [width:0] counter = 0;
     reg outClk = 1'b0;
 
-    always @ (posedge inClk) begin
+    always @ (posedge inClk or negedge inClk) begin
         
-        if (counter == DIVIDE-1) begin
+        if (counter == DIVIDE - 1) begin
             outClk <= ~outClk;
             counter <= 0;
         end
@@ -93,8 +162,8 @@ module transBuf(en, left, right);
     assign bothDriven = enLeft & enRight;
     
     bufif1 LtoR[7:0](right, left, (~bothDriven & en & notEq & enLeft));
-    bufif1 RtoL[7:0](left, right, (~bothDriven & en & notEq & enRight));
-    
+    //bufif1 RtoL[7:0](left, right, (~bothDriven & en & notEq & enRight));
+    //bufif1 LtoR[7:0](right, left, en);
 endmodule
 
 
