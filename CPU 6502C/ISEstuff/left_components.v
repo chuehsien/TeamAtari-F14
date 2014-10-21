@@ -2,29 +2,18 @@
 `include "Control/Tcontrol.v"
 `include "Control/Logiccontrol.v"
 
-module clockGen(phi0_in,
+module clockGen(RST,phi0_in,
                 phi1_out,phi2_out,phi1_extout,phi2_extout);
                 
-    input phi0_in;
+    input RST,phi0_in;
     output phi1_out,phi2_out,phi1_extout,phi2_extout;
-
-    wire phi0_in;
-    wire phi1_out,phi2_out,phi1_extout,phi2_extout;
+  
     
-    wire phi2_a,phi2_b,phi2_c,phi2_d,phi2_e,phi2_f,phi2_g;
-    BUFG a(.O(phi1_out),.I(phi0_in));
-    not b(phi2_a,phi1_out);
+    BUFG a(phi1_out,~phi0_in);
+    BUFG b(phi2_out,phi0_in);
     
-    buf bufa(phi2_b,phi2_a);
-    buf bufb(phi2_c,phi2_b);
-    buf bufc(phi2_d,phi2_c);
-    buf bufd(phi2_e,phi2_d);
-    buf bufe(phi2_f,phi2_e);
-    buf buff(phi2_g,phi2_f);
-    BUFG bufg(.O(phi2_out),.I(phi2_g));
-
-    assign phi1_extout = phi1_out;
-    assign phi2_extout = phi2_out;
+    BUFG c(phi1_extout,phi1_out);
+    BUFG d(phi2_extout,phi2_out);
     
 endmodule
 

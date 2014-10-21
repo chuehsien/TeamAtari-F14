@@ -11,38 +11,65 @@
     - LED[4-7] displays the data on the right bus
 */
 
-module testBUF(GPIO_SW_C, GPIO_SW_E, GPIO_SW_W, GPIO_DIP_SW1, GPIO_DIP_SW2,
-               GPIO_DIP_SW3, GPIO_DIP_SW4, GPIO_DIP_SW5, GPIO_DIP_SW6,
-               GPIO_DIP_SW7, GPIO_DIP_SW8, GPIO_LED_0, leftBus, rightBus,
-               GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5,
+module testBUF(USER_CLK,GPIO_SW_C, 
+               GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5,
                GPIO_LED_6, GPIO_LED_7);
                
-    input GPIO_SW_C, GPIO_SW_E, GPIO_SW_W;
-    input GPIO_DIP_SW1, GPIO_DIP_SW2, GPIO_DIP_SW3, GPIO_DIP_SW4,
-          GPIO_DIP_SW5, GPIO_DIP_SW6, GPIO_DIP_SW7, GPIO_DIP_SW8;
-    inout [3:0] leftBus, rightBus;          
+    input USER_CLK,GPIO_SW_C;
+  
     output GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3,
            GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7;
 
-    assign {GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, 
-            GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7} = {leftBus, rightBus};
+    wire phi1,phi2,phi2_shifted,phi0_in;
+    assign GPIO_LED_0 = phi1;
+    assign GPIO_LED_1 = phi2;
+    assign GPIO_LED_2 = phi2_shifted;
+    assign GPIO_LED_7 = phi0_in;
+    assign {GPIO_LED_3, GPIO_LED_4, GPIO_LED_5} = 3'd0;
     
-    // Pullup mosfets for databus (drives bus with 0xFF when no data is driven)
-    PULLUP pL [3:0] (.O(leftBus));
-    PULLUP pR [3:0] (.O(rightBus));
+    assign GPIO_LED_6 = GPIO_SW_C;
+    clockone2048 test1(USER_CLK,memClk_b0);
+    clockone2048 test2(memClk_b0,memClk_b1);
+    clockone4    test3(memClk_b1,memClk_b2);
+    clockone4    test4(memClk_b2,phi0_in);
     
-    assign leftBus = (GPIO_SW_W) ? {GPIO_DIP_SW1, GPIO_DIP_SW2, GPIO_DIP_SW3, GPIO_DIP_SW4} : 4'hz;
-    assign rightBus = (GPIO_SW_E) ? {GPIO_DIP_SW5, GPIO_DIP_SW6, GPIO_DIP_SW7, GPIO_DIP_SW8} : 4'hz;
-               
-    wire enLeft, enRight;
-    assign enLeft = (leftBus != 4'hF);
-    assign enRight = (rightBus != 4'hF);
+    clockGen test(.RST(GPIO_SW_C),.phi0_in(phi0_in),.phi1_out(phi1),.phi2_out(phi2),.phi2shift_out(phi2_shifted));
     
-    wire notEq;
-    assign notEq = (leftBus != rightBus);
+
+endmodule
+
+module clockGen(RST,phi0_in,
+                phi1_out,phi2_out,phi2shift_out);
+                
+    input RST,phi0_in;
+    output phi1_out,phi2_out,phi2shift_out;
+  
+    wire DCMIn;
+    BUFG DCMb(.O(DCMin),.I(phi0_in));
+  
+    wire phi1,phi2,phi2shift;
+  
+  
+    BUFG a(.O(phi1_out),.I(~phi0_in));
     
-    bufif1 LtoR(rightBus, leftBus, (GPIO_SW_C & notEq & enLeft));
-    bufif1 RtoL(leftBus, rightBus, (GPIO_SW_C & notEq & enRight));
+    BUFG b(.O(phi2_out),.I(phi0_in));
+    
+    skewClk test(phi2shift_out,phi2_out);
+
     
 endmodule
 
+// delay the clock by 1 tick.
+module skewClk(outClk,inClk);
+    output outClk;
+    input inClk;
+    
+    reg [1:0] count = 1'b0;
+
+
+    always @ (posedge inClk) begin
+        count <= {count[0],~count[0]};
+    end
+    
+    assign outClk = count[1];
+endmodule

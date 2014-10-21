@@ -148,21 +148,23 @@ endmodule
 
 
 // Assert 'en' to connect the left and right data buses
-module transBuf(en, left, right);
+module transBuf(en, leftDriver, rightDriver, left, right);
 
     input en;
+    input [2:0] leftDriver,rightDriver;
     inout [7:0] left, right;
     
+    
+
+    
     wire enLeft, enRight;
-    assign enLeft = (left != 8'hFF);
-    assign enRight = (right != 8'hFF);
+    assign enLeft = (leftDriver > rightDriver);
+    assign enRight = (rightDriver > leftDriver);
     
-    wire notEq,bothDriven;
-    assign notEq = (left != right);
-    assign bothDriven = enLeft & enRight;
     
-    bufif1 LtoR[7:0](right, left, (~bothDriven & en & notEq & enLeft));
-    bufif1 RtoL[7:0](left, right, (~bothDriven & en & notEq & enRight));
+    
+    bufif1 LtoR[7:0](right, left, (en & enLeft));
+    bufif1 RtoL[7:0](left, right, (en & enRight));
     //bufif1 LtoR[7:0](right, left, en);
 endmodule
 

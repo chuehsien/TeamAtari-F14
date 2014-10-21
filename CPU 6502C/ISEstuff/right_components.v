@@ -155,13 +155,10 @@ module AdderHoldReg(rstAll,phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes,tempAVR,te
         aluHC <= tempHC;
 
     end
-    
-    
-    
-    
-    TRIBUF adl[7:0](adderReg, ADD_ADL, ADL);
-    TRIBUF sb1[6:0](adderReg[6:0], ADD_SB0to6, SB[6:0]);
-    TRIBUF sb2(adderReg[7], ADD_SB7, SB[7]);
+
+    triState adl[7:0](ADL,adderReg,ADD_ADL);
+    triState sb1[6:0](SB[6:0],adderReg[6:0],ADD_SB0to6);
+    triState sb2(SB[7],adderReg[7], ADD_SB7);
   
 endmodule
 
@@ -240,12 +237,12 @@ module inputDataLatch(data,rstAll, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
     //TRIBUF adl [7:0](dataADL,DL_ADL,ADL);
     //TRIBUF adh [7:0](dataADH,DL_ADH,ADH);
   
-    bufif1 db[7:0](DB,data,DL_DB);
-    bufif1 adl[7:0](ADL,data,DL_ADL);
-    bufif1 adh[7:0](ADH,data,DL_ADH);
+    triState db[7:0](DB,data,DL_DB);
+    triState adl[7:0](ADL,data,DL_ADL);
+    triState adh[7:0](ADH,data,DL_ADH);
     
     always @ (posedge phi2) begin
-        if (rstAll) data <= data;
+        if (rstAll) data <= 8'h00;
         else data <= extDataBus;
        // data <= (rstAll) ? 8'h00 :
        //          ((phi2) ? extDataBus : data);
@@ -283,25 +280,12 @@ module increment(inc, inAdd,
     output carry;
     output [7:0] outAdd;
     
-    wire inc;
-    wire [7:0] inAdd;
-    reg carry;
-    reg [7:0] outAdd = 8'h00;
-
     //internal    
-    reg [8:0] result = 8'h00;
+    wire [8:0] result;
     
-    always @(*)begin
-        carry = 1'b0;
-        if (inc) begin
-            result = {1'b0,inAdd} + 8'b1;
-            outAdd = result[7:0];
-            if (result[8]) carry = 1'b1;
-        end
-        else 
-            outAdd = inAdd;
-    end
-    
+    assign result = inAdd + inc;
+    assign carry = result[8];
+    assign outAdd = result[7:0];
     
 endmodule
 
@@ -319,18 +303,14 @@ module PC(rstAll, phi2, PCL_DB, PCL_ADL,inFromIncre,
     wire [7:0] PCout;
     
     reg [7:0] currPC = 8'h00;
-    TRIBUF db[7:0](currPC, PCL_DB, DB);
-    //bufif1 (strong1,strong0) testbuf[7:0](DB,PCL_DB,currPC);
-    
-    //buf weird[7:0](DB,currPC);
-    TRIBUF adl[7:0](currPC, PCL_ADL, ADL);
+    triState db[7:0](DB,currPC,PCL_DB);
+    triState adl[7:0](ADL,currPC,PCL_ADL);
 
     assign PCout = currPC;
     
-    always @ (posedge phi2 or posedge rstAll) begin
-        currPC <= (rstAll) ? 8'h00 :
-                    ((phi2) ? inFromIncre : currPC);
-                    
+    always @ (posedge phi2) begin
+        if (rstAll) currPC <= 8'h00;
+        else currPC <= inFromIncre;
     end
     
 endmodule
@@ -361,12 +341,12 @@ module SPreg(rstAll,phi2,S_S, SB_S, S_ADL, S_SB, SBin,
     
     reg [7:0] latchOut = 8'h00;
     
-    TRIBUF adl[7:0](latchOut, S_ADL, ADL);
-    TRIBUF sb[7:0](latchOut, S_SB, SB);
+    triState adl[7:0](ADL,latchOut,S_ADL);
+    triState sb[7:0](SB,latchOut,S_SB);
 
-    always @ (posedge phi2 or posedge rstAll) begin
+    always @ (posedge phi2) begin
         latchOut <= (rstAll) ? 8'h00 :
-                    ((phi2 & SB_S) ? SBin : latchOut);
+                    ((SB_S) ? SBin : latchOut);
                    
     end
     
@@ -437,9 +417,9 @@ module decimalAdjust(SBin, DSA, DAA, ACR, HC, phi2,
     
 endmodule
 
-module accum(rstAll,phi2,inFromDecAdder, SB_AC, AC_DB, AC_SB,
+module accum(accumVal,rstAll,phi2,inFromDecAdder, SB_AC, AC_DB, AC_SB,
             DB,SB);
-    
+    output [7:0] accumVal;
     input rstAll,phi2;
     input [7:0] inFromDecAdder;
     input SB_AC, AC_DB, AC_SB;
@@ -452,17 +432,16 @@ module accum(rstAll,phi2,inFromDecAdder, SB_AC, AC_DB, AC_SB,
        
     reg [7:0] currAccum = 8'h00;
     
-    assign DB = (AC_DB) ? currAccum : 8'bzzzzzzzz;
-    assign SB = (AC_SB) ? currAccum : 8'bzzzzzzzz;
-        
-    
-    always @ (posedge phi2 or posedge rstAll) begin
+    triState DB_b[7:0](DB,currAccum,AC_DB);
+    triState SB_b[7:0](SB,currAccum,AC_SB);
+
+    always @ (posedge phi2) begin
         currAccum <= (rstAll) ? 8'h00 :
-                    ((phi2 & SB_AC) ? inFromDecAdder : currAccum);
+                    ((SB_AC) ? inFromDecAdder : currAccum);
  
     end
     
-    
+    assign accumVal = currAccum;
 endmodule
 
 

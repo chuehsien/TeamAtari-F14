@@ -75,25 +75,32 @@ module CPUtest(USER_CLK,
    
     wire [7:0] memOut;
     wire memClk; //target inClk = 1.79 * 2 = 3.6Mhz
-    wire memClk_b0,memClk_b1,memClk_b2;
+    wire memClk_b0,memClk_b1,memClk_b2,memClk_b3;
     //clockDivider    #(3) mainClock(USER_CLK,inClk); 
     //clockDivider    #(5000000) cpuClock(USER_CLK,memClk_b0); //now its 10Mhz, slow down to 1Hz. divide by 3300.
     clockone2048 test1(USER_CLK,memClk_b0);
     clockone1024 test2(memClk_b0,memClk_b1);
     clockone4    test3(memClk_b1,memClk_b2);
+    clockHalf    test4(memClk_b2,memClk_b3);
     
-    buf clkBuf(memClk,memClk_b2);
-    clockHalf memClock(memClk_b2,phi0_in);
+     buf clkBuf0(phi0_in,memClk_b3);
+    wire memClockFast;
+    buf clkBuf1(memClockFast,~memClk_b2);
     
     wire [15:0] memAdd;
     assign memAdd = {extABH,extABL};
-    blkMem mem(
-      .clka(memClk), // input clka
+    
+    blk_mem_gen_v7_2 mem( 
+      .clka(phi0_in), // input clka
       .wea(~RW), // input [0 : 0] wea
       .addra(memAdd), // input [15 : 0] addra
       .dina(extDB), // input [7 : 0] dina
-      .douta(memOut) // output [7 : 0] douta
+      .clkb(memClockFast),
+      .addrb(memAdd),
+      .doutb(memOut) // output [7 : 0] douta
     );
+    
+    
 	triState busDriver[7:0](extDB,memOut,RW);
     
     
@@ -130,16 +137,17 @@ module CPUtest(USER_CLK,
     wire [2:0] dbDrivers,sbDrivers,adlDrivers,adhDrivers;
     wire [7:0] DB,ADH,ADL,SB,DB_b,ADH_b,ADL_b,SB_b;
     wire [2:0] activeInt;
-    wire phi1_b;
+    wire phi1_b,phi2_b;
     buf b[31:0]({DB_b,ADH_b,ADL_b,SB_b},{DB,ADH,ADL,SB});
     buf b1(phi1_b,phi1);
+    buf b2(phi2_shift_b,phi2_shift);
     wire [7:0] ALUhold_out;
     wire rstAll;
     
-    wire [7:0] eDB_b, eABH_b,eABL_b,idlContents,A,B;
-    buf b2[23:0]({eDB_b,eABH_b,eABL_b},{extDB,extABH,extABL});
+    wire [7:0] eDB_b, eABH_b,eABL_b,idlContents,A,B,outToPCL,outToPCH,accumVal;
+    buf b3[23:0]({eDB_b,eABH_b,eABL_b},{extDB,extABH,extABL});
     //fsm to translate stuff on DB into readable format and tick the lcd.
-	top_6502C cpu(.A(A),.B(B),.idlContents(idlContents),.rstAll(rstAll),.ALUhold_out(ALUhold_out),.phi1(phi1),.dbDrivers(dbDrivers),.sbDrivers(sbDrivers),
+	top_6502C cpu(.accumVal(accumVal),.outToPCL(outToPCL),.outToPCH(outToPCH),.A(A),.B(B),.idlContents(idlContents),.rstAll(rstAll),.ALUhold_out(ALUhold_out),.phi1(phi1),.dbDrivers(dbDrivers),.sbDrivers(sbDrivers),
                 .adlDrivers(adlDrivers),.adhDrivers(adhDrivers),
                 .activeInt(activeInt),.currT(currT),
                 .DB(DB),.SB(SB),.ADH(ADH),.ADL(ADL),
@@ -185,7 +193,7 @@ module CPUtest(USER_CLK,
     SB_b,
     {7'd0,phi1_b},
     {RW,activeInt,RDY,IRQ_L,NMI_L,RES_L},
-    {7'd0,memClk},
+    accumVal,
     A,
     B,
     idlContents,
@@ -200,9 +208,9 @@ module CPUtest(USER_CLK,
     memAdd[7:0],
     memOut,
     {1'b0,currT},
-    TRIG4,
-    TRIG5,
-    TRIG6,
+    outToPCH,
+    outToPCL,
+    {7'd0,memClk},
     TRIG7,
     TRIG8,
     TRIG9,

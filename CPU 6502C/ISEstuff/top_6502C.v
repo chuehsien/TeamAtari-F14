@@ -14,9 +14,10 @@
 
 `include "Control/plaFSM.v"
 
-module top_6502C(A,B,idlContents,rstAll,ALUhold_out,phi1,dbDrivers,sbDrivers,adlDrivers,adhDrivers,activeInt,currT,DB,SB,ADH,ADL,RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,	
+module top_6502C(accumVal,outToPCL,outToPCH,A,B,idlContents,rstAll,ALUhold_out,phi1,dbDrivers,sbDrivers,adlDrivers,adhDrivers,activeInt,currT,DB,SB,ADH,ADL,RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,	
                 phi1_out, SYNC, extABL, extABH, phi2_out, RW);
-            output [7:0] A,B;
+            output [7:0] accumVal;
+            output [7:0] outToPCL,outToPCH,A,B;
             output [7:0] idlContents;
             output rstAll;
             output [7:0] ALUhold_out;
@@ -80,7 +81,7 @@ module top_6502C(A,B,idlContents,rstAll,ALUhold_out,phi1,dbDrivers,sbDrivers,adl
             assign holdLo = controlSigs[`nADL_ABL];
             //clock
             wire phi1,phi2;
-			clockGen clock(phi0_in,phi1,phi2,phi1_out,phi2_out);
+			clockGen clock(~RES_L,phi0_in,phi1,phi2,phi1_out,phi2_out);
             
             //datapath modules
             wire [7:0] DB_b0,ADL_b0,ADH_b0;
@@ -133,8 +134,8 @@ module top_6502C(A,B,idlContents,rstAll,ALUhold_out,phi1,dbDrivers,sbDrivers,adl
             //how to model tranif?
             //passBuffer SBtoDB(SB,controlSigs[`SB_DB],DB);
             //passBuffer DBtoSB(DB,controlSigs[`SB_DB],SB);
-            transBuf ta(controlSigs[`SB_DB], SB, DB);
-            transBuf tb(controlSigs[`SB_ADH], SB, ADH);
+            transBuf ta(controlSigs[`SB_DB], sbDrivers, dbDrivers, SB, DB);
+            transBuf tb(controlSigs[`SB_ADH], sbDrivers,adhDrivers, SB, ADH);
             //passBuffer SBtoADH(SB,controlSigs[`SB_ADH],ADH);
             //passBuffer ADHtoSB(ADH,controlSigs[`SB_ADH],SB);
 `else				
@@ -203,14 +204,17 @@ module top_6502C(A,B,idlContents,rstAll,ALUhold_out,phi1,dbDrivers,sbDrivers,adl
             wire [7:0] DB_b5,SB_b5;
             triState accum_b0[7:0](DB,DB_b5,controlSigs[`AC_DB]);
             triState accum_b1[7:0](SB,SB_b5,controlSigs[`AC_SB]);
-            accum           a(rstAll,phi2,inFromDecAdder, controlSigs[`SB_AC], controlSigs[`AC_DB], controlSigs[`AC_SB],
+            accum           a(accumVal,rstAll,phi2,inFromDecAdder, controlSigs[`SB_AC], controlSigs[`AC_DB], controlSigs[`AC_SB],
                             DB_b5,SB_b5);
                         
 
             //addressbusreg loads by default every phi1. only disable if controlSig is asserted.
             wire [7:0] extAB_b0,extAB_b1;
-            triState ABR_b0[7:0](extABH,extAB_b0,~controlSigs[`nADH_ABH]);
-            triState ABR_b1[7:0](extABL,extAB_b1,~controlSigs[`nADL_ABL]);
+            //triState ABR_b0[7:0](extABH,extAB_b0,~controlSigs[`nADH_ABH]);
+            //triState ABR_b1[7:0](extABL,extAB_b1,~controlSigs[`nADL_ABL]);
+            buf ABR_b0[7:0](extABH,extAB_b0);
+            buf ABR_b1[7:0](extABL,extAB_b1);
+            
             wire [7:0] extAB_b2,extAB_b3;
             buf ABRhi[7:0](extAB_b2,ADH);
             buf ABRlo[7:0](extAB_b3,ADL);
