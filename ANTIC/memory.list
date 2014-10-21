@@ -47,9 +47,8 @@ A2
 02
 02
 41      // Jump and wait for vertical
-00      // blank to display list which
-A0      // starts at $A000
-
+03      // blank to display list which
+A0      // starts at $A003
 // Character Set
 @E000
 00      // Example: First 8 bytes represent an 'A' (This may be wrong, just a test)
