@@ -162,7 +162,7 @@ module transBuf(en, left, right);
     assign bothDriven = enLeft & enRight;
     
     bufif1 LtoR[7:0](right, left, (~bothDriven & en & notEq & enLeft));
-    //bufif1 RtoL[7:0](left, right, (~bothDriven & en & notEq & enRight));
+    bufif1 RtoL[7:0](left, right, (~bothDriven & en & notEq & enRight));
     //bufif1 LtoR[7:0](right, left, en);
 endmodule
 

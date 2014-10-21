@@ -12,7 +12,7 @@ module clockGen(phi0_in,
     wire phi1_out,phi2_out,phi1_extout,phi2_extout;
     
     wire phi2_a,phi2_b,phi2_c,phi2_d,phi2_e,phi2_f,phi2_g;
-    buf a(phi1_out,phi0_in);
+    BUFG a(.O(phi1_out),.I(phi0_in));
     not b(phi2_a,phi1_out);
     
     buf bufa(phi2_b,phi2_a);
@@ -21,9 +21,8 @@ module clockGen(phi0_in,
     buf bufd(phi2_e,phi2_d);
     buf bufe(phi2_f,phi2_e);
     buf buff(phi2_g,phi2_f);
-    buf bufg(phi2_out,phi2_g);
+    BUFG bufg(.O(phi2_out),.I(phi2_g));
 
-    
     assign phi1_extout = phi1_out;
     assign phi2_extout = phi2_out;
     
@@ -40,7 +39,6 @@ module predecodeRegister(phi2,extDataBus,
     wire [7:0] extDataBus;
     reg [7:0] outToIR = `BRK;
 
-    
     always @ (posedge phi2) begin
         outToIR <= extDataBus;      
     end
@@ -83,7 +81,6 @@ module inoutLatch3(rstAll, phi1,data1,data2,data3,done1,done2,done3,
 
     end
 
-    
 endmodule
 */
 

@@ -37,12 +37,12 @@ module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC)
 
   input [7:0] A, B;
   input DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS;
-  output reg [7:0] ALU_out = 8'h00;
-  output reg AVR, ACR, HC = 1'b0; 
+  output [7:0] ALU_out;
+  output AVR, ACR, HC; 
   
-  /*
+  
   wire [8:0] result;
-  assign result = (A + B) & 9'h1ff;
+  assign result = (A + B + I_ADDC) & 9'h1ff;
   wire [4:0] halfResult;
   assign halfResult = (A[3:0] + B[3:0]) & 5'h1f;
   
@@ -50,8 +50,14 @@ module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC)
     assign ACR = (SUMS) ? ((result>>8)&1'b1) : 
                ((SRS) ? B[0] : 1'b0);
                
-    assign HC =
-    */
+    assign HC = halfResult[4];
+    assign AVR = (SUMS) ?  ((A[7]==B[7]) & (A[7] != result[7])) : 1'b0;
+    assign ALU_out = (SUMS) ? (result&8'hff) :
+                           ((ANDS) ? (A&B) : 
+                           ((EORS) ? (A^B) :
+                           ((ORS) ? (A|B) :
+                           ((SRS) ? {I_ADDC, B[7:1]} : 8'hzz))));
+  /*  
   always @ (*) begin
 
     AVR = 1'b0;
@@ -80,7 +86,7 @@ module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC)
         end
     
   end
-  
+  */
 endmodule
 
 module ACRlatch(rstAll,phi1,inAVR,inACR,inHC,AVR,ACR,HC);
@@ -123,7 +129,7 @@ module AdderHoldReg(rstAll,phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes,tempAVR,te
     wire [7:0] ADL,SB;
     reg [7:0] adderReg = 8'h00;
     reg aluAVR,aluACR,aluHC = 1'b0;
-  	
+  	/*
     always @ (posedge phi2 or posedge rstAll) begin
         adderReg <= (rstAll) ? 8'h00 :
                     ((phi2) ? addRes : adderReg);
@@ -138,7 +144,21 @@ module AdderHoldReg(rstAll,phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes,tempAVR,te
                     ((phi2) ? tempHC : aluHC);
 
     end
-  
+    */
+    always @ (posedge phi2) begin
+        adderReg <= addRes;
+
+        aluAVR <= tempAVR;
+
+        aluACR <= tempACR;
+
+        aluHC <= tempHC;
+
+    end
+    
+    
+    
+    
     TRIBUF adl[7:0](adderReg, ADD_ADL, ADL);
     TRIBUF sb1[6:0](adderReg[6:0], ADD_SB0to6, SB[6:0]);
     TRIBUF sb2(adderReg[7], ADD_SB7, SB[7]);
@@ -202,9 +222,9 @@ module dataOutReg(phi2, en, dataIn,
     
 endmodule
 
-module inputDataLatch(rstAll, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
+module inputDataLatch(data,rstAll, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
                         DB,ADL,ADH);
-    
+    output [7:0] data; 
     input rstAll, phi2, DL_DB, DL_ADL, DL_ADH;
     input [7:0] extDataBus;
     inout [7:0] DB, ADL, ADH;
@@ -224,9 +244,11 @@ module inputDataLatch(rstAll, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
     bufif1 adl[7:0](ADL,data,DL_ADL);
     bufif1 adh[7:0](ADH,data,DL_ADH);
     
-    always @ (posedge phi2 or posedge rstAll) begin
-        data <= (rstAll) ? 8'h00 :
-                 ((phi2) ? extDataBus : data);
+    always @ (posedge phi2) begin
+        if (rstAll) data <= data;
+        else data <= extDataBus;
+       // data <= (rstAll) ? 8'h00 :
+       //          ((phi2) ? extDataBus : data);
                     
     end
 

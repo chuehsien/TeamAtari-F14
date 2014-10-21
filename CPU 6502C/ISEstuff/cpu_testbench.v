@@ -68,7 +68,7 @@ module CPUtest(USER_CLK,
 	/* CPU registers */
     wire RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in;
     wire phi1_out, SYNC, phi2_out, RW;
-    wire [15:0] extAB; //Address Bus Low and High
+    wire [7:0] extABH,extABL; //Address Bus Low and High
     wire [7:0] extDB; //Data Bus
     
    //RW=1 => read mode.
@@ -85,15 +85,17 @@ module CPUtest(USER_CLK,
     buf clkBuf(memClk,memClk_b2);
     clockHalf memClock(memClk_b2,phi0_in);
     
-    
+    wire [15:0] memAdd;
+    assign memAdd = {extABH,extABL};
     blkMem mem(
       .clka(memClk), // input clka
       .wea(~RW), // input [0 : 0] wea
-      .addra(extAB), // input [15 : 0] addra
+      .addra(memAdd), // input [15 : 0] addra
       .dina(extDB), // input [7 : 0] dina
       .douta(memOut) // output [7 : 0] douta
     );
 	triState busDriver[7:0](extDB,memOut,RW);
+    
     
     assign RDY = 1'b1;
 	assign IRQ_L = 1'b1;
@@ -107,7 +109,7 @@ module CPUtest(USER_CLK,
     assign reset = GPIO_SW_W;
 	assign GPIO_LED_S = phi0_in;
 	assign clearAll = GPIO_SW_E;
-	assign {GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7} = extAB[7:0];
+	assign {GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7} = extABL;
 	//assign {GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3,GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7} = 
     //{RDY,IRQ_L,NMI_L,RES_L,4'b0000};
     
@@ -131,17 +133,18 @@ module CPUtest(USER_CLK,
     wire phi1_b;
     buf b[31:0]({DB_b,ADH_b,ADL_b,SB_b},{DB,ADH,ADL,SB});
     buf b1(phi1_b,phi1);
+    wire [7:0] ALUhold_out;
+    wire rstAll;
     
-    wire [7:0] eDB_b;
-    wire [15:0] eAB_b;
-    buf b2[23:0]({eDB_b,eAB_b},{extDB,extAB});
+    wire [7:0] eDB_b, eABH_b,eABL_b,idlContents,A,B;
+    buf b2[23:0]({eDB_b,eABH_b,eABL_b},{extDB,extABH,extABL});
     //fsm to translate stuff on DB into readable format and tick the lcd.
-	top_6502C cpu(.phi1(phi1),.dbDrivers(dbDrivers),.sbDrivers(sbDrivers),
+	top_6502C cpu(.A(A),.B(B),.idlContents(idlContents),.rstAll(rstAll),.ALUhold_out(ALUhold_out),.phi1(phi1),.dbDrivers(dbDrivers),.sbDrivers(sbDrivers),
                 .adlDrivers(adlDrivers),.adhDrivers(adhDrivers),
                 .activeInt(activeInt),.currT(currT),
                 .DB(DB),.SB(SB),.ADH(ADH),.ADL(ADL),
                 .RDY(RDY), .IRQ_L(IRQ_L), .NMI_L(NMI_L), .RES_L(RES_L), .SO(SO), .phi0_in(phi0_in), 
-                .extDB(extDB), .phi1_out(phi1_out), .SYNC(SYNC), .extAB(extAB), .phi2_out(phi2_out), .RW(RW));
+                .extDB(extDB), .phi1_out(phi1_out), .SYNC(SYNC), .extABH(extABH),.extABL(extABL), .phi2_out(phi2_out), .RW(RW));
 
     
     wire [7:0] TRIG0,
@@ -172,8 +175,8 @@ module CPUtest(USER_CLK,
     chipscope_ila ila0(
     CONTROL0,
     chipClk,
-    eAB_b[15:8],
-    eAB_b[7:0],
+    eABH_b,
+    eABL_b,
     eDB_b,
     {1'b0,currT},
     DB_b,
@@ -183,20 +186,20 @@ module CPUtest(USER_CLK,
     {7'd0,phi1_b},
     {RW,activeInt,RDY,IRQ_L,NMI_L,RES_L},
     {7'd0,memClk},
-    {5'd0,dbDrivers},
-    {5'd0,sbDrivers},
-    {5'd0,adlDrivers},
-    {5'd0,adhDrivers},
-    TRIG15);
+    A,
+    B,
+    idlContents,
+    {rstAll,4'd0,adhDrivers},
+    ALUhold_out);
     
     // extra ila for use...
     chipscope_ila ila1(
     CONTROL1,
     chipClk,
-    TRIG0,
-    TRIG1,
-    TRIG2,
-    TRIG3,
+    memAdd[15:8],
+    memAdd[7:0],
+    memOut,
+    {1'b0,currT},
     TRIG4,
     TRIG5,
     TRIG6,
