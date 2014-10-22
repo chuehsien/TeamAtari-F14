@@ -55,11 +55,13 @@ module plaFSM(currState,phi1,phi2,RDY,nextT, rst,brkNow,
             
             `FSMexecBrk: begin
                 nextIntHandled = 1'b0;
-                if (nextT == `Tone || nextT == `T1NoBranch ||
-                    nextT == `T1BranchNoCross || nextT == `T1BranchCross) begin
-                    nextState = `FSMfetch;
+                
+                if (nextT == `Tzero) begin
                     nextIntHandled = 1'b1;
                 end    
+                else if (nextT == `Tone) begin
+                    nextState = `FSMfetch;
+                end
                 else begin
                     nextState = currState;
                 end

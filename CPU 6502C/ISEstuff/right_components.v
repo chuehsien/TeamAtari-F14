@@ -47,12 +47,12 @@ module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC)
   assign halfResult = (A[3:0] + B[3:0]) & 5'h1f;
   
   
-    assign ACR = (SUMS) ? ((result>>8)&1'b1) : 
+    assign ACR = (SUMS) ? (result[8]) : 
                ((SRS) ? B[0] : 1'b0);
                
     assign HC = halfResult[4];
     assign AVR = (SUMS) ?  ((A[7]==B[7]) & (A[7] != result[7])) : 1'b0;
-    assign ALU_out = (SUMS) ? (result&8'hff) :
+    assign ALU_out = (SUMS) ? (result[7:0]) :
                            ((ANDS) ? (A&B) : 
                            ((EORS) ? (A^B) :
                            ((ORS) ? (A|B) :
@@ -208,15 +208,14 @@ module dataOutReg(phi2, en, dataIn,
     input phi2,en;
     input [7:0] dataIn;
     output [7:0] dataOut;
-    
-    wire phi2,en;
-    wire [7:0] dataIn;
-    reg [7:0] dataOut = 8'h00;
+
+    reg [7:0] data = 8'h00;
     
     always @(posedge phi2) begin
-        dataOut <= (en) ? dataIn : 8'hzz;                             
+        data <= dataIn;                       
     end
     
+    triState b[7:0](dataOut,data,en);
 endmodule
 
 module inputDataLatch(data,rstAll, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
@@ -470,9 +469,9 @@ module AddressBusReg(phi1,hold, dataIn,
 endmodule
 
 //used for x and y registers
-module register(rstAll,phi2, load, bus_en,SBin,
+module register(currVal,rstAll,phi2, load, bus_en,SBin,
             SB);
-    
+    output [7:0] currVal;
     input rstAll,phi2, load, bus_en;
     input [7:0] SBin;
     output [7:0] SB;

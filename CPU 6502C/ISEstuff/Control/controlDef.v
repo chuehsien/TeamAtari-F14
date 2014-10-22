@@ -87,11 +87,11 @@
 
 
 
-`define RST_i 3'd0
-`define NMI_i 3'd1
-`define IRQ_i 3'd2
-`define BRK_i 3'd3
-`define NONE 3'd4
+`define RST_i 3'd1
+`define NMI_i 3'd2
+`define IRQ_i 3'd3
+`define BRK_i 3'd4
+`define NONE 3'd0
 
 `define status_C 3'd0
 `define status_Z 3'd1

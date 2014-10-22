@@ -15,8 +15,7 @@ press north button to display current eDB on lcd.
 press east button to clear lcd.
 the lower byte of eAB is always on the leds.
 */
-module CPUtest(USER_CLK, 
-			   GPIO_SW_C,			   
+module CPUtest(USER_CLK, 			   
 			   GPIO_SW_E,			   
 			   GPIO_SW_S,			   
 			   GPIO_SW_N,
@@ -24,21 +23,22 @@ module CPUtest(USER_CLK,
                GPIO_DIP_SW1,
                GPIO_DIP_SW2,
                GPIO_DIP_SW3,
-               
+               GPIO_DIP_SW4,
 				GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7,
-			   GPIO_LED_N, GPIO_LED_W,GPIO_LED_S,
+			   GPIO_LED_N, GPIO_LED_W,
 				LCD_FPGA_RS, LCD_FPGA_RW, LCD_FPGA_E,
 			   LCD_FPGA_DB7, LCD_FPGA_DB6, LCD_FPGA_DB5, LCD_FPGA_DB4);
 
 	input	   USER_CLK;
 	/* switch C is reset, E is clear, S is resetFSM, W is nextString */
-	input	   GPIO_SW_C, GPIO_SW_E, GPIO_SW_S,  GPIO_SW_N, GPIO_SW_W;
+	input	   GPIO_SW_E, GPIO_SW_S,  GPIO_SW_N, GPIO_SW_W;
 	input GPIO_DIP_SW1,
                GPIO_DIP_SW2,
-               GPIO_DIP_SW3;
+               GPIO_DIP_SW3,
+                GPIO_DIP_SW4;
                
 	output 	GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7;
-	output 	GPIO_LED_N, GPIO_LED_W,GPIO_LED_S;
+	output 	GPIO_LED_N, GPIO_LED_W;
 	output	LCD_FPGA_RS,LCD_FPGA_RW,LCD_FPGA_E;
 	output   LCD_FPGA_DB7, LCD_FPGA_DB6, LCD_FPGA_DB5, LCD_FPGA_DB4;
 	
@@ -65,15 +65,17 @@ module CPUtest(USER_CLK,
 	wire clearAll;
 	wire	resetFSM;
 
-	/* CPU registers */
-    wire RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in;
+
+    wire phi0_in;
+    
+    wire RDY, IRQ_L, NMI_L, RES_L, SO;
+    
     wire phi1_out, SYNC, phi2_out, RW;
     wire [7:0] extABH,extABL; //Address Bus Low and High
     wire [7:0] extDB; //Data Bus
     
    //RW=1 => read mode.
    
-    wire [7:0] memOut;
     wire memClk; //target inClk = 1.79 * 2 = 3.6Mhz
     wire memClk_b0,memClk_b1,memClk_b2,memClk_b3;
     //clockDivider    #(3) mainClock(USER_CLK,inClk); 
@@ -82,77 +84,102 @@ module CPUtest(USER_CLK,
     clockone1024 test2(memClk_b0,memClk_b1);
     clockone4    test3(memClk_b1,memClk_b2);
     clockHalf    test4(memClk_b2,memClk_b3);
+    buf clkBuf0(phi0_in,memClk_b3);
     
-     buf clkBuf0(phi0_in,memClk_b3);
-    wire memClockFast;
-    buf clkBuf1(memClockFast,~memClk_b2);
     
-    wire [15:0] memAdd;
+    (* clock_signal = "yes" *)wire memReadClock,memWriteClock;
+    buf writeclk(memWriteClock,phi1_out);
+    buf readclk(memReadClock,~memClk_b2); //read clock is doublespeed, and inverted of phi1 (which means same as phi0).
+   
+    
+    
+
+    
+    wire [15:0] memAdd,memAdd_b;
+    wire [7:0] memOut,memOut_b,memDBin;
     assign memAdd = {extABH,extABL};
-    
-    blk_mem_gen_v7_2 mem( 
-      .clka(phi0_in), // input clka
-      .wea(~RW), // input [0 : 0] wea
-      .addra(memAdd), // input [15 : 0] addra
-      .dina(extDB), // input [7 : 0] dina
-      .clkb(memClockFast),
-      .addrb(memAdd),
-      .doutb(memOut) // output [7 : 0] douta
-    );
-    
-    
+    buf memB0[7:0](memOut,memOut_b);
+    buf memB1[15:0](memAdd_b,memAdd);
+    buf memB2[7:0](memDBin,extDB);
 	triState busDriver[7:0](extDB,memOut,RW);
     
+    blk_mem_gen_v7_2 mem( 
+      .clka(memWriteClock), // input clka
+      .wea(~RW), // input [0 : 0] wea
+      .addra(memAdd_b), // input [15 : 0] addra
+      .dina(memDBin), // input [7 : 0] dina
+      .clkb(memReadClock),
+      .addrb(memAdd_b),
+      .doutb(memOut_b) // output [7 : 0] douta
+    );
     
-    assign RDY = 1'b1;
-	assign IRQ_L = 1'b1;
-	assign NMI_L = 1'b1;
-	assign RES_L = GPIO_DIP_SW3;
+    /*
+    debounce #(.PRESSLENGTH(50)) rdyB(memClk_b0,~GPIO_DIP_SW1,nRDY);
+    debounce #(.PRESSLENGTH(50)) irqB(memClk_b0,~GPIO_DIP_SW2,nIRQ_L);
+    debounce #(.PRESSLENGTH(50)) nmiB(memClk_b0,~GPIO_DIP_SW3,nNMI_L);
+    debounce #(.PRESSLENGTH(50)) resB(memClk_b0,~GPIO_DIP_SW4,nRES_L);
+    */
+    
+    DeBounce #(.N(8)) rdyB(USER_CLK,1'b1,GPIO_DIP_SW1,RDY);
+    DeBounce #(.N(8)) irqB(USER_CLK,1'b1,GPIO_DIP_SW2,IRQ_L);
+    DeBounce #(.N(8)) nmiB(USER_CLK,1'b1,GPIO_DIP_SW3,NMI_L);
+    DeBounce #(.N(8)) resB(USER_CLK,1'b1,GPIO_DIP_SW4,RES_L);
+    
+    
+   // not invAgain[3:0]({RDY,IRQ_L,NMI_L,RES_L},{nRDY,nIRQ_L,nNMI_L,nRES_L});
 	assign SO = GPIO_SW_S;
 	//assign phi0_in = ~GPIO_SW_S; //pressing button => phi1 tick.
-	
-	assign GPIO_LED_N = memClk;
+
+    
+    
 	assign GPIO_LED_W = initDone;
     assign reset = GPIO_SW_W;
-	assign GPIO_LED_S = phi0_in;
 	assign clearAll = GPIO_SW_E;
-	assign {GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7} = extABL;
-	//assign {GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3,GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7} = 
-    //{RDY,IRQ_L,NMI_L,RES_L,4'b0000};
     
-	wire [7:0] data;
+	buf tada0(GPIO_LED_N,memReadClock);
+	buf tada2[7:0]({GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7},extABL);
+    
+	wire [7:0] dat;
+    wire clrLCD;
+    //write to lcd control every phi1. before write, clear LCD.
 	lcd_control		lcd(.rst(reset), .clk(USER_CLK), .control(control_out), .sf_d(out),
 							 .writeStart(writeStart), .initDone(initDone), .writeDone(writeDone), 
 							 .dataIn(data), 
-							 .clearAll(clearAll));
+							 .clearAll(clrLCD));
 
     wire butOut;
     debounce        deb(USER_CLK,GPIO_SW_N,butOut);
   
-	testFSM			myTestFsm(.clkFSM(USER_CLK), .resetFSM(reset), .data(data),
-									 .initDone(butOut), .writeStart(writeStart),
-									 .dataHi(extDB[7:4]),.dataLo(extDB[3:0]),
-									 .writeDone(writeDone));
+    wire [7:0] Accum,Xreg,Yreg;
+	testFSM			myTestFsm(.clkFSM(USER_CLK), .resetFSM(reset),
+									 .initDone(initDone),.writeDone(writeDone),
+                                     .A(Accum),.X(Xreg),.Y(Yreg),
+                                     .data(data),.display(phi0_in),
+                                     .writeStart(writeStart),.clrLCD(clrLCD)
+									 );//write new data on each phi2 uptick.
     wire [6:0] currT;
-    wire [2:0] dbDrivers,sbDrivers,adlDrivers,adhDrivers;
+    //wire [2:0] dbDrivers,sbDrivers,adlDrivers,adhDrivers;
     wire [7:0] DB,ADH,ADL,SB,DB_b,ADH_b,ADL_b,SB_b;
     wire [2:0] activeInt;
-    wire phi1_b,phi2_b;
-    buf b[31:0]({DB_b,ADH_b,ADL_b,SB_b},{DB,ADH,ADL,SB});
-    buf b1(phi1_b,phi1);
-    buf b2(phi2_shift_b,phi2_shift);
-    wire [7:0] ALUhold_out;
-    wire rstAll;
     
-    wire [7:0] eDB_b, eABH_b,eABL_b,idlContents,A,B,outToPCL,outToPCH,accumVal;
-    buf b3[23:0]({eDB_b,eABH_b,eABL_b},{extDB,extABH,extABL});
+    wire phi1_b,phi0_in_b,memReadClock_b;
+    buf b[31:0]({DB_b,ADH_b,ADL_b,SB_b},{DB,ADH,ADL,SB});
+    buf b1(phi1_b,phi1_out);
+    buf b2(phi0_in_b,phi0_in);
+    buf b3(memReadClock_b,memReadClock);
+    wire [7:0] ALUhold_out;
+    wire rstAll,nmiPending,resPending,irqPending;
+    
+    wire [7:0] idlContents,A,B,outToPCL,outToPCH,accumVal;
+    wire [1:0] currState;
+    wire [7:0] second_first_int;
     //fsm to translate stuff on DB into readable format and tick the lcd.
-	top_6502C cpu(.accumVal(accumVal),.outToPCL(outToPCL),.outToPCH(outToPCH),.A(A),.B(B),.idlContents(idlContents),.rstAll(rstAll),.ALUhold_out(ALUhold_out),.phi1(phi1),.dbDrivers(dbDrivers),.sbDrivers(sbDrivers),
-                .adlDrivers(adlDrivers),.adhDrivers(adhDrivers),
+	top_6502C cpu(.second_first_int(second_first_int),.nmiPending(nmiPending),.resPending(resPending),.irqPending(irqPending),.currState(currState),.accumVal(accumVal),.outToPCL(outToPCL),.outToPCH(outToPCH),.A(A),.B(B),.idlContents(idlContents),.rstAll(rstAll),.ALUhold_out(ALUhold_out),
                 .activeInt(activeInt),.currT(currT),
                 .DB(DB),.SB(SB),.ADH(ADH),.ADL(ADL),
                 .RDY(RDY), .IRQ_L(IRQ_L), .NMI_L(NMI_L), .RES_L(RES_L), .SO(SO), .phi0_in(phi0_in), 
-                .extDB(extDB), .phi1_out(phi1_out), .SYNC(SYNC), .extABH(extABH),.extABL(extABL), .phi2_out(phi2_out), .RW(RW));
+                .extDB(extDB), .phi1_out(phi1_out), .SYNC(SYNC), .extABH(extABH),.extABL(extABL), .phi2_out(phi2_out), .RW(RW),
+                .Accum(Accum),.Xreg(Xreg),.Yreg(Yreg));
 
     
     wire [7:0] TRIG0,
@@ -174,8 +201,8 @@ module CPUtest(USER_CLK,
     
     wire chipClk,chipClk_b0;
     clockone2048 test11(USER_CLK,chipClk_b0);
-    clockone256  test12(chipClk_b0,chipClk);
-    
+    clockone256  test12(chipClk_b0,chipClk_b);
+    BUFG chipscopeClk(chipClk,chipClk_b);
     
     //clockDivider    #(250000) mainClock2(USER_CLK,chipClk);
     
@@ -183,9 +210,9 @@ module CPUtest(USER_CLK,
     chipscope_ila ila0(
     CONTROL0,
     chipClk,
-    eABH_b,
-    eABL_b,
-    eDB_b,
+    extABH,
+    extABL,
+    extDB,
     {1'b0,currT},
     DB_b,
     ADH_b,
@@ -197,30 +224,30 @@ module CPUtest(USER_CLK,
     A,
     B,
     idlContents,
-    {rstAll,4'd0,adhDrivers},
-    ALUhold_out);
+    {rstAll,4'd0,irqPending,nmiPending,resPending},
+    second_first_int);
     
     // extra ila for use...
     chipscope_ila ila1(
     CONTROL1,
     chipClk,
-    memAdd[15:8],
-    memAdd[7:0],
+    memAdd_b[15:8],
+    memAdd_b[7:0],
     memOut,
     {1'b0,currT},
     outToPCH,
     outToPCL,
-    {7'd0,memClk},
-    TRIG7,
-    TRIG8,
-    TRIG9,
-    TRIG10,
+    {7'd0,memReadClock_b},
+    {7'd0,phi0_in_b},
+    {7'd0,phi1_b},
+    {6'd0,currState},
+    ALUhold_out,
     TRIG11,
     TRIG12,
     TRIG13,
     TRIG14,
     TRIG15);
-    
+
     chipscope_icon2 icon(
     .CONTROL0(CONTROL0),
     .CONTROL1(CONTROL1));

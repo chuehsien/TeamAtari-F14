@@ -6,7 +6,7 @@ module clockGen(RST,phi0_in,
                 phi1_out,phi2_out,phi1_extout,phi2_extout);
                 
     input RST,phi0_in;
-    output phi1_out,phi2_out,phi1_extout,phi2_extout;
+     (* clock_signal = "yes" *) output phi1_out,phi2_out,phi1_extout,phi2_extout;
   
     
     BUFG a(phi1_out,~phi0_in);
@@ -73,74 +73,123 @@ module inoutLatch3(rstAll, phi1,data1,data2,data3,done1,done2,done3,
 endmodule
 */
 
-module interruptLatch(rstAll,phi1,en,NMI_L,IRQ_L,RES_L,outNMI_L,outIRQ_L,outRES_L);
-    input rstAll,phi1,en,NMI_L,IRQ_L,RES_L;
+module interruptLatch(phi1,en,NMI_L,IRQ_L,RES_L,outNMI_L,outIRQ_L,outRES_L);
+    input phi1,en,NMI_L,IRQ_L,RES_L;
     output outNMI_L,outIRQ_L,outRES_L;
     
-    wire rstAll,phi1,en,NMI_L,IRQ_L,RES_L;
+    wire phi1,en,NMI_L,IRQ_L,RES_L;
     reg outNMI_L,outIRQ_L,outRES_L = 1'b1;
-    
-    always @ (posedge phi1 or posedge rstAll) begin
-        outIRQ_L <= (rstAll) ? 1'b1 :
-                    ((en) ? IRQ_L : outIRQ_L);
+
+    always @ (posedge phi1) begin
+       if (en) begin
+            outNMI_L <= NMI_L;
+            outIRQ_L <= IRQ_L;
+            outRES_L <= RES_L;
+        end
+        else begin
+            outNMI_L <= outNMI_L;
+            outIRQ_L <= outIRQ_L;
+            outRES_L <= outRES_L;
         
-        outNMI_L <= (rstAll) ? 1'b1 : NMI_L;
-        outRES_L <= (rstAll) ? 1'b1 : RES_L;
-       
+        end
     end
+
     
 endmodule
 
 
-module interruptControl(rstAll,NMI_L, IRQ_L, RES_L, 
-                           nmi,irq,res);
-    input rstAll, NMI_L,IRQ_L,RES_L;
+
+
+//captures the edge.
+module interruptControl(NMI_L, IRQ_L, RES_L,nmiDone,
+                        nmiPending,irqPending,resPending);
+                           
+    input NMI_L,IRQ_L,RES_L,nmiDone;
+    output nmiPending,irqPending,resPending;
+   
+    (* clock_signal = "yes" *)wire NMI_L;
+   
+   FDCE #(
+      .INIT(1'b0) // Initial value of register (1'b0 or 1'b1)
+   ) FDCE_inst (
+      .Q(nmiPending),      // 1-bit Data output
+      .C(~NMI_L),      // 1-bit Clock input
+      .CE(1'b1),    // 1-bit Clock enable input
+      .CLR(nmiDone),  // 1-bit Asynchronous clear input
+      .D(1'b1)       // 1-bit Data input
+   );
+   
+    assign irqPending = ~IRQ_L;
+    assign resPending = ~RES_L;
+endmodule
+
+//interprets, prioritize interrupts and send to logic
+//only tick in new stuff when activeint is none.
+module PLAinterruptControl(phi1, nmiPending,resPending,irqPending,intHandled,
+        activeInt,nmi,irq,res);
+        
+    input phi1, nmiPending,resPending,irqPending,intHandled;
+    output [2:0] activeInt;
     output nmi,irq,res;
     
-    wire rstAll, NMI_L,IRQ_L,RES_L;
-    wire nmi,irq,res;
- 
-    reg nmiPending, irqPending, resPending = 1'b0;
+    //internal
+    reg nmi_latch,res_latch,irq_latch = 1'b0;
 
-    always @ (negedge NMI_L or posedge rstAll) begin
-        if (rstAll) nmiPending <= 1'b0;
-        else nmiPending <= 1'b1;
-    end
-    
-    always @ (IRQ_L or rstAll) begin
-        if (rstAll) irqPending <= 1'b0;
-        else irqPending <= ~IRQ_L;
-    end
-    
-    always @ (RES_L or rstAll) begin
-        if (rstAll) resPending <= 1'b0;
-        else resPending <= ~RES_L;
+    always @ (posedge phi1) begin
+       /* if (activeInt!=`NMI_i) begin
+            nmi_latch <= nmiPending;
+        end
+        else begin
+            nmi_latch <= nmi_latch;
+        end*/
+        nmi_latch <= nmiPending;    
+        irq_latch <= irqPending;
+        res_latch <= resPending;
     end
     
     wire intg;
-    assign intg = nmiPending & irqPending;
-    assign nmi = intg | nmiPending;
-    assign irq = ~intg & irqPending;
-    assign res = resPending;
+    assign intg = nmi_latch & irq_latch;
     
-endmodule
+    assign nmi = intg | nmi_latch;
+    assign irq = ~intg & irq_latch;
+    assign res = res_latch;
+    
+    wire [2:0] activeIntNext;
+    assign activeIntNext = res ? `RST_i : 
+                            ((activeInt!=`NONE) ? activeInt :
+                            (nmi ? `NMI_i :
+                            (irq ? `IRQ_i : `NONE)));
 
-module PLAinterruptControl(phi1, rstAll,nmiPending,rstPending,irqPending,intHandled,activeInt);
-    input phi1,rstAll,nmiPending,rstPending,irqPending,intHandled;
-	output [2:0] activeInt;
-    
-	reg [2:0] activeInt = `NONE;
-    
-    always @ (nmiPending or rstPending or irqPending or intHandled) begin
-    
-        if (intHandled & (activeInt!=`NONE)) activeInt = `NONE;
-        else if (rstPending) activeInt = `RST_i;
-        else if (nmiPending) activeInt = `NMI_i;
-        else if (irqPending) activeInt = `IRQ_i;
-    end
-    
-endmodule
+   FDRE #(
+      .INIT(1'b0) // Initial value of register (1'b0 or 1'b1)
+   ) FDRE_inst0(
+      .Q(activeInt[0]),      // 1-bit Data output
+      .C(phi1),      // 1-bit Clock input
+      .CE(1'b1),    // 1-bit Clock enable input
+      .R(intHandled),  // 1-bit Asynchronous clear input
+      .D(activeIntNext[0])       // 1-bit Data input
+   );
 
+   FDRE #(
+      .INIT(1'b0) // Initial value of register (1'b0 or 1'b1)
+   ) FDRE_inst1(
+      .Q(activeInt[1]),      // 1-bit Data output
+      .C(phi1),      // 1-bit Clock input
+      .CE(1'b1),    // 1-bit Clock enable input
+      .R(intHandled),  // 1-bit Asynchronous clear input
+      .D(activeIntNext[1])       // 1-bit Data input
+   );
+   
+   FDRE #(
+      .INIT(1'b0) // Initial value of register (1'b0 or 1'b1)
+   ) FDRE_inst2(
+      .Q(activeInt[2]),      // 1-bit Data output
+      .C(phi1),      // 1-bit Clock input
+      .CE(1'b1),    // 1-bit Clock enable input
+      .R(intHandled),  // 1-bit Asynchronous clear input
+      .D(activeIntNext[2])       // 1-bit Data input
+   );
+endmodule
 
 //nRW - reading, ~nRW - writing
 module readyControl(phi2, RDY,nRW,
@@ -197,19 +246,12 @@ module instructionRegister(currT,RDY,phi1,phi2,OPin,OPout,prevOP);
     output reg [7:0] OPout = `BRK;
     output reg [7:0] prevOP = `BRK;
     
-    reg en = 1'b0;
-    
-    (* clock_signal = "yes" *)
-    wire tick,tock;
-    
-    
-    assign tick = (currT == `Tone || currT == `T1NoBranch ||
+    wire en, readyForNext;
+
+    assign readyForNext = (currT == `Tone || currT == `T1NoBranch ||
                         currT == `T1BranchNoCross || currT == `T1BranchCross) & phi2 & RDY;
-    always @ (tick) begin
-        if (tick) en = 1'b1;
-        else en = 1'b0;
-    end
-    
+    buf tickB(en,readyForNext);
+  
     //wait for (currT==`Tone & phi2) to enable.
     always @ (posedge phi1) begin
 			OPout <= (en) ? OPin : OPout;

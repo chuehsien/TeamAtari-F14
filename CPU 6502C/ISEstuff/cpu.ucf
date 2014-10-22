@@ -1,4 +1,4 @@
-NET  GPIO_SW_C            LOC="AJ6";   # Bank 18, Vcco=3.3V, No DCI
+//NET  GPIO_SW_C            LOC="AJ6";   # Bank 18, Vcco=3.3V, No DCI
 NET  GPIO_SW_E            LOC="AK7";   # Bank 18, Vcco=3.3V, No DCI
 NET  GPIO_SW_S            LOC="V8";    # Bank 18, Vcco=3.3V, No DCI
 NET  GPIO_SW_N            LOC="U8";    # Bank 18, Vcco=3.3V, No DCI
@@ -22,11 +22,11 @@ NET  GPIO_LED_6           LOC="AD24";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm 
 NET  GPIO_LED_7           LOC="AE24";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
 NET  GPIO_LED_N           LOC="AF13";  # Bank 2, Vcco=3.3V
 NET  GPIO_LED_W           LOC="AF23";  # Bank 2, Vcco=3.3V
-NET  GPIO_LED_S           LOC="AG12";  # Bank 2, Vcco=3.3V
+//NET  GPIO_LED_S           LOC="AG12";  # Bank 2, Vcco=3.3V
 
 NET  GPIO_DIP_SW1         LOC="U25";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
 NET  GPIO_DIP_SW2         LOC="AG27";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
 NET  GPIO_DIP_SW3         LOC="AF25";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-
+NET  GPIO_DIP_SW4         LOC="AF26";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
 
 NET  "GPIO_SW_S" CLOCK_DEDICATED_ROUTE = FALSE;

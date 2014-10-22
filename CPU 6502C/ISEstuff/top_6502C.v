@@ -14,15 +14,19 @@
 
 `include "Control/plaFSM.v"
 
-module top_6502C(accumVal,outToPCL,outToPCH,A,B,idlContents,rstAll,ALUhold_out,phi1,dbDrivers,sbDrivers,adlDrivers,adhDrivers,activeInt,currT,DB,SB,ADH,ADL,RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,	
-                phi1_out, SYNC, extABL, extABH, phi2_out, RW);
+module top_6502C(second_first_int,nmiPending,resPending,irqPending,currState,accumVal,outToPCL,outToPCH,A,B,idlContents,rstAll,ALUhold_out,activeInt,currT,DB,SB,ADH,ADL,RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,	
+                phi1_out, SYNC, extABL, extABH, phi2_out, RW,
+                Accum,Xreg,Yreg);
+            output [7:0] second_first_int;
+            output nmiPending,resPending,irqPending;
+            output [1:0] currState;
             output [7:0] accumVal;
             output [7:0] outToPCL,outToPCH,A,B;
             output [7:0] idlContents;
             output rstAll;
             output [7:0] ALUhold_out;
-            output phi1;
-            output [2:0] dbDrivers,sbDrivers,adlDrivers,adhDrivers;
+            //output phi1;
+            //output [2:0] dbDrivers,sbDrivers,adlDrivers,adhDrivers;
             output [2:0] activeInt;
             output [6:0] currT;          
             output [7:0] DB,SB,ADH,ADL;
@@ -32,7 +36,7 @@ module top_6502C(accumVal,outToPCL,outToPCH,A,B,idlContents,rstAll,ALUhold_out,p
             
 			output phi1_out, SYNC, phi2_out,RW;
 			output [7:0] extABH,extABL;
-		
+            output [7:0] Accum,Xreg,Yreg;
         
             wire RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in;
             wire [7:0] extDB;
@@ -206,7 +210,7 @@ module top_6502C(accumVal,outToPCL,outToPCH,A,B,idlContents,rstAll,ALUhold_out,p
             triState accum_b1[7:0](SB,SB_b5,controlSigs[`AC_SB]);
             accum           a(accumVal,rstAll,phi2,inFromDecAdder, controlSigs[`SB_AC], controlSigs[`AC_DB], controlSigs[`AC_SB],
                             DB_b5,SB_b5);
-                        
+            assign Accum = accumVal;           
 
             //addressbusreg loads by default every phi1. only disable if controlSig is asserted.
             wire [7:0] extAB_b0,extAB_b1;
@@ -224,8 +228,8 @@ module top_6502C(accumVal,outToPCL,outToPCH,A,B,idlContents,rstAll,ALUhold_out,p
             wire [7:0] SB_b6, SB_b7;
             triState x_b0[7:0](SB,SB_b6,controlSigs[`X_SB]);
             triState y_b0[7:0](SB,SB_b7,controlSigs[`Y_SB]);
-            register        x_reg(rstAll,phi2,controlSigs[`SB_X],controlSigs[`X_SB],SB,SB_b6);
-            register        y_reg(rstAll,phi2,controlSigs[`SB_Y],controlSigs[`Y_SB],SB,SB_b7);
+            register        x_reg(Xreg,rstAll,phi2,controlSigs[`SB_X],controlSigs[`X_SB],SB,SB_b6);
+            register        y_reg(Yreg,rstAll,phi2,controlSigs[`SB_Y],controlSigs[`Y_SB],SB,SB_b7);
             
             //unsure about the inputs...
             wire DBZ;
@@ -267,10 +271,9 @@ module top_6502C(accumVal,outToPCL,outToPCH,A,B,idlContents,rstAll,ALUhold_out,p
             //moving on to left side...
             wire [7:0] predecodeOut, opcodeToIR;
             wire interrupt;
-
-            wire nmiPending, irqPending, resPending,intHandled;
             
-            assign interrupt = nmiPending|resPending|irqPending;
+            wire FSMnmi,FSMirq,FSMres;
+            assign interrupt = FSMnmi|FSMirq|FSMres;
             predecodeRegister   pdr(phi2,extDB,predecodeOut);
             predecodeLogic      pdl(predecodeOut,interrupt,opcodeToIR);
             wire brkNow;
@@ -286,7 +289,6 @@ module top_6502C(accumVal,outToPCL,outToPCH,A,B,idlContents,rstAll,ALUhold_out,p
 `endif    
 */
             wire [7:0] prevOpcode;
-            (* clock_signal = "yes" *)
             wire [6:0] currT;
             instructionRegister ir_reg(currT,RDY,phi1,phi2, opcodeToIR, opcode, prevOpcode);
             
@@ -298,15 +300,22 @@ module top_6502C(accumVal,outToPCL,outToPCH,A,B,idlContents,rstAll,ALUhold_out,p
             //controlLatch    conLatch(phi1,phi2,nextControlSigs,controlSigs);
             
             wire outNMI_L,outIRQ_L,outRES_L;
+            wire nmiPending,irqPending,resPending,nmiDone;
             wire [1:0] currState;
             wire RDYout; //this is the one which affects the FSM.
-            interruptLatch   iHandlerLatch(rstAll,phi1,~(SR_contents[`status_I]),NMI_L,IRQ_L,RES_L,outNMI_L,outIRQ_L,outRES_L); //latches signals from outside world
-            interruptControl iHandler(rstAll,outNMI_L,outIRQ_L,outRES_L,nmiPending,irqPending,resPending); //handles edge triggered stuff
-            PLAinterruptControl  plaInt(phi1,rstAll,nmiPending,resPending,irqPending,intHandled,activeInt); //latches incoming interrupts and keeps track of current interrupt.
-            plaFSM      fsm(currState,phi1,phi2,RDYout,newT, resPending,brkNow,currT,intHandled, rstAll);          
+            interruptLatch   iHandlerLatch(phi1,~(SR_contents[`status_I]),NMI_L,IRQ_L,RES_L,outNMI_L,outIRQ_L,outRES_L);
+            interruptControl iHandler(outNMI_L,outIRQ_L,outRES_L,nmiDone,
+                        nmiPending,irqPending,resPending);
+
+            assign nmiDone = intHandled & (activeInt == `NMI_i);
+            
+            PLAinterruptControl  plaInt(phi1,nmiPending,resPending,irqPending,intHandled,activeInt,FSMnmi,FSMirq,FSMres);
+                                        
+            plaFSM      fsm(currState,phi1,phi2,RDYout,newT, FSMres,brkNow,currT,intHandled, rstAll);          
             
             
             readyControl rdy_control(phi2, RDY, controlSigs[`nRW], RDYout);
+            assign second_first_int = {FSMnmi,FSMirq,FSMres,2'd0,nmiPending,irqPending,resPending};
 endmodule
 
 

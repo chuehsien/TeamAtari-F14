@@ -23,25 +23,32 @@ module triState(out,in,en);
     assign out = (en) ? in : 1'bz;
     
 endmodule
-module debounce(
-    input clk,
-    input button_i,
-    output button_debounced_o
-    );
-
-    parameter MIN_DELAY = 50; // minimum number of cycles to count
-    parameter W_COUNTER = 20;
-    reg [W_COUNTER:0] counter; // one bit wider than min_delay
-
-    assign button_debounced_o = counter[W_COUNTER];
+module debounce(clk, button_i,
+                button_debounced_o);
+    parameter PRESSLENGTH = 50; // minimum number of cycles to count
+                
+    input clk, button_i;
+    output button_debounced_o;
+    
+    reg button_debounced_o = 1'b0;
+    reg [15:0] count = 16'd0;
 
     always @(posedge clk) begin
-        if (!button_i) begin
-        // if button sensor is showing 'off' state, reset the counter
-            counter <= 0;
-        end 
-        else if (!counter[W_COUNTER]) begin
-            counter <= counter + 1'd1;
+        if (count == PRESSLENGTH) begin
+            //stablized
+            if (button_i) begin
+                button_debounced_o <= 1'b1;
+            end
+            else button_debounced_o <= 1'b0;
+            count <= 16'd0;
+        end
+        else if (count > 0) begin
+            count <= count + 1;
+        end
+        
+        else if (count == 0) begin
+            if (button_i) count <= count + 1;
+            
         end
     end
 
