@@ -16,22 +16,6 @@
 */
 
 
-
-/* Tri-State Buffer
- * Much like a transmission gate, 
- * by asserting "EN", the value of 
- * "A" goes to "Y". Otherwise, a floating
- * output is kept.
- * Size: 6
- */
-module TRIBUF (A, EN, Y);
-	input A, EN;
-	output Y;
-	bufif1 g(Y,A,EN);
-endmodule
-
-
-
 // Note: Decimal Enable (DAA) not yet understood or implemented
 module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC);
 
@@ -231,11 +215,7 @@ module inputDataLatch(data,rstAll, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
     
     // internal
     reg [7:0] data = 8'h00;
-  
-    //TRIBUF db [7:0](dataDB,DL_DB,DB);
-    //TRIBUF adl [7:0](dataADL,DL_ADL,ADL);
-    //TRIBUF adh [7:0](dataADH,DL_ADH,ADH);
-  
+
     triState db[7:0](DB,data,DL_DB);
     triState adl[7:0](ADL,data,DL_ADL);
     triState adh[7:0](ADH,data,DL_ADH);

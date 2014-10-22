@@ -6,7 +6,7 @@
  */
  
  
- module testFSM(clkFSM,
+ module testFSM(state,clkFSM,
 					resetFSM,
 					initDone,
 					writeDone,
@@ -14,7 +14,8 @@
 					A,X,Y,
 					data, 
 					writeStart,clrLCD);
-					
+			
+    output [5:0] state;
 	input clkFSM;
 	input resetFSM;
 	input initDone;

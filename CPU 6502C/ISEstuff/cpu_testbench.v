@@ -32,7 +32,7 @@ module CPUtest(USER_CLK,
 	input	   USER_CLK;
 	/* switch C is reset, E is clear, S is resetFSM, W is nextString */
 	input	   GPIO_SW_E, GPIO_SW_S,  GPIO_SW_N, GPIO_SW_W;
-	input GPIO_DIP_SW1,
+	input      GPIO_DIP_SW1,
                GPIO_DIP_SW2,
                GPIO_DIP_SW3,
                 GPIO_DIP_SW4;
@@ -62,7 +62,7 @@ module CPUtest(USER_CLK,
 	wire	writeStart;
 	wire	writeDone;
 	wire	initDone;
-	wire clearAll;
+	wire    clearAll;
 	wire	resetFSM;
 
 
@@ -76,6 +76,7 @@ module CPUtest(USER_CLK,
     
    //RW=1 => read mode.
    
+   
     wire memClk; //target inClk = 1.79 * 2 = 3.6Mhz
     wire memClk_b0,memClk_b1,memClk_b2,memClk_b3;
     //clockDivider    #(3) mainClock(USER_CLK,inClk); 
@@ -86,15 +87,14 @@ module CPUtest(USER_CLK,
     clockHalf    test4(memClk_b2,memClk_b3);
     buf clkBuf0(phi0_in,memClk_b3);
     
+     /*-------------------------------------------------------------*/
+    // mem stuff
+    
     
     (* clock_signal = "yes" *)wire memReadClock,memWriteClock;
     buf writeclk(memWriteClock,phi1_out);
     buf readclk(memReadClock,~memClk_b2); //read clock is doublespeed, and inverted of phi1 (which means same as phi0).
    
-    
-    
-
-    
     wire [15:0] memAdd,memAdd_b;
     wire [7:0] memOut,memOut_b,memDBin;
     assign memAdd = {extABH,extABL};
@@ -103,7 +103,7 @@ module CPUtest(USER_CLK,
     buf memB2[7:0](memDBin,extDB);
 	triState busDriver[7:0](extDB,memOut,RW);
     
-    blk_mem_gen_v7_2 mem( 
+    blk_mem_gen_v7_1 mem( 
       .clka(memWriteClock), // input clka
       .wea(~RW), // input [0 : 0] wea
       .addra(memAdd_b), // input [15 : 0] addra
@@ -112,13 +112,20 @@ module CPUtest(USER_CLK,
       .addrb(memAdd_b),
       .doutb(memOut_b) // output [7 : 0] douta
     );
+
     
-    /*
-    debounce #(.PRESSLENGTH(50)) rdyB(memClk_b0,~GPIO_DIP_SW1,nRDY);
-    debounce #(.PRESSLENGTH(50)) irqB(memClk_b0,~GPIO_DIP_SW2,nIRQ_L);
-    debounce #(.PRESSLENGTH(50)) nmiB(memClk_b0,~GPIO_DIP_SW3,nNMI_L);
-    debounce #(.PRESSLENGTH(50)) resB(memClk_b0,~GPIO_DIP_SW4,nRES_L);
-    */
+    
+    
+    
+    
+    
+    
+    
+    /*-------------------------------------------------------------*/
+    // cpu stuff
+    
+    
+    
     
     DeBounce #(.N(8)) rdyB(USER_CLK,1'b1,GPIO_DIP_SW1,RDY);
     DeBounce #(.N(8)) irqB(USER_CLK,1'b1,GPIO_DIP_SW2,IRQ_L);
@@ -130,33 +137,6 @@ module CPUtest(USER_CLK,
 	assign SO = GPIO_SW_S;
 	//assign phi0_in = ~GPIO_SW_S; //pressing button => phi1 tick.
 
-    
-    
-	assign GPIO_LED_W = initDone;
-    assign reset = GPIO_SW_W;
-	assign clearAll = GPIO_SW_E;
-    
-	buf tada0(GPIO_LED_N,memReadClock);
-	buf tada2[7:0]({GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7},extABL);
-    
-	wire [7:0] dat;
-    wire clrLCD;
-    //write to lcd control every phi1. before write, clear LCD.
-	lcd_control		lcd(.rst(reset), .clk(USER_CLK), .control(control_out), .sf_d(out),
-							 .writeStart(writeStart), .initDone(initDone), .writeDone(writeDone), 
-							 .dataIn(data), 
-							 .clearAll(clrLCD));
-
-    wire butOut;
-    debounce        deb(USER_CLK,GPIO_SW_N,butOut);
-  
-    wire [7:0] Accum,Xreg,Yreg;
-	testFSM			myTestFsm(.clkFSM(USER_CLK), .resetFSM(reset),
-									 .initDone(initDone),.writeDone(writeDone),
-                                     .A(Accum),.X(Xreg),.Y(Yreg),
-                                     .data(data),.display(phi0_in),
-                                     .writeStart(writeStart),.clrLCD(clrLCD)
-									 );//write new data on each phi2 uptick.
     wire [6:0] currT;
     //wire [2:0] dbDrivers,sbDrivers,adlDrivers,adhDrivers;
     wire [7:0] DB,ADH,ADL,SB,DB_b,ADH_b,ADL_b,SB_b;
@@ -173,6 +153,7 @@ module CPUtest(USER_CLK,
     wire [7:0] idlContents,A,B,outToPCL,outToPCH,accumVal;
     wire [1:0] currState;
     wire [7:0] second_first_int;
+    wire [7:0] Accum,Xreg,Yreg;
     //fsm to translate stuff on DB into readable format and tick the lcd.
 	top_6502C cpu(.second_first_int(second_first_int),.nmiPending(nmiPending),.resPending(resPending),.irqPending(irqPending),.currState(currState),.accumVal(accumVal),.outToPCL(outToPCL),.outToPCH(outToPCH),.A(A),.B(B),.idlContents(idlContents),.rstAll(rstAll),.ALUhold_out(ALUhold_out),
                 .activeInt(activeInt),.currT(currT),
@@ -182,22 +163,42 @@ module CPUtest(USER_CLK,
                 .Accum(Accum),.Xreg(Xreg),.Yreg(Yreg));
 
     
-    wire [7:0] TRIG0,
-    TRIG1,
-    TRIG2,
-    TRIG3,
-    TRIG4,
-    TRIG5,
-    TRIG6,
-    TRIG7,
-    TRIG8,
-    TRIG9,
-    TRIG10,
-    TRIG11,
-    TRIG12,
-    TRIG13,
-    TRIG14,
-    TRIG15;
+
+    /*-------------------------------------------------------------*/
+    // LCD stuff
+
+	assign GPIO_LED_W = initDone;
+    assign reset = GPIO_SW_W;
+    assign GPIO_LED_N = writeStart;
+    
+	//buf tada0(GPIO_LED_N,memReadClock);
+	buf tada2[7:0]({GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7},extABL);
+    
+	wire [7:0] data;
+    wire clrLCD;
+    //write to lcd control every phi1. before write, clear LCD.
+	lcd_control		lcd(.rst(reset), .clk(USER_CLK), .control(control_out), .sf_d(out),
+							 .writeStart(writeStart), .initDone(initDone), .writeDone(writeDone), 
+							 .dataIn(data), 
+							 .clearAll(clrLCD));
+
+    wire butOut;
+    wire [5:0] lcdstate;
+    DeBounce #(.N(8)) deb(USER_CLK,1'b1,GPIO_SW_N,butOut);
+    
+	testFSM			myTestFsm(.state(lcdstate),.clkFSM(USER_CLK), .resetFSM(reset),
+									 .initDone(initDone),.writeDone(writeDone),
+                                     .A(Accum),.X(Xreg),.Y(Yreg),
+                                     .data(data),.display(butOut),
+                                     .writeStart(writeStart),.clrLCD(clrLCD)
+									 );//write new data on each phi2 uptick.
+                                     
+           
+ /*-------------------------------------------------------------*/
+    // chipscope stuff
+
+
+    wire [7:0] TRIG0,TRIG1,TRIG2,TRIG3,TRIG4,TRIG5,TRIG6,TRIG7,TRIG8,TRIG9,TRIG10,TRIG11,TRIG12,TRIG13,TRIG14,TRIG15;
     
     wire chipClk,chipClk_b0;
     clockone2048 test11(USER_CLK,chipClk_b0);
@@ -223,7 +224,7 @@ module CPUtest(USER_CLK,
     accumVal,
     A,
     B,
-    idlContents,
+    {butOut,writeStart,clrLCD,lcdstate},
     {rstAll,4'd0,irqPending,nmiPending,resPending},
     second_first_int);
     
@@ -251,6 +252,6 @@ module CPUtest(USER_CLK,
     chipscope_icon2 icon(
     .CONTROL0(CONTROL0),
     .CONTROL1(CONTROL1));
-
+               
 endmodule
 
