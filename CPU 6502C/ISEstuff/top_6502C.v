@@ -14,9 +14,11 @@
 
 `include "Control/plaFSM.v"
 
-module top_6502C(second_first_int,nmiPending,resPending,irqPending,currState,accumVal,outToPCL,outToPCH,A,B,idlContents,rstAll,ALUhold_out,activeInt,currT,DB,SB,ADH,ADL,RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,	
+module top_6502C(SR_contents,opcode,second_first_int,nmiPending,resPending,irqPending,currState,accumVal,outToPCL,outToPCH,A,B,idlContents,rstAll,ALUhold_out,activeInt,currT,DB,SB,ADH,ADL,RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,	
                 phi1_out, SYNC, extABL, extABH, phi2_out, RW,
                 Accum,Xreg,Yreg);
+            output [7:0] SR_contents;
+            output [7:0] opcode;
             output [7:0] second_first_int;
             output nmiPending,resPending,irqPending;
             output [1:0] currState;
@@ -244,8 +246,8 @@ module top_6502C(second_first_int,nmiPending,resPending,irqPending,currState,acc
             wire [7:0] SR_contents;
             
             //latch SR signals.
-            wire latchedACR,latchedAVR;
-            plainLatch      latch[1:0](phi2,{tempACR, tempAVR},{latchedACR,latchedAVR});
+            //wire latchedACR,latchedAVR;
+            //plainLatch      latch[1:0](phi2,{tempACR, tempAVR},{latchedACR,latchedAVR});
             
             wire [7:0] DB_b8;
             triState SR_b0[7:0](DB,DB_b8,controlSigs[`P_DB]);
@@ -253,14 +255,13 @@ module top_6502C(second_first_int,nmiPending,resPending,irqPending,currState,acc
                         controlSigs[`FLAG_DBZ],
                         controlSigs[`FLAG_ALU],
                         controlSigs[`FLAG_DB],
-                        controlSigs[`P_DB], DBZ, latchedACR, latchedAVR, BRKins,
+                        controlSigs[`P_DB], DBZ, aluACR, aluAVR, BRKins,
                         controlSigs[`SET_C], controlSigs[`CLR_C],
                         controlSigs[`SET_I], controlSigs[`CLR_I],
                         controlSigs[`CLR_V],
                         controlSigs[`SET_D], controlSigs[`CLR_D],
                         DB,ALUhold_out,opcode,DB_b8,
                         SR_contents);
-            
 
                     
             wire [7:0] extDB_b0;
@@ -290,7 +291,7 @@ module top_6502C(second_first_int,nmiPending,resPending,irqPending,currState,acc
 */
             wire [7:0] prevOpcode;
             wire [6:0] currT;
-            instructionRegister ir_reg(currT,RDY,phi1,phi2, opcodeToIR, opcode, prevOpcode);
+            instructionRegister ir_reg(rstAll,currT,RDY,phi1,phi2, opcodeToIR, opcode, prevOpcode);
             
             wire [64:0] nextControlSigs;
             wire [2:0] activeInt;

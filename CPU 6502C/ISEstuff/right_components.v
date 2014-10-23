@@ -79,13 +79,13 @@ module ACRlatch(rstAll,phi1,inAVR,inACR,inHC,AVR,ACR,HC);
     
     reg AVR,ACR,HC = 1'b0;
     
-    always @ (posedge phi1 or posedge rstAll) begin
+    always @ (posedge phi1) begin
         if (rstAll) begin
             AVR <= 1'b0;
             ACR <= 1'b0;
             HC <= 1'b0;
         end
-        else if (phi1) begin
+        else begin
             AVR <= inAVR;
             ACR <= inACR;
             HC <= inHC;        
@@ -463,9 +463,9 @@ module register(currVal,rstAll,phi2, load, bus_en,SBin,
     
     assign SB = (bus_en) ? currVal : 8'bzzzzzzzz;
     
-    always @(posedge phi2 or posedge rstAll) begin
+    always @(posedge phi2) begin
             currVal <= (rstAll) ? 8'h00 :
-                        ((phi2 & load) ? SBin : currVal);
+                        ((load) ? SBin : currVal);
 
     end
    
@@ -515,16 +515,14 @@ module statusReg(rstAll,phi1,phi2,DB_P,loadDBZ,flagsALU,flagsDB,
         currVal[4] = B;
     end
     
-    (* clock_signal = "yes" *)
-    wire phi2OrRstAll;
-    
-    assign phi2OrRstAll = phi2 | rstAll;
+
+
 
     assign DBinout = (P_DB) ? currVal : 8'bzzzzzzzz;
     assign status = currVal;
 
     
-    always @ (posedge phi1 or posedge phi2OrRstAll) begin
+    always @ (posedge phi1 or posedge phi2) begin
     
         if (phi1) begin
             if (rstAll)  begin
@@ -756,17 +754,4 @@ module opendrainMosADH(rstAll,O_ADH0, O_ADH17,
     bufif1 b[6:0](bus[7:1],pull,O_ADH17);
 
     
-endmodule
-
-    
-module plainLatch(tick,in,out);
-    input tick;
-    input in;
-    output reg out = 1'b0;
-
-    always @ (posedge tick) begin
-        if (in == 0 | in == 1) out <= in;
-    end
-
-
 endmodule

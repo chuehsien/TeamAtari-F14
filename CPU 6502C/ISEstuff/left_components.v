@@ -239,7 +239,8 @@ module controlLatch(phi1,phi2,inControl,outControl);
 endmodule
 
 
-module instructionRegister(currT,RDY,phi1,phi2,OPin,OPout,prevOP);
+module instructionRegister(rstAll,currT,RDY,phi1,phi2,OPin,OPout,prevOP);
+    input rstAll;
     input [6:0] currT;
     input RDY,phi1,phi2;
     input [7:0] OPin;
@@ -254,8 +255,9 @@ module instructionRegister(currT,RDY,phi1,phi2,OPin,OPout,prevOP);
   
     //wait for (currT==`Tone & phi2) to enable.
     always @ (posedge phi1) begin
-			OPout <= (en) ? OPin : OPout;
-			prevOP <= (en) ? OPout : prevOP;
+         
+			OPout <= rstAll ? 8'h00 : ((en) ? OPin : OPout);
+			prevOP <= rstAll ? 8'h00 : ((en) ? OPout : prevOP);
 			
         
     end

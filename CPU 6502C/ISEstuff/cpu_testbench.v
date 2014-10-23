@@ -103,7 +103,7 @@ module CPUtest(USER_CLK,
     buf memB2[7:0](memDBin,extDB);
 	triState busDriver[7:0](extDB,memOut,RW);
     
-    blk_mem_gen_v7_1 mem( 
+    memTestFull mem( 
       .clka(memWriteClock), // input clka
       .wea(~RW), // input [0 : 0] wea
       .addra(memAdd_b), // input [15 : 0] addra
@@ -153,9 +153,11 @@ module CPUtest(USER_CLK,
     wire [7:0] idlContents,A,B,outToPCL,outToPCH,accumVal;
     wire [1:0] currState;
     wire [7:0] second_first_int;
+    wire [7:0] OP;
     wire [7:0] Accum,Xreg,Yreg;
+    wire [7:0] SR_contents;
     //fsm to translate stuff on DB into readable format and tick the lcd.
-	top_6502C cpu(.second_first_int(second_first_int),.nmiPending(nmiPending),.resPending(resPending),.irqPending(irqPending),.currState(currState),.accumVal(accumVal),.outToPCL(outToPCL),.outToPCH(outToPCH),.A(A),.B(B),.idlContents(idlContents),.rstAll(rstAll),.ALUhold_out(ALUhold_out),
+	top_6502C cpu(.SR_contents(SR_contents),.opcode(OP),.second_first_int(second_first_int),.nmiPending(nmiPending),.resPending(resPending),.irqPending(irqPending),.currState(currState),.accumVal(accumVal),.outToPCL(outToPCL),.outToPCH(outToPCH),.A(A),.B(B),.idlContents(idlContents),.rstAll(rstAll),.ALUhold_out(ALUhold_out),
                 .activeInt(activeInt),.currT(currT),
                 .DB(DB),.SB(SB),.ADH(ADH),.ADL(ADL),
                 .RDY(RDY), .IRQ_L(IRQ_L), .NMI_L(NMI_L), .RES_L(RES_L), .SO(SO), .phi0_in(phi0_in), 
@@ -169,7 +171,7 @@ module CPUtest(USER_CLK,
 
 	assign GPIO_LED_W = initDone;
     assign reset = GPIO_SW_W;
-    assign GPIO_LED_N = writeStart;
+    assign GPIO_LED_N = SYNC;
     
 	//buf tada0(GPIO_LED_N,memReadClock);
 	buf tada2[7:0]({GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7},extABL);
@@ -182,16 +184,17 @@ module CPUtest(USER_CLK,
 							 .dataIn(data), 
 							 .clearAll(clrLCD));
 
+
     wire butOut;
     wire [5:0] lcdstate;
     DeBounce #(.N(8)) deb(USER_CLK,1'b1,GPIO_SW_N,butOut);
     
-	testFSM			myTestFsm(.state(lcdstate),.clkFSM(USER_CLK), .resetFSM(reset),
-									 .initDone(initDone),.writeDone(writeDone),
-                                     .A(Accum),.X(Xreg),.Y(Yreg),
-                                     .data(data),.display(butOut),
-                                     .writeStart(writeStart),.clrLCD(clrLCD)
-									 );//write new data on each phi2 uptick.
+     testFSM			myTestFsm(.state(lcdstate),.clkFSM(USER_CLK), .resetFSM(reset),.data(data),
+									 .initDone(initDone),.writeDone(writeDone),.writeStart(writeStart),.clrLCD(clrLCD),
+                                     .A(Accum),.X(Xreg),.Y(Yreg),.OP(OP),
+                                     .display(phi1_out),
+									 .nextString(~phi1_out)
+									 );          
                                      
            
  /*-------------------------------------------------------------*/
@@ -221,12 +224,12 @@ module CPUtest(USER_CLK,
     SB_b,
     {7'd0,phi1_b},
     {RW,activeInt,RDY,IRQ_L,NMI_L,RES_L},
-    accumVal,
-    A,
-    B,
-    {butOut,writeStart,clrLCD,lcdstate},
-    {rstAll,4'd0,irqPending,nmiPending,resPending},
-    second_first_int);
+    Accum,
+    ALUhold_out,
+    SR_contents,
+    OP,
+    Xreg,
+    Yreg);
     
     // extra ila for use...
     chipscope_ila ila1(

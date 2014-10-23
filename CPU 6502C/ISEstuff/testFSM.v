@@ -10,8 +10,9 @@
 					resetFSM,
 					initDone,
 					writeDone,
+                    nextString,
                     display,
-					A,X,Y,
+					A,X,Y,OP,
 					data, 
 					writeStart,clrLCD);
 			
@@ -20,8 +21,9 @@
 	input resetFSM;
 	input initDone;
 	input writeDone;
+    input nextString;
     input display;
-	input [7:0] A,X,Y;
+	input [7:0] A,X,Y,OP;
     
 	output [7:0]	data;
 	output			writeStart,clrLCD;
@@ -31,8 +33,8 @@
 	reg [5:0] 		state,next_state;
 	
 	`define idle 	    6'd0
-    `define clear0      6'd1
-    `define wait0       6'd2
+    `define ready      6'd1
+    `define clear0       6'd2
 	`define data1	    6'd3
 	`define wait1	    6'd4
 	`define data2	    6'd5
@@ -45,8 +47,12 @@
 	`define wait5	    6'd12
 	`define data6	    6'd13
 	`define wait6	    6'd14
-	`define waitClear   6'd15
-	`define finish      6'd16
+    `define data7       6'd15
+    `define wait7       6'd16
+    `define data8       6'd17
+    `define wait8       6'd18
+	`define waitClear   6'd19
+	`define finish      6'd20
 	
     task toAscii;
     input [3:0] data;
@@ -77,31 +83,35 @@
     
     
 	/* first write 18545, then write ECE to LCD */
-	always @ (clkFSM or state or initDone or writeDone or writeStart)
+	always @ (clkFSM or state or initDone or writeDone or display or A or X or Y or OP)
 		begin
 			next_state <= `idle;
 			data = 8'b00000000;
 			writeStart = 1'b0;
-            clrLCD <= 1'b0;
+            clrLCD = 1'b0;
 			case(state)
 				`idle : 
 					begin
-                        if (~initDone) next_state <= `idle;
-                        else if (display) begin
-                            next_state <= `clear0;
-                            clrLCD <= 1'b1;
-                        end
+                        if (initDone) next_state <= `ready;
                         else next_state <= `idle;
 					end
-                    
+                 `ready :
+                    begin
+                        if (display) next_state <= `clear0;
+                        else next_state <= `ready;
+                        
+                    end
+
                 `clear0:
                     begin
-                        clrLCD <= 1'b1;
+                        clrLCD = 1'b1;
+                        next_state <= `waitClear;
+                    end
+                 `waitClear:
+                    begin
                         if (initDone) next_state <= `data1;
                         else next_state <= `clear0;
                     end
-                    
-                    
 				`data1 :
 					begin
 						toAscii(A[7:4],data);		//A_hi
@@ -183,15 +193,45 @@
 					begin
 						toAscii(Y[3:0],data);
 						if(writeDone == 1'b1)
-							next_state <= `finish;
+							next_state <= `data7;
 						else
 							next_state <= `wait6;
 					end
 				
+               `data7 :
+					begin
+						toAscii(OP[7:4],data);	//op_hi
+						writeStart = 1'b1;
+						next_state <= `wait7;
+					end
+				`wait7 :
+					begin
+						toAscii(OP[7:4],data);
+						if(writeDone == 1'b1)
+							next_state <= `data8;
+						else
+							next_state <= `wait7;
+					end
+                    
+				`data8 :
+					begin
+						toAscii(OP[3:0],data);	//op_lo
+						writeStart = 1'b1;
+						next_state <= `wait8;
+					end
+				`wait8 :
+					begin
+						toAscii(OP[3:0],data);
+						if(writeDone == 1'b1)
+							next_state <= `finish;
+						else
+							next_state <= `wait8;
+					end                    
 				`finish :
 					begin
-						if (~display) next_state <= `idle;
+						if (nextString) next_state <= `idle;
                         else next_state <= `finish;
+                        //next_state <= `finish;
 					end
             endcase
         end
