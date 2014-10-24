@@ -58,12 +58,12 @@ module top_6502C(SRflags,opcode,second_first_int,nmiPending,resPending,irqPendin
             //control sigs
             wire [64:0] controlSigs;
             wire rstAll;
-            wire [2:0] adlDrivers,adhDrivers,sbDrivers,dbDrivers;
-            assign adlDrivers = controlSigs[`ADD_ADL]+
+            wire [2:0] adhDrivers,sbDrivers,dbDrivers;
+            /*assign adlDrivers = controlSigs[`ADD_ADL]+
                                 controlSigs[`S_ADL] +
                                 controlSigs[`PCL_ADL] +
                                 controlSigs[`DL_ADL]+
-                                (controlSigs[`O_ADL0]|controlSigs[`O_ADL1]|controlSigs[`O_ADL2]);
+                                (controlSigs[`O_ADL0]|controlSigs[`O_ADL1]|controlSigs[`O_ADL2]);*/
             assign adhDrivers = controlSigs[`DL_ADH] +
                                 controlSigs[`PCH_ADH] +
                                 controlSigs[`SB_ADH]+
@@ -84,11 +84,11 @@ module top_6502C(SRflags,opcode,second_first_int,nmiPending,resPending,irqPendin
                                controlSigs[`P_DB];
             
             assign RW = ~controlSigs[`nRW];
-            assign holdHi = controlSigs[`nADH_ABH];
-            assign holdLo = controlSigs[`nADL_ABL];
+            //assign holdHi = controlSigs[`nADH_ABH];
+            //assign holdLo = controlSigs[`nADL_ABL];
             //clock
             wire phi1,phi2;
-			clockGen clock(~RES_L,phi0_in,phi1,phi2,phi1_out,phi2_out);
+			clockGen clock(phi0_in,phi1,phi2,phi1_out,phi2_out);
             
             //datapath modules
             wire [7:0] DB_b0,ADL_b0,ADH_b0;
@@ -187,7 +187,7 @@ module top_6502C(SRflags,opcode,second_first_int,nmiPending,resPending,irqPendin
             triState addhold_b0[7:0](ADL,ADL_b4,controlSigs[`ADD_ADL]);
             triState addhold_b1[6:0](SB[6:0],SB_b4[6:0],controlSigs[`ADD_SB0to6]);
             triState addhold_b2(SB[7],SB_b4[7],controlSigs[`ADD_SB7]);
-            AdderHoldReg addHold(rstAll, phi2, controlSigs[`ADD_ADL], controlSigs[`ADD_SB0to6], controlSigs[`ADD_SB7], 
+            AdderHoldReg addHold(phi2, controlSigs[`ADD_ADL], controlSigs[`ADD_SB0to6], controlSigs[`ADD_SB7], 
                                 ALU_out, tempAVR, tempACR, tempHC,
                                 ADL_b4,SB_b4,ALUhold_out,aluAVR,aluACR,aluHC);
             
@@ -306,7 +306,9 @@ module top_6502C(SRflags,opcode,second_first_int,nmiPending,resPending,irqPendin
             wire nmiPending,irqPending,resPending,nmiDone,intHandled;
             wire [1:0] currState;
             wire RDYout; //this is the one which affects the FSM.
-            interruptLatch   iHandlerLatch(phi1,~(SR_contents[`status_I]),NMI_L,IRQ_L,RES_L,outNMI_L,outIRQ_L,outRES_L);
+            wire IRQ_Lfiltered;
+            assign IRQ_Lfiltered = IRQ_L | SR_contents[`status_I];
+            interruptLatch   iHandlerLatch(phi1,NMI_L,IRQ_Lfiltered,RES_L,outNMI_L,outIRQ_L,outRES_L);
             interruptControl iHandler(outNMI_L,outIRQ_L,outRES_L,nmiDone,
                         nmiPending,irqPending,resPending);
 

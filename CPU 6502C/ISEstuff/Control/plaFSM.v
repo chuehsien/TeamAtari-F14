@@ -16,7 +16,8 @@ module plaFSM(currState,phi1,phi2,RDY,nextT, rst,brkNow,
     reg nextIntHandled;
     always @ (*) begin
         
-        
+         nextState = `FSMinit;
+         nextIntHandled = 1'b0;
         case (currState) 
             `FSMinit: begin
                 nextIntHandled = 1'b0;
@@ -65,9 +66,15 @@ module plaFSM(currState,phi1,phi2,RDY,nextT, rst,brkNow,
                 else begin
                     nextState = currState;
                 end
- 
-                //rstAll = 1'b0;
+            end    
+            default: begin
+                    nextState = `FSMinit;
+                    nextIntHandled = 1'b0;
             end
+                
+                
+                //rstAll = 1'b0;
+            
         endcase
 
     end

@@ -2,10 +2,10 @@
 `include "Control/Tcontrol.v"
 `include "Control/Logiccontrol.v"
 
-module clockGen(RST,phi0_in,
+module clockGen(phi0_in,
                 phi1_out,phi2_out,phi1_extout,phi2_extout);
                 
-    input RST,phi0_in;
+    input phi0_in;
      (* clock_signal = "yes" *) output phi1_out,phi2_out,phi1_extout,phi2_extout;
   
     
@@ -73,16 +73,16 @@ module inoutLatch3(rstAll, phi1,data1,data2,data3,done1,done2,done3,
 endmodule
 */
 
-module interruptLatch(phi1,en,NMI_L,IRQ_L,RES_L,outNMI_L,outIRQ_L,outRES_L);
-    input phi1,en,NMI_L,IRQ_L,RES_L;
+module interruptLatch(phi1,NMI_L,IRQ_Lfiltered,RES_L,outNMI_L,outIRQ_L,outRES_L);
+    input phi1,NMI_L,IRQ_Lfiltered,RES_L;
     output outNMI_L,outIRQ_L,outRES_L;
     
-    wire phi1,en,NMI_L,IRQ_L,RES_L;
+    wire phi1,NMI_L,IRQ_Lfiltered,RES_L;
     reg outNMI_L,outIRQ_L,outRES_L = 1'b1;
 
     always @ (posedge phi1) begin
  
-        outIRQ_L <= en ? IRQ_L : outIRQ_L;
+        outIRQ_L <= IRQ_Lfiltered;
           
         outNMI_L <= NMI_L;
         outRES_L <= RES_L;

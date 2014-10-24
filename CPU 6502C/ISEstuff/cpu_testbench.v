@@ -83,7 +83,7 @@ module CPUtest(USER_CLK,
     //clockDivider    #(5000000) cpuClock(USER_CLK,memClk_b0); //now its 10Mhz, slow down to 1Hz. divide by 3300.
     clockone2048 test1(USER_CLK,memClk_b0);
     clockone1024 test2(memClk_b0,memClk_b1);
-    clockone4    test3(memClk_b1,memClk_b2);
+    clockHalf    test3(memClk_b1,memClk_b2);
     clockHalf    test4(memClk_b2,memClk_b3);
     buf clkBuf0(phi0_in,memClk_b3);
     
@@ -187,11 +187,11 @@ module CPUtest(USER_CLK,
 							 .clearAll(clrLCD));
 
 
-    wire butOut;
-    wire [5:0] lcdstate;
-    DeBounce #(.N(8)) deb(USER_CLK,1'b1,GPIO_SW_N,butOut);
+    //wire butOut;
+    //wire [5:0] lcdstate;
+    //DeBounce #(.N(8)) deb(USER_CLK,1'b1,GPIO_SW_N,butOut);
     
-     testFSM			myTestFsm(.state(lcdstate),.clkFSM(USER_CLK), .resetFSM(reset),.data(data),
+     testFSM			myTestFsm(.clkFSM(USER_CLK), .resetFSM(reset),.data(data),
 									 .initDone(initDone),.writeDone(writeDone),.writeStart(writeStart),.clrLCD(clrLCD),
                                      .A(Accum),.X(Xreg),.Y(Yreg),.OP(OP),
                                      .display(phi1_out),

@@ -6,7 +6,7 @@
  */
  
  
- module testFSM(state,clkFSM,
+ module testFSM(clkFSM,
 					resetFSM,
 					initDone,
 					writeDone,
@@ -16,7 +16,6 @@
 					data, 
 					writeStart,clrLCD);
 			
-    output [5:0] state;
 	input clkFSM;
 	input resetFSM;
 	input initDone;
@@ -83,7 +82,7 @@
     
     
 	/* first write 18545, then write ECE to LCD */
-	always @ (clkFSM or state or initDone or writeDone or display or A or X or Y or OP)
+	always @ (clkFSM or state or initDone or writeDone or display or A or X or Y or OP or nextString)
 		begin
 			next_state <= `idle;
 			data = 8'b00000000;

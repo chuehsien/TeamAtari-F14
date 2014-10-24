@@ -97,17 +97,17 @@ module ACRlatch(rstAll,phi1,inAVR,inACR,inHC,AVR,ACR,HC);
 
 endmodule
 
-module AdderHoldReg(rstAll,phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes,tempAVR,tempACR,tempHC,
+module AdderHoldReg(phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes,tempAVR,tempACR,tempHC,
 		ADL,SB,adderReg,aluAVR,aluACR,aluHC);
 
-    input rstAll,phi2, ADD_ADL, ADD_SB0to6, ADD_SB7;
+    input phi2, ADD_ADL, ADD_SB0to6, ADD_SB7;
     input [7:0] addRes;
     input tempAVR,tempACR,tempHC;
     inout [7:0] ADL, SB;
     output [7:0] adderReg;
     output aluAVR,aluACR,aluHC;
     
-    wire rstAll,phi2, ADD_ADL, ADD_SB0to6, ADD_SB7;
+    wire phi2, ADD_ADL, ADD_SB0to6, ADD_SB7;
     wire tempAVR,tempACR,tempHC;
     wire [7:0] addRes;
     wire [7:0] ADL,SB;

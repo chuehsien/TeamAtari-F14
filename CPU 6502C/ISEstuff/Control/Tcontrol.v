@@ -6,6 +6,7 @@ module Tcontrol(T,opcode,carry,SR,newT);
     output reg [6:0] newT = `emptyT;
 
     always @ (*) begin
+        newT = `emptyT;
         if (opcode==`BRK) begin
             case (T)
             `Tzero : newT = `Tone;
@@ -15,10 +16,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tsix;
             `Tsix : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ORA_izx) begin
+        else if (opcode==`ORA_izx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -26,59 +28,66 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ORA_zp) begin
+        else if (opcode==`ORA_zp) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ASL_zp) begin
+        else if (opcode==`ASL_zp) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`PHP) begin
+        else if (opcode==`PHP) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ORA_imm) begin
+        else if (opcode==`ORA_imm) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ASL) begin
+        else if (opcode==`ASL) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ORA_abs) begin
+        else if (opcode==`ORA_abs) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ASL_abs) begin
+        else if (opcode==`ASL_abs) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -86,10 +95,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`BPL_rel) begin
+        else if (opcode==`BPL_rel) begin
             case (T)
             `Tzero : newT = `T1BranchCross;
             `Ttwo : begin
@@ -103,10 +113,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `T1BranchNoCross : newT = `Ttwo;
             `T1BranchCross : newT = `Ttwo;
             `T1NoBranch : newT = `Ttwo;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ORA_izy) begin
+        else if (opcode==`ORA_izy) begin
             case (T)
             `TzeroCrossPg : newT = `Tone;
             `TzeroNoCrossPg : newT = `Tone;
@@ -118,19 +129,21 @@ module Tcontrol(T,opcode,carry,SR,newT);
                     else newT = `TzeroNoCrossPg;
                     end
             `Tfive : newT = `TzeroCrossPg;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ORA_zpx) begin
+        else if (opcode==`ORA_zpx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ASL_zpx) begin
+        else if (opcode==`ASL_zpx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -138,17 +151,19 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`CLC) begin
+        else if (opcode==`CLC) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ORA_aby) begin
+        else if (opcode==`ORA_aby) begin
             case (T)
             `TzeroNoCrossPg : newT = `Tone;
             `TzeroCrossPg : newT = `Tone;
@@ -159,10 +174,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
                     else newT = `TzeroNoCrossPg;
                     end
             `Tfour : newT = `TzeroCrossPg;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ORA_abx) begin
+        else if (opcode==`ORA_abx) begin
             case (T)
             `TzeroNoCrossPg : newT = `Tone;
             `TzeroCrossPg : newT = `Tone;
@@ -173,10 +189,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
                     else newT = `TzeroNoCrossPg;
                     end
             `Tfour : newT = `TzeroCrossPg;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ASL_abx) begin
+        else if (opcode==`ASL_abx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -185,10 +202,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tsix;
             `Tsix : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`JSR_abs) begin
+        else if (opcode==`JSR_abs) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -196,10 +214,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`AND_izx) begin
+        else if (opcode==`AND_izx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -207,77 +226,86 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`BIT_zp) begin
+        else if (opcode==`BIT_zp) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`AND_zp) begin
+        else if (opcode==`AND_zp) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ROL_zp) begin
+        else if (opcode==`ROL_zp) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`PLP) begin
+        else if (opcode==`PLP) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`AND_imm) begin
+        else if (opcode==`AND_imm) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ROL) begin
+        else if (opcode==`ROL) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`BIT_abs) begin
+        else if (opcode==`BIT_abs) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`AND_abs) begin
+        else if (opcode==`AND_abs) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ROL_abs) begin
+        else if (opcode==`ROL_abs) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -285,10 +313,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`BMI_rel) begin
+        else if (opcode==`BMI_rel) begin
             case (T)
             `Tzero : newT = `T1BranchCross;
             `Ttwo : begin
@@ -302,10 +331,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `T1BranchNoCross : newT = `Ttwo;
             `T1BranchCross : newT = `Ttwo;
             `T1NoBranch : newT = `Ttwo;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`AND_izy) begin
+        else if (opcode==`AND_izy) begin
             case (T)
             `TzeroNoCrossPg : newT = `Tone;
             `TzeroCrossPg : newT = `Tone;
@@ -317,19 +347,21 @@ module Tcontrol(T,opcode,carry,SR,newT);
                     else newT = `TzeroNoCrossPg;
                     end
             `Tfive : newT = `TzeroCrossPg;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`AND_zpx) begin
+        else if (opcode==`AND_zpx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ROL_zpx) begin
+        else if (opcode==`ROL_zpx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -337,17 +369,19 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`SEC) begin
+        else if (opcode==`SEC) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`AND_aby) begin
+        else if (opcode==`AND_aby) begin
             case (T)
             `TzeroNoCrossPg : newT = `Tone;
             `TzeroCrossPg : newT = `Tone;
@@ -358,10 +392,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
                     else newT = `TzeroNoCrossPg;
                     end
             `Tfour : newT = `TzeroCrossPg;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`AND_abx) begin
+        else if (opcode==`AND_abx) begin
             case (T)
             `TzeroNoCrossPg : newT = `Tone;
             `TzeroCrossPg : newT = `Tone;
@@ -372,10 +407,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
                     else newT = `TzeroNoCrossPg;
                     end
             `Tfour : newT = `TzeroCrossPg;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ROL_abx) begin
+        else if (opcode==`ROL_abx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -384,10 +420,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tsix;
             `Tsix : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`RTI) begin
+        else if (opcode==`RTI) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -395,10 +432,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`EOR_izx) begin
+        else if (opcode==`EOR_izx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -406,67 +444,75 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`EOR_zp) begin
+        else if (opcode==`EOR_zp) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`LSR_zp) begin
+        else if (opcode==`LSR_zp) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`PHA) begin
+        else if (opcode==`PHA) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`EOR_imm) begin
+        else if (opcode==`EOR_imm) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`LSR) begin
+        else if (opcode==`LSR) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`JMP_abs) begin
+        else if (opcode==`JMP_abs) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`EOR_abs) begin
+        else if (opcode==`EOR_abs) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`LSR_abs) begin
+        else if (opcode==`LSR_abs) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -474,10 +520,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`BVC_rel) begin
+        else if (opcode==`BVC_rel) begin
             case (T)
             `Tzero : newT = `T1BranchCross;
             `Ttwo : begin
@@ -491,10 +538,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `T1BranchNoCross : newT = `Ttwo;
             `T1BranchCross : newT = `Ttwo;
             `T1NoBranch : newT = `Ttwo;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`EOR_izy) begin
+        else if (opcode==`EOR_izy) begin
             case (T)
             `TzeroNoCrossPg : newT = `Tone;
             `TzeroCrossPg : newT = `Tone;
@@ -506,19 +554,21 @@ module Tcontrol(T,opcode,carry,SR,newT);
                     else newT = `TzeroNoCrossPg;
                     end
             `Tfive : newT = `TzeroCrossPg;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`EOR_zpx) begin
+        else if (opcode==`EOR_zpx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`LSR_zpx) begin
+        else if (opcode==`LSR_zpx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -526,17 +576,19 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`CLI) begin
+        else if (opcode==`CLI) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`EOR_aby) begin
+        else if (opcode==`EOR_aby) begin
             case (T)
             `TzeroNoCrossPg : newT = `Tone;
             `TzeroCrossPg : newT = `Tone;
@@ -547,10 +599,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
                     else newT = `TzeroNoCrossPg;
                     end
             `Tfour : newT = `TzeroCrossPg;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`EOR_abx) begin
+        else if (opcode==`EOR_abx) begin
             case (T)
             `TzeroNoCrossPg : newT = `Tone;
             `TzeroCrossPg : newT = `Tone;
@@ -561,10 +614,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
                     else newT = `TzeroNoCrossPg;
                     end
             `Tfour : newT = `TzeroCrossPg;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`LSR_abx) begin
+        else if (opcode==`LSR_abx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -573,10 +627,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tsix;
             `Tsix : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`RTS) begin
+        else if (opcode==`RTS) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -584,10 +639,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ADC_izx) begin
+        else if (opcode==`ADC_izx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -595,70 +651,78 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ADC_zp) begin
+        else if (opcode==`ADC_zp) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ROR_zp) begin
+        else if (opcode==`ROR_zp) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`PLA) begin
+        else if (opcode==`PLA) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ADC_imm) begin
+        else if (opcode==`ADC_imm) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ROR) begin
+        else if (opcode==`ROR) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`JMP_zp) begin
+        else if (opcode==`JMP_zp) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ADC_abs) begin
+        else if (opcode==`ADC_abs) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ROR_abs) begin
+        else if (opcode==`ROR_abs) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -666,10 +730,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`BVS_rel) begin
+        else if (opcode==`BVS_rel) begin
             case (T)
             `Tzero : newT = `T1BranchCross;
             `Ttwo : begin
@@ -683,10 +748,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `T1BranchNoCross : newT = `Ttwo;
             `T1BranchCross : newT = `Ttwo;
             `T1NoBranch : newT = `Ttwo;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ADC_izy) begin
+        else if (opcode==`ADC_izy) begin
             case (T)
             `TzeroNoCrossPg : newT = `Tone;
             `TzeroCrossPg : newT = `Tone;
@@ -698,19 +764,21 @@ module Tcontrol(T,opcode,carry,SR,newT);
                     else newT = `TzeroNoCrossPg;
                     end
             `Tfive : newT = `TzeroCrossPg;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ADC_zpx) begin
+        else if (opcode==`ADC_zpx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ROR_zpx) begin
+        else if (opcode==`ROR_zpx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -718,17 +786,19 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`SEI) begin
+        else if (opcode==`SEI) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ADC_aby) begin
+        else if (opcode==`ADC_aby) begin
             case (T)
             `TzeroNoCrossPg : newT = `Tone;
             `TzeroCrossPg : newT = `Tone;
@@ -739,10 +809,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
                     else newT = `TzeroNoCrossPg;
                     end
             `Tfour : newT = `TzeroCrossPg;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ADC_abx) begin
+        else if (opcode==`ADC_abx) begin
             case (T)
             `TzeroNoCrossPg : newT = `Tone;
             `TzeroCrossPg : newT = `Tone;
@@ -753,10 +824,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
                     else newT = `TzeroNoCrossPg;
                     end
             `Tfour : newT = `TzeroCrossPg;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`ROR_abx) begin
+        else if (opcode==`ROR_abx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -765,10 +837,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tsix;
             `Tsix : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`STA_izx) begin
+        else if (opcode==`STA_izx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -776,75 +849,84 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`STY_zp) begin
+        else if (opcode==`STY_zp) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`STA_zp) begin
+        else if (opcode==`STA_zp) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`STX_zp) begin
+        else if (opcode==`STX_zp) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`DEY) begin
+        else if (opcode==`DEY) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`TXA) begin
+        else if (opcode==`TXA) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`STY_abs) begin
+        else if (opcode==`STY_abs) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`STA_abs) begin
+        else if (opcode==`STA_abs) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`STX_abs) begin
+        else if (opcode==`STX_abs) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`BCC_rel) begin
+        else if (opcode==`BCC_rel) begin
             case (T)
             `Tzero : newT = `T1BranchCross;
             `Ttwo : begin
@@ -858,10 +940,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `T1BranchNoCross : newT = `Ttwo;
             `T1BranchCross : newT = `Ttwo;
             `T1NoBranch : newT = `Ttwo;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`STA_izy) begin
+        else if (opcode==`STA_izy) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -869,78 +952,87 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`STY_zpx) begin
+        else if (opcode==`STY_zpx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`STA_zpx) begin
+        else if (opcode==`STA_zpx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`STX_zpy) begin
+        else if (opcode==`STX_zpy) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`TYA) begin
+        else if (opcode==`TYA) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`STA_aby) begin
+        else if (opcode==`STA_aby) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`TXS) begin
+        else if (opcode==`TXS) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`STA_abx) begin
+        else if (opcode==`STA_abx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`LDY_imm) begin
+        else if (opcode==`LDY_imm) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`LDA_izx) begin
+        else if (opcode==`LDA_izx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -948,89 +1040,100 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`LDX_imm) begin
+        else if (opcode==`LDX_imm) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`LDY_zp) begin
+        else if (opcode==`LDY_zp) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`LDA_zp) begin
+        else if (opcode==`LDA_zp) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`LDX_zp) begin
+        else if (opcode==`LDX_zp) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`TAY) begin
+        else if (opcode==`TAY) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`LDA_imm) begin
+        else if (opcode==`LDA_imm) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`TAX) begin
+        else if (opcode==`TAX) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`LDY_abs) begin
+        else if (opcode==`LDY_abs) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`LDA_abs) begin
+        else if (opcode==`LDA_abs) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`LDX_abs) begin
+        else if (opcode==`LDX_abs) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`BCS_rel) begin
+        else if (opcode==`BCS_rel) begin
             case (T)
             `Tzero : newT = `T1BranchCross;
             `Ttwo : begin
@@ -1044,10 +1147,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `T1BranchNoCross : newT = `Ttwo;
             `T1BranchCross : newT = `Ttwo;
             `T1NoBranch : newT = `Ttwo;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`LDA_izy) begin
+        else if (opcode==`LDA_izy) begin
             case (T)
             `TzeroNoCrossPg : newT = `Tone;
             `TzeroCrossPg : newT = `Tone;
@@ -1059,44 +1163,49 @@ module Tcontrol(T,opcode,carry,SR,newT);
                     else newT = `TzeroNoCrossPg;
                     end
             `Tfive : newT = `TzeroCrossPg;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`LDY_zpx) begin
+        else if (opcode==`LDY_zpx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`LDA_zpx) begin
+        else if (opcode==`LDA_zpx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`LDX_zpy) begin
+        else if (opcode==`LDX_zpy) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`CLV) begin
+        else if (opcode==`CLV) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`LDA_aby) begin
+        else if (opcode==`LDA_aby) begin
             case (T)
             `TzeroNoCrossPg : newT = `Tone;
             `TzeroCrossPg : newT = `Tone;
@@ -1107,17 +1216,19 @@ module Tcontrol(T,opcode,carry,SR,newT);
                     else newT = `TzeroNoCrossPg;
                     end
             `Tfour : newT = `TzeroCrossPg;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`TSX) begin
+        else if (opcode==`TSX) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`LDY_abx) begin
+        else if (opcode==`LDY_abx) begin
             case (T)
             `TzeroNoCrossPg : newT = `Tone;
             `TzeroCrossPg : newT = `Tone;
@@ -1128,10 +1239,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
                     else newT = `TzeroNoCrossPg;
                     end
             `Tfour : newT = `TzeroCrossPg;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`LDA_abx) begin
+        else if (opcode==`LDA_abx) begin
             case (T)
             `TzeroNoCrossPg : newT = `Tone;
             `TzeroCrossPg : newT = `Tone;
@@ -1142,10 +1254,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
                     else newT = `TzeroNoCrossPg;
                     end
             `Tfour : newT = `TzeroCrossPg;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`LDX_aby) begin
+        else if (opcode==`LDX_aby) begin
             case (T)
             `TzeroNoCrossPg : newT = `Tone;
             `TzeroCrossPg : newT = `Tone;
@@ -1156,17 +1269,19 @@ module Tcontrol(T,opcode,carry,SR,newT);
                     else newT = `TzeroNoCrossPg;
                     end
             `Tfour : newT = `TzeroCrossPg;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`CPY_imm) begin
+        else if (opcode==`CPY_imm) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`CMP_izx) begin
+        else if (opcode==`CMP_izx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -1174,75 +1289,84 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`CPY_zp) begin
+        else if (opcode==`CPY_zp) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`CMP_zp) begin
+        else if (opcode==`CMP_zp) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`DEC_zp) begin
+        else if (opcode==`DEC_zp) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`INY) begin
+        else if (opcode==`INY) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`CMP_imm) begin
+        else if (opcode==`CMP_imm) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`DEX) begin
+        else if (opcode==`DEX) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`CPY_abs) begin
+        else if (opcode==`CPY_abs) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`CMP_abs) begin
+        else if (opcode==`CMP_abs) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`DEC_abs) begin
+        else if (opcode==`DEC_abs) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -1250,10 +1374,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`BNE_rel) begin
+        else if (opcode==`BNE_rel) begin
             case (T)
             `Tzero : newT = `T1BranchCross;
             `Ttwo : begin
@@ -1267,10 +1392,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `T1BranchNoCross : newT = `Ttwo;
             `T1BranchCross : newT = `Ttwo;
             `T1NoBranch : newT = `Ttwo;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`CMP_izy) begin
+        else if (opcode==`CMP_izy) begin
             case (T)
             `TzeroCrossPg : newT = `Tone;
             `TzeroNoCrossPg : newT = `Tone;
@@ -1282,19 +1408,21 @@ module Tcontrol(T,opcode,carry,SR,newT);
                     else newT = `TzeroNoCrossPg;
                     end
             `Tfive : newT = `TzeroCrossPg;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`CMP_zpx) begin
+        else if (opcode==`CMP_zpx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`DEC_zpx) begin
+        else if (opcode==`DEC_zpx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -1302,17 +1430,19 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`CLD) begin
+        else if (opcode==`CLD) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`CMP_aby) begin
+        else if (opcode==`CMP_aby) begin
             case (T)
             `TzeroNoCrossPg : newT = `Tone;
             `TzeroCrossPg : newT = `Tone;
@@ -1323,10 +1453,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
                     else newT = `TzeroNoCrossPg;
                     end
             `Tfour : newT = `TzeroCrossPg;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`CMP_abx) begin
+        else if (opcode==`CMP_abx) begin
             case (T)
             `TzeroNoCrossPg : newT = `Tone;
             `TzeroCrossPg : newT = `Tone;
@@ -1337,10 +1468,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
                     else newT = `TzeroNoCrossPg;
                     end
             `Tfour : newT = `TzeroCrossPg;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`DEC_abx) begin
+        else if (opcode==`DEC_abx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -1349,17 +1481,19 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tsix;
             `Tsix : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`CPX_imm) begin
+        else if (opcode==`CPX_imm) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`SBC_izx) begin
+        else if (opcode==`SBC_izx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -1367,75 +1501,84 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`CPX_zp) begin
+        else if (opcode==`CPX_zp) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`SBC_zp) begin
+        else if (opcode==`SBC_zp) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`INC_zp) begin
+        else if (opcode==`INC_zp) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`INX) begin
+        else if (opcode==`INX) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`SBC_imm) begin
+        else if (opcode==`SBC_imm) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`NOP) begin
+        else if (opcode==`NOP) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`CPX_abs) begin
+        else if (opcode==`CPX_abs) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`SBC_abs) begin
+        else if (opcode==`SBC_abs) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`INC_abs) begin
+        else if (opcode==`INC_abs) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -1443,10 +1586,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`BEQ_rel) begin
+        else if (opcode==`BEQ_rel) begin
             case (T)
             `Tzero : newT = `T1BranchCross;
             `Ttwo : begin
@@ -1460,10 +1604,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `T1BranchNoCross : newT = `Ttwo;
             `T1BranchCross : newT = `Ttwo;
             `T1NoBranch : newT = `Ttwo;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`SBC_izy) begin
+        else if (opcode==`SBC_izy) begin
             case (T)
             `TzeroNoCrossPg : newT = `Tone;
             `TzeroCrossPg : newT = `Tone;
@@ -1475,19 +1620,21 @@ module Tcontrol(T,opcode,carry,SR,newT);
                     else newT = `TzeroNoCrossPg;
                     end
             `Tfive : newT = `TzeroCrossPg;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`SBC_zpx) begin
+        else if (opcode==`SBC_zpx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tthree;
             `Tthree : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`INC_zpx) begin
+        else if (opcode==`INC_zpx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -1495,17 +1642,19 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tthree : newT = `Tfour;
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`SED) begin
+        else if (opcode==`SED) begin
             case (T)
             `Tone : newT = `Ttwo;
             `Ttwo : newT = `Tone;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`SBC_aby) begin
+        else if (opcode==`SBC_aby) begin
             case (T)
             `TzeroNoCrossPg : newT = `Tone;
             `TzeroCrossPg : newT = `Tone;
@@ -1516,10 +1665,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
                     else newT = `TzeroNoCrossPg;
                     end
             `Tfour : newT = `TzeroCrossPg;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`SBC_abx) begin
+        else if (opcode==`SBC_abx) begin
             case (T)
             `TzeroNoCrossPg : newT = `Tone;
             `TzeroCrossPg : newT = `Tone;
@@ -1530,10 +1680,11 @@ module Tcontrol(T,opcode,carry,SR,newT);
                     else newT = `TzeroNoCrossPg;
                     end
             `Tfour : newT = `TzeroCrossPg;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
-        if (opcode==`INC_abx) begin
+        else if (opcode==`INC_abx) begin
             case (T)
             `Tzero : newT = `Tone;
             `Tone : newT = `Ttwo;
@@ -1542,7 +1693,8 @@ module Tcontrol(T,opcode,carry,SR,newT);
             `Tfour : newT = `Tfive;
             `Tfive : newT = `Tsix;
             `Tsix : newT = `Tzero;
-            endcase
+            default: newT = `emptyT;
+			endcase
         end
 
     end
