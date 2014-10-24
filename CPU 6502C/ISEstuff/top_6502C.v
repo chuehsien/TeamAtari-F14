@@ -14,10 +14,10 @@
 
 `include "Control/plaFSM.v"
 
-module top_6502C(SR_contents,opcode,second_first_int,nmiPending,resPending,irqPending,currState,accumVal,outToPCL,outToPCH,A,B,idlContents,rstAll,ALUhold_out,activeInt,currT,DB,SB,ADH,ADL,RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,	
+module top_6502C(SRflags,opcode,second_first_int,nmiPending,resPending,irqPending,currState,accumVal,outToPCL,outToPCH,A,B,idlContents,rstAll,ALUhold_out,activeInt,currT,DB,SB,ADH,ADL,RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,	
                 phi1_out, SYNC, extABL, extABH, phi2_out, RW,
                 Accum,Xreg,Yreg);
-            output [7:0] SR_contents;
+            output [7:0] SRflags;
             output [7:0] opcode;
             output [7:0] second_first_int;
             output nmiPending,resPending,irqPending;
@@ -262,6 +262,7 @@ module top_6502C(SR_contents,opcode,second_first_int,nmiPending,resPending,irqPe
                         controlSigs[`SET_D], controlSigs[`CLR_D],
                         DB,ALUhold_out,opcode,DB_b8,
                         SR_contents);
+            assign SRflags = {controlSigs[`FLAG_ALU],5'd0,aluACR,SR_contents[`status_C]};
 
                     
             wire [7:0] extDB_b0;

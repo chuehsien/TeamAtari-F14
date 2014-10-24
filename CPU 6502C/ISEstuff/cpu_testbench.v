@@ -155,9 +155,9 @@ module CPUtest(USER_CLK,
     wire [7:0] second_first_int;
     wire [7:0] OP;
     wire [7:0] Accum,Xreg,Yreg;
-    wire [7:0] SR_contents;
+    wire [7:0] SRflags;
     //fsm to translate stuff on DB into readable format and tick the lcd.
-	top_6502C cpu(.SR_contents(SR_contents),.opcode(OP),.second_first_int(second_first_int),.nmiPending(nmiPending),.resPending(resPending),.irqPending(irqPending),.currState(currState),.accumVal(accumVal),.outToPCL(outToPCL),.outToPCH(outToPCH),.A(A),.B(B),.idlContents(idlContents),.rstAll(rstAll),.ALUhold_out(ALUhold_out),
+	top_6502C cpu(.SRflags(SRflags),.opcode(OP),.second_first_int(second_first_int),.nmiPending(nmiPending),.resPending(resPending),.irqPending(irqPending),.currState(currState),.accumVal(accumVal),.outToPCL(outToPCL),.outToPCH(outToPCH),.A(A),.B(B),.idlContents(idlContents),.rstAll(rstAll),.ALUhold_out(ALUhold_out),
                 .activeInt(activeInt),.currT(currT),
                 .DB(DB),.SB(SB),.ADH(ADH),.ADL(ADL),
                 .RDY(RDY), .IRQ_L(IRQ_L), .NMI_L(NMI_L), .RES_L(RES_L), .SO(SO), .phi0_in(phi0_in), 
@@ -226,7 +226,7 @@ module CPUtest(USER_CLK,
     {RW,activeInt,RDY,IRQ_L,NMI_L,RES_L},
     Accum,
     ALUhold_out,
-    SR_contents,
+    SRflags,
     OP,
     Xreg,
     Yreg);
