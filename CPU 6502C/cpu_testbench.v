@@ -69,14 +69,14 @@ module testCPU;
       
       @(posedge phi0_in);
       
-      $display("DB: \t%h, \tAB: \t%h, \tSYNC: \t%h, \tRW: \t%h, \tcontrolSigs: \t%b, \tA: \t%h, \tY: \t%h", extDB, extAB, SYNC, RW, top_6502C_module.controlSigs, top_6502C_module.A, top_6502C_module.SB);
+      $display("DB:\t%h\tAB:\t%h\tSYNC:\t%h\tRW:\t%h\tcontrolSigs: \t%b\tA:\t%h\tY:\t%h", extDB, extAB, SYNC, RW, top_6502C_module.controlSigs, top_6502C_module.A, top_6502C_module.SB);
       
       @(negedge phi0_in);
       
       //Check that the output is correct
       //ALTERNATIVE: check that certain outputs correspond to expected values
       
-      $display("DB: \t%h, \tAB: \t%h, \tSYNC: \t%h, \tRW: \t%h, \tcontrolSigs: \t%b, \tA: \t%h, \tY: \t%h", extDB, extAB, SYNC, RW, top_6502C_module.controlSigs, top_6502C_module.A, top_6502C_module.SB);
+      $display("DB:\t%h\tAB:\t%h\tSYNC:\t%h\tRW:\t%h\tcontrolSigs: \t%b\tA:\t%h\tY:\t%h", extDB, extAB, SYNC, RW, top_6502C_module.controlSigs, top_6502C_module.A, top_6502C_module.SB);
       
       $display("======================");
     
@@ -93,6 +93,9 @@ module testCPU;
   initial begin
   
   phi0_in = 1'b0;
+  enable = 1'b1;
+  we_L = 1'b1;
+  re_L = 1'b0; //We want to be reading from memory
   
   for (i=0; i<NUM_TESTS; i=i+1) begin
     run_vector;
