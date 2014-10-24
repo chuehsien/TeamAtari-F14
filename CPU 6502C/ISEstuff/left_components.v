@@ -81,17 +81,12 @@ module interruptLatch(phi1,en,NMI_L,IRQ_L,RES_L,outNMI_L,outIRQ_L,outRES_L);
     reg outNMI_L,outIRQ_L,outRES_L = 1'b1;
 
     always @ (posedge phi1) begin
-       if (en) begin
-            outNMI_L <= NMI_L;
-            outIRQ_L <= IRQ_L;
-            outRES_L <= RES_L;
-        end
-        else begin
-            outNMI_L <= outNMI_L;
-            outIRQ_L <= outIRQ_L;
-            outRES_L <= outRES_L;
+ 
+        outIRQ_L <= en ? IRQ_L : outIRQ_L;
+          
+        outNMI_L <= NMI_L;
+        outRES_L <= RES_L;
         
-        end
     end
 
     

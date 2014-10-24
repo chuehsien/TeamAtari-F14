@@ -14,7 +14,8 @@
 
 `include "Control/plaFSM.v"
 
-module top_6502C(SRflags,opcode,second_first_int,nmiPending,resPending,irqPending,currState,accumVal,outToPCL,outToPCH,A,B,idlContents,rstAll,ALUhold_out,activeInt,currT,DB,SB,ADH,ADL,RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in, extDB,	
+module top_6502C(SRflags,opcode,second_first_int,nmiPending,resPending,irqPending,currState,accumVal,outToPCL,outToPCH,A,B,idlContents,rstAll,ALUhold_out,activeInt,currT,DB,SB,ADH,ADL,
+                RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in,fastClk,extDB,	
                 phi1_out, SYNC, extABL, extABH, phi2_out, RW,
                 Accum,Xreg,Yreg);
             output [7:0] SRflags;
@@ -33,7 +34,7 @@ module top_6502C(SRflags,opcode,second_first_int,nmiPending,resPending,irqPendin
             output [6:0] currT;          
             output [7:0] DB,SB,ADH,ADL;
             
-			input RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in;
+			input RDY, IRQ_L, NMI_L, RES_L, SO, phi0_in,fastClk;
 			inout [7:0] extDB;
             
 			output phi1_out, SYNC, phi2_out,RW;
@@ -234,9 +235,9 @@ module top_6502C(SRflags,opcode,second_first_int,nmiPending,resPending,irqPendin
             register        y_reg(Yreg,rstAll,phi2,controlSigs[`SB_Y],controlSigs[`Y_SB],SB,SB_b7);
             
             //unsure about the inputs...
-            wire DBZ;
+            wire DBZ,ALUZ;
             assign DBZ = ~(|(DB));
-      
+            assign ALUZ = ~(|(ALUhold_out));
             //statusReg       status_reg(phi2,  controlSigs[`IR5_I], , ACR ,AVR, DB_N, 
             //                            DB, opcode,DB, statusReg);
             wire BRKins;
@@ -251,18 +252,18 @@ module top_6502C(SRflags,opcode,second_first_int,nmiPending,resPending,irqPendin
             
             wire [7:0] DB_b8;
             triState SR_b0[7:0](DB,DB_b8,controlSigs[`P_DB]);
-            statusReg SR(rstAll,phi1,phi2,controlSigs[`DB_P],
+            statusReg SR(phi1_1,phi2_1,rstAll,fastClk,controlSigs[`DB_P],
                         controlSigs[`FLAG_DBZ],
                         controlSigs[`FLAG_ALU],
                         controlSigs[`FLAG_DB],
-                        controlSigs[`P_DB], DBZ, aluACR, aluAVR, BRKins,
+                        controlSigs[`P_DB], DBZ,ALUZ, aluACR, aluAVR, BRKins,
                         controlSigs[`SET_C], controlSigs[`CLR_C],
                         controlSigs[`SET_I], controlSigs[`CLR_I],
                         controlSigs[`CLR_V],
                         controlSigs[`SET_D], controlSigs[`CLR_D],
                         DB,ALUhold_out,opcode,DB_b8,
                         SR_contents);
-            assign SRflags = {controlSigs[`FLAG_ALU],5'd0,aluACR,SR_contents[`status_C]};
+            assign SRflags = {controlSigs[`FLAG_ALU],phi1_1,phi2_1,3'd0,ALUZ,SR_contents[`status_Z]};
 
                     
             wire [7:0] extDB_b0;
@@ -302,7 +303,7 @@ module top_6502C(SRflags,opcode,second_first_int,nmiPending,resPending,irqPendin
             //controlLatch    conLatch(phi1,phi2,nextControlSigs,controlSigs);
             
             wire outNMI_L,outIRQ_L,outRES_L;
-            wire nmiPending,irqPending,resPending,nmiDone;
+            wire nmiPending,irqPending,resPending,nmiDone,intHandled;
             wire [1:0] currState;
             wire RDYout; //this is the one which affects the FSM.
             interruptLatch   iHandlerLatch(phi1,~(SR_contents[`status_I]),NMI_L,IRQ_L,RES_L,outNMI_L,outIRQ_L,outRES_L);

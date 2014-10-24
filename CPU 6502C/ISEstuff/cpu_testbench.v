@@ -90,10 +90,12 @@ module CPUtest(USER_CLK,
      /*-------------------------------------------------------------*/
     // mem stuff
     
-    
+    wire fastClk;
+    buf fast(fastClk,memClk_b2);
     (* clock_signal = "yes" *)wire memReadClock,memWriteClock;
     buf writeclk(memWriteClock,phi1_out);
     buf readclk(memReadClock,~memClk_b2); //read clock is doublespeed, and inverted of phi1 (which means same as phi0).
+    
    
     wire [15:0] memAdd,memAdd_b;
     wire [7:0] memOut,memOut_b,memDBin;
@@ -160,7 +162,7 @@ module CPUtest(USER_CLK,
 	top_6502C cpu(.SRflags(SRflags),.opcode(OP),.second_first_int(second_first_int),.nmiPending(nmiPending),.resPending(resPending),.irqPending(irqPending),.currState(currState),.accumVal(accumVal),.outToPCL(outToPCL),.outToPCH(outToPCH),.A(A),.B(B),.idlContents(idlContents),.rstAll(rstAll),.ALUhold_out(ALUhold_out),
                 .activeInt(activeInt),.currT(currT),
                 .DB(DB),.SB(SB),.ADH(ADH),.ADL(ADL),
-                .RDY(RDY), .IRQ_L(IRQ_L), .NMI_L(NMI_L), .RES_L(RES_L), .SO(SO), .phi0_in(phi0_in), 
+                .RDY(RDY), .IRQ_L(IRQ_L), .NMI_L(NMI_L), .RES_L(RES_L), .SO(SO), .phi0_in(phi0_in), .fastClk(fastClk),
                 .extDB(extDB), .phi1_out(phi1_out), .SYNC(SYNC), .extABH(extABH),.extABL(extABL), .phi2_out(phi2_out), .RW(RW),
                 .Accum(Accum),.Xreg(Xreg),.Yreg(Yreg));
 

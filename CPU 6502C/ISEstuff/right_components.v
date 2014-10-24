@@ -475,17 +475,17 @@ endmodule
 //this needs to push out B bit when its a BRK.
 //the x_set and x_clr are edge triggered.
 //everything else is ticked in when 'update' is asserted.
-module statusReg(rstAll,phi1,phi2,DB_P,loadDBZ,flagsALU,flagsDB,
-                        P_DB, DBZ, ACR, AVR, B,
+module statusReg(phi1_1,phi2_1,rstAll,fastClk,DB_P,loadDBZ,flagsALU,flagsDB,
+                        P_DB, DBZ, ALUZ, ACR, AVR, B,
                         C_set, C_clr,
                         I_set,I_clr, 
                         V_clr,
                         D_set,D_clr,
                         DB,ALU,opcode,DBinout,
                         status);
-    
-    input rstAll,phi1,phi2,DB_P,loadDBZ,flagsALU,flagsDB,
-                        P_DB, DBZ, ACR, AVR,B,
+    output phi1_1,phi2_1;
+    input rstAll,fastClk,DB_P,loadDBZ,flagsALU,flagsDB,
+                        P_DB, DBZ,ALUZ, ACR, AVR,B,
                         C_set, C_clr,
                         I_set,I_clr, 
                         V_clr,
@@ -495,8 +495,8 @@ module statusReg(rstAll,phi1,phi2,DB_P,loadDBZ,flagsALU,flagsDB,
     inout [7:0] DBinout;
     output [7:0] status; //used by the FSM
     
-    wire rstAll,phi1,phi2,DB_P,loadDBZ,flagsALU,flagsDB,
-                    P_DB, DBZ,ACR, AVR,B,
+    wire rstAll,fastClk,DB_P,loadDBZ,flagsALU,flagsDB,
+                    P_DB, DBZ,ALUZ,ACR, AVR,B,
                     C_set, C_clr,
                     I_set,I_clr, 
                     V_clr,
@@ -507,21 +507,123 @@ module statusReg(rstAll,phi1,phi2,DB_P,loadDBZ,flagsALU,flagsDB,
     wire [7:0] status;
     
     // internal
-    reg [7:0] currVal = 8'b0010_0000;
+   // wire [7:0] currVal;
+//    = 8'b0010_0000;
     
     // bit arrangement: (bit 7) NV_BDIZC (bit 0) - bit 5 has no purpose.
-
+    //assign currVal[4] = B;
+    /* 
     always @ (B) begin
         currVal[4] = B;
     end
     
 
-
-
-    assign DBinout = (P_DB) ? currVal : 8'bzzzzzzzz;
-    assign status = currVal;
+ */
+    reg currVal7,currVal6,currVal3,currVal2,currVal1,currVal0;
+    assign DBinout = (P_DB) ? status : 8'bzzzzzzzz;
+    assign status = {currVal7,currVal6,1'b1,B,currVal3,currVal2,currVal1,currVal0};
+    //assign currVal[5] = 1'b1;
+    
+    
+    
+    //Negative
+    wire phi1_7,phi1_6,phi1_3,phi1_2,phi1_1,phi1_0;
+  /*  wire phi2_7,phi2_6,phi2_3,phi2_2,phi2_1,phi2_0;
+    
+    wire load7,load6,load3,load2,load1,load0;
+    assign load7 = ((phi1) ? phi1_7 : ((phi2) ? phi2_7 : 1'b0));
+    assign load6 = ((phi1) ? phi1_6 : ((phi2) ? phi2_6 : 1'b0));
+    assign load3 = ((phi1) ? phi1_3 : ((phi2) ? phi2_3 : 1'b0));
+    assign load2 = ((phi1) ? phi1_2 : ((phi2) ? phi2_2 : 1'b0));
+    assign load1 = ((phi1) ? phi1_1 : ((phi2) ? phi2_1 : 1'b0));
+    assign load0 = ((phi1) ? phi1_0 : ((phi2) ? phi2_0 : 1'b0));
+ */  
+    always @ (posedge fastClk) begin
+    
+        if (rstAll) begin
+            currVal7 <= 1'b0;
+            currVal6 <= 1'b0;
+            currVal3 <= 1'b0;
+            currVal2 <= 1'b0;
+            currVal1 <= 1'b0;
+            currVal0 <= 1'b0;
+        end
+        else begin
+            currVal7 <= phi1_7;
+            currVal6 <= phi1_6;
+            currVal3 <= phi1_3;
+            currVal2 <= phi1_2;
+            currVal1 <= phi1_1;
+            currVal0 <= phi1_0;
+        end
+    end
 
     
+    wire class1,class2,class3,class4; //diff classes of opcodes affect diff opcodes.
+    assign class1 = (opcode == `ADC_abs || opcode == `ADC_abx || opcode == `ADC_aby || opcode == `ADC_imm || 
+                 opcode == `ADC_izx || opcode == `ADC_izy || opcode == `ADC_zp  || opcode == `ADC_zpx ||
+                 opcode == `SBC_abs || opcode == `SBC_abx || opcode == `SBC_aby || opcode == `SBC_imm || 
+                 opcode == `SBC_izx || opcode == `SBC_izy || opcode == `SBC_zp  || opcode == `SBC_zpx );
+                 
+    assign class2 =  (opcode == `ORA_izx ||opcode == `ORA_izy ||opcode == `ORA_aby ||opcode == `ORA_abx ||
+                        opcode == `ORA_abs ||opcode == `ORA_imm ||opcode == `ORA_zp || opcode == `ORA_zpx||
+                        opcode == `AND_izx ||opcode == `AND_izy ||opcode == `AND_aby ||opcode == `AND_abx ||
+                        opcode == `AND_abs ||opcode == `AND_imm ||opcode == `AND_zp || opcode == `AND_zpx||
+                        opcode == `EOR_izx ||opcode == `EOR_izy ||opcode == `EOR_aby ||opcode == `EOR_abx ||
+                        opcode == `EOR_abs ||opcode == `EOR_imm ||opcode == `EOR_zp || opcode == `EOR_zpx) ;  
+     
+    assign class3 = (opcode == `BIT_zp || opcode == `BIT_abs);
+    assign class4 = (opcode == `TAX || opcode == `TAY || opcode == `TSX || 
+            opcode == `TXA || opcode == `TXS || opcode == `TYA);             
+            
+    //N bit
+    assign phi1_7 = loadDBZ ? currVal7 :
+                    ((flagsALU) ? ALU[7] :
+                     (flagsDB ? DB[7] : 
+                     (DB_P ? DB[7] : currVal7)));
+                     
+                     
+    //assign phi2_7 = (flagsDB & class4) ? DB[7] : currVal7;
+    
+    //V bit
+    assign phi1_6 = loadDBZ ? currVal6 :
+                    (flagsALU ? (class1 ? AVR : (class2 ? currVal6 : AVR)) :
+                    (flagsDB ? (class3 ? DB[6] : currVal6) :
+                    (DB_P ? DB[6] :  (V_clr ? 1'b0 : currVal6))));
+    
+   // assign phi2_6 = currVal6;
+    
+    //D bit
+    assign phi1_3 = loadDBZ ? currVal3 : 
+                    (flagsALU  ? currVal3 : 
+                    (flagsDB ? currVal3 :
+                    (DB_P ? DB[3] : (D_set ? 1'b1 : (D_clr ? 1'b0 : currVal3)))));
+                    
+  //  assign phi2_3 = currVal3;
+    
+    //I bit
+    assign phi1_2 = DB_P ? DB[2] : (I_set ? 1'b1 : (I_clr ? 1'b0 : currVal2));           
+   // assign phi2_2 = currVal2;           
+    
+    //Z bit
+    assign phi1_1 = loadDBZ ? DBZ :
+                    (flagsALU ? (ALUZ) :
+                    (flagsDB ? (class4 ? DBZ  : (class3 ? currVal1 :(DBZ))) :
+                    (DB_P ? DB[1] : currVal1)));
+                   
+    //assign phi2_1 = (flagsDB & class4) ? (DBZ) : currVal1;
+    
+    //C bit
+    assign phi1_0 = loadDBZ ? currVal0 :
+                    (flagsALU ?  (class1 ? ACR : (class2 ? currVal0 : ACR)) :
+                    (flagsDB ? currVal0 :
+                    (DB_P ? DB[0] :
+                    (C_set ? 1'b1 : (C_clr ? 1'b0 : currVal0)))));
+                    
+    //assign phi2_0 = currVal0;
+                    
+                    
+    /*
     always @ (posedge phi1 or posedge phi2) begin
     
         if (phi1) begin
@@ -646,8 +748,8 @@ module statusReg(rstAll,phi1,phi2,DB_P,loadDBZ,flagsALU,flagsDB,
             if ((flagsDB) & (opcode == `TAX || opcode == `TAY || opcode == `TSX || 
             opcode == `TXA || opcode == `TXS || opcode == `TYA)) begin
             
-                currVal[`status_Z] <= ~(|ALU);
-                currVal[`status_N] <= ALU[7];
+                currVal[`status_Z] <= ~(|DB);
+                currVal[`status_N] <= DB[7];
                 
                 currVal[`status_C] <= currVal[`status_C];
                 currVal[`status_V] <= currVal[`status_V];
@@ -662,6 +764,7 @@ module statusReg(rstAll,phi1,phi2,DB_P,loadDBZ,flagsALU,flagsDB,
         
     
     end
+    */
     
 
 
