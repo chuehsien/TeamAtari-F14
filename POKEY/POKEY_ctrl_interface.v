@@ -13,11 +13,14 @@ module POKEY_controller_interface (key_scan_L, control_input, kr1_L, kr2_L);
      *
      */
      
+     //K4, K5 selects pins 5-8
+     //K1,K2 selects pins 1-4
+     
     //wire output1, output2;
      
-    mux pin_4_1 (control_input[3:0], key_scan_L[1:0], kr1_L);
+    mux pin_4_1 (control_input[3:0], key_scan_L[2:1], kr1_L);
      
-    demux pin_8_5 (1'b0, key_scan_L[4:3], control_input[7:4]);
+    demux pin_8_5 (1'b0, key_scan_L[5:4], control_input[7:4]);
     
     
 
