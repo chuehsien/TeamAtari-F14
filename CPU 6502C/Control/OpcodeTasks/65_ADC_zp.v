@@ -1,6 +1,3 @@
-`include "Control/opcodeDef.v"
-`include "Control/controlDef.v"
-`include "Control/TDef.v"
 task ADC_zp;
 
 	input [6:0] T;

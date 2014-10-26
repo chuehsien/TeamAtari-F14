@@ -1,6 +1,3 @@
-`include "Control/opcodeDef.v"
-`include "Control/controlDef.v"
-`include "Control/TDef.v"
 task LDY_abs;
 
 	input [6:0] T;
