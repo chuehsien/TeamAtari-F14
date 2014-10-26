@@ -85,8 +85,6 @@
 `define DB7_N 6'd61
 */
 
-
-
 `define RST_i 3'd1
 `define NMI_i 3'd2
 `define IRQ_i 3'd3

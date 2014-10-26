@@ -68,7 +68,7 @@ module CPUtest(USER_CLK,
 
     wire phi0_in;
     
-    wire RDY, IRQ_L, NMI_L, RES_L, SO;
+    wire HALT,RDY, IRQ_L, NMI_L, RES_L, SO;
     
     wire phi1_out, SYNC, phi2_out, RW;
     wire [7:0] extABH,extABL; //Address Bus Low and High
@@ -129,7 +129,7 @@ module CPUtest(USER_CLK,
     
     
     
-    DeBounce #(.N(8)) rdyB(USER_CLK,1'b1,GPIO_DIP_SW1,RDY);
+    DeBounce #(.N(8)) rdyB(USER_CLK,1'b1,GPIO_DIP_SW1,HALT);
     DeBounce #(.N(8)) irqB(USER_CLK,1'b1,GPIO_DIP_SW2,IRQ_L);
     DeBounce #(.N(8)) nmiB(USER_CLK,1'b1,GPIO_DIP_SW3,NMI_L);
     DeBounce #(.N(8)) resB(USER_CLK,1'b1,GPIO_DIP_SW4,RES_L);
@@ -155,15 +155,19 @@ module CPUtest(USER_CLK,
     wire [7:0] idlContents,A,B,outToPCL,outToPCH,accumVal;
     wire [1:0] currState;
     wire [7:0] second_first_int;
-    wire [7:0] OP;
+    wire [7:0] OP,opcodeToIR;
     wire [7:0] Accum,Xreg,Yreg;
     wire [7:0] SRflags;
+    wire phi1,phi2;
     //fsm to translate stuff on DB into readable format and tick the lcd.
-	top_6502C cpu(.SRflags(SRflags),.opcode(OP),.second_first_int(second_first_int),.nmiPending(nmiPending),.resPending(resPending),.irqPending(irqPending),.currState(currState),.accumVal(accumVal),.outToPCL(outToPCL),.outToPCH(outToPCH),.A(A),.B(B),.idlContents(idlContents),.rstAll(rstAll),.ALUhold_out(ALUhold_out),
+	top_6502C cpu(.phi1(phi1),.phi2(phi2),
+                .SRflags(SRflags),.opcode(OP),.opcodeToIR(opcodeToIR),.second_first_int(second_first_int),.nmiPending(nmiPending),
+                .resPending(resPending),.irqPending(irqPending),.currState(currState),.accumVal(accumVal),
+                .outToPCL(outToPCL),.outToPCH(outToPCH),.A(A),.B(B),.idlContents(idlContents),.rstAll(rstAll),.ALUhold_out(ALUhold_out),
                 .activeInt(activeInt),.currT(currT),
                 .DB(DB),.SB(SB),.ADH(ADH),.ADL(ADL),
-                .RDY(RDY), .IRQ_L(IRQ_L), .NMI_L(NMI_L), .RES_L(RES_L), .SO(SO), .phi0_in(phi0_in), .fastClk(fastClk),
-                .extDB(extDB), .phi1_out(phi1_out), .SYNC(SYNC), .extABH(extABH),.extABL(extABL), .phi2_out(phi2_out), .RW(RW),
+                .HALT(HALT),.IRQ_L(IRQ_L), .NMI_L(NMI_L), .RES_L(RES_L), .SO(SO), .phi0_in(phi0_in), .fastClk(fastClk),
+                .RDY(RDY),.extDB(extDB), .phi1_out(phi1_out), .SYNC(SYNC), .extABH(extABH),.extABL(extABL), .phi2_out(phi2_out), .RW(RW),
                 .Accum(Accum),.Xreg(Xreg),.Yreg(Yreg));
 
     
@@ -227,11 +231,11 @@ module CPUtest(USER_CLK,
     {7'd0,phi1_b},
     {RW,activeInt,RDY,IRQ_L,NMI_L,RES_L},
     Accum,
-    ALUhold_out,
+    opcodeToIR,
     SRflags,
     OP,
-    Xreg,
-    Yreg);
+    second_first_int,
+    8'd0);
     
     // extra ila for use...
     chipscope_ila ila1(
@@ -244,11 +248,11 @@ module CPUtest(USER_CLK,
     outToPCH,
     outToPCL,
     {7'd0,memReadClock_b},
-    {7'd0,phi0_in_b},
-    {7'd0,phi1_b},
-    {6'd0,currState},
-    ALUhold_out,
-    TRIG11,
+    {7'd0,phi0_in},
+    {7'd0,phi1_out},
+    {7'd0,phi2_out},
+    {7'd0,phi1},
+    {7'd0,phi2},
     TRIG12,
     TRIG13,
     TRIG14,

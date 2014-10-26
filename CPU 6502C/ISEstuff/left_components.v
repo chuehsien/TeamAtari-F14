@@ -1,13 +1,47 @@
 // this module contains all contains that are driven by clocks and the left side of the block diagram
 `include "Control/Tcontrol.v"
-`include "Control/Logiccontrol.v"
+`include "Control/Logiccontrol2.v"
 
-module clockGen(phi0_in,
-                phi1_out,phi2_out,phi1_extout,phi2_extout);
+module clockGen(HALT,phi0_in,
+                haltAll,RDY,phi1_out,phi2_out,phi1_extout,phi2_extout);
                 
-    input phi0_in;
+    input HALT,phi0_in;
+    output haltAll,RDY;
+    reg haltAll;
      (* clock_signal = "yes" *) output phi1_out,phi2_out,phi1_extout,phi2_extout;
-  
+
+    /*
+    //when disabled, phi0 is stuck at 0. which coincidentally is when phi1 stuck at 1.
+    //when enabled again, input should be already at 0 (phi1 tick just occurred), which merges nicely with the stuck at 0 phi.
+    //BUFGCE clockBuf(.O(phi0_buf),.I(phi0_in),.CE(~haltEn));
+    
+    BUFGCTRL #(
+       .INIT_OUT(0),           // Initial value of BUFGCTRL output ($VALUES;)
+       .PRESELECT_I0("TRUE"), // BUFGCTRL output uses I0 input ($VALUES;)
+       .PRESELECT_I1("FALSE")  // BUFGCTRL output uses I1 input ($VALUES;)
+    )
+    BUFGCTRL_inst (
+       .O(phi0_buf),             // 1-bit output: Clock output
+       .CE0(1'b1),         // 1-bit input: Clock enable input for I0
+       .CE1(1'b0),         // 1-bit input: Clock enable input for I1
+       .I0(phi0_in),           // 1-bit input: Primary clock
+       .I1(1'b0),           // 1-bit input: Secondary clock
+       .IGNORE0(1'b1), // 1-bit input: Clock ignore input for I0
+       .IGNORE1(1'b1), // 1-bit input: Clock ignore input for I1
+       .S0(~haltEn),           // 1-bit input: Clock select for I0
+       .S1(haltEn)            // 1-bit input: Clock select for I1
+    );
+   
+   
+    //LDCPE #(.INIT(1'b0)) clockLatch(.CLR(1'b0),.PRE(1'b0),.G(~haltEn),.GE(1'b1),.D(phi0_in),.Q(phi0_latch));
+    */
+    
+    
+    //latch on phi1 ticks
+    always @ (negedge phi0_in) begin
+        haltAll <= HALT;
+    end
+    assign RDY = haltAll;
     
     BUFG a(phi1_out,~phi0_in);
     BUFG b(phi2_out,phi0_in);
@@ -17,10 +51,10 @@ module clockGen(phi0_in,
     
 endmodule
 
-module predecodeRegister(phi2,extDataBus,
+module predecodeRegister(haltAll,phi2,extDataBus,
                         outToIR);
                         
-    input phi2;
+    input haltAll,phi2;
     input [7:0] extDataBus;
     output [7:0] outToIR;
 
@@ -29,7 +63,8 @@ module predecodeRegister(phi2,extDataBus,
     reg [7:0] outToIR = `BRK;
 
     always @ (posedge phi2) begin
-        outToIR <= extDataBus;      
+        if (haltAll) outToIR <= outToIR;
+        else outToIR <= extDataBus;      
     end
 
 endmodule
@@ -73,20 +108,19 @@ module inoutLatch3(rstAll, phi1,data1,data2,data3,done1,done2,done3,
 endmodule
 */
 
-module interruptLatch(phi1,NMI_L,IRQ_Lfiltered,RES_L,outNMI_L,outIRQ_L,outRES_L);
-    input phi1,NMI_L,IRQ_Lfiltered,RES_L;
+module interruptLatch(haltAll,phi1,NMI_L,IRQ_Lfiltered,RES_L,outNMI_L,outIRQ_L,outRES_L);
+    input haltAll,phi1,NMI_L,IRQ_Lfiltered,RES_L;
     output outNMI_L,outIRQ_L,outRES_L;
     
     wire phi1,NMI_L,IRQ_Lfiltered,RES_L;
     reg outNMI_L,outIRQ_L,outRES_L = 1'b1;
 
     always @ (posedge phi1) begin
- 
-        outIRQ_L <= IRQ_Lfiltered;
-          
-        outNMI_L <= NMI_L;
-        outRES_L <= RES_L;
-        
+
+            outIRQ_L <= IRQ_Lfiltered;  
+            outNMI_L <= NMI_L;
+            outRES_L <= RES_L;
+
     end
 
     
@@ -120,10 +154,10 @@ endmodule
 
 //interprets, prioritize interrupts and send to logic
 //only tick in new stuff when activeint is none.
-module PLAinterruptControl(phi1, nmiPending,resPending,irqPending,intHandled,
+module PLAinterruptControl(haltAll,phi1, nmiPending,resPending,irqPending,intHandled,
         activeInt,nmi,irq,res);
         
-    input phi1, nmiPending,resPending,irqPending,intHandled;
+    input haltAll,phi1, nmiPending,resPending,irqPending,intHandled;
     output [2:0] activeInt;
     output nmi,irq,res;
     
@@ -131,15 +165,18 @@ module PLAinterruptControl(phi1, nmiPending,resPending,irqPending,intHandled,
     reg nmi_latch,res_latch,irq_latch = 1'b0;
 
     always @ (posedge phi1) begin
-       /* if (activeInt!=`NMI_i) begin
-            nmi_latch <= nmiPending;
+       if (haltAll) begin
+            nmi_latch <= nmi_latch;    
+            irq_latch <= irq_latch;
+            res_latch <= res_latch;
+      
+       end
+       
+       else begin
+           nmi_latch <= nmiPending;    
+           irq_latch <= irqPending;
+           res_latch <= resPending;
         end
-        else begin
-            nmi_latch <= nmi_latch;
-        end*/
-        nmi_latch <= nmiPending;    
-        irq_latch <= irqPending;
-        res_latch <= resPending;
     end
     
     wire intg;
@@ -160,7 +197,7 @@ module PLAinterruptControl(phi1, nmiPending,resPending,irqPending,intHandled,
    ) FDRE_inst0(
       .Q(activeInt[0]),      // 1-bit Data output
       .C(phi1),      // 1-bit Clock input
-      .CE(1'b1),    // 1-bit Clock enable input
+      .CE(~haltAll),    // 1-bit Clock enable input
       .R(intHandled),  // 1-bit Asynchronous clear input
       .D(activeIntNext[0])       // 1-bit Data input
    );
@@ -170,7 +207,7 @@ module PLAinterruptControl(phi1, nmiPending,resPending,irqPending,intHandled,
    ) FDRE_inst1(
       .Q(activeInt[1]),      // 1-bit Data output
       .C(phi1),      // 1-bit Clock input
-      .CE(1'b1),    // 1-bit Clock enable input
+      .CE(~haltAll),    // 1-bit Clock enable input
       .R(intHandled),  // 1-bit Asynchronous clear input
       .D(activeIntNext[1])       // 1-bit Data input
    );
@@ -180,7 +217,7 @@ module PLAinterruptControl(phi1, nmiPending,resPending,irqPending,intHandled,
    ) FDRE_inst2(
       .Q(activeInt[2]),      // 1-bit Data output
       .C(phi1),      // 1-bit Clock input
-      .CE(1'b1),    // 1-bit Clock enable input
+      .CE(~haltAll),    // 1-bit Clock enable input
       .R(intHandled),  // 1-bit Asynchronous clear input
       .D(activeIntNext[2])       // 1-bit Data input
    );
@@ -219,7 +256,7 @@ module logicControl(currT,opcode,prevOpcode,phi1,phi2,activeInt,tempCarry,carry,
         Tcontrol    tCon(currT,opcode,tempCarry,statusReg,nextT);
         
         // the logic depends on the ticked in ACR in the ACRlatch.
-        randomLogic     randomLog(currT,opcode,prevOpcode,phi1,phi2,activeInt,carry,statusReg[`status_C],statusReg[`status_D],nextControlSigs);
+        randomLogic2     randomLog(currT,opcode,prevOpcode,phi1,phi2,activeInt,carry,statusReg[`status_C],statusReg[`status_D],nextControlSigs);
 
 endmodule
 
@@ -233,11 +270,10 @@ module controlLatch(phi1,phi2,inControl,outControl);
         outControl <= inControl;
 endmodule
 
-
-module instructionRegister(rstAll,currT,RDY,phi1,phi2,OPin,OPout,prevOP);
-    input rstAll;
+module instructionRegister(haltAll,rstAll,currT,phi1,phi2,OPin,OPout,prevOP);
+    input haltAll,rstAll;
     input [6:0] currT;
-    input RDY,phi1,phi2;
+    input phi1,phi2;
     input [7:0] OPin;
     output reg [7:0] OPout = `BRK;
     output reg [7:0] prevOP = `BRK;
@@ -245,14 +281,21 @@ module instructionRegister(rstAll,currT,RDY,phi1,phi2,OPin,OPout,prevOP);
     wire en, readyForNext;
 
     assign readyForNext = (currT == `Tone || currT == `T1NoBranch ||
-                        currT == `T1BranchNoCross || currT == `T1BranchCross) & phi2 & RDY;
+                        currT == `T1BranchNoCross || currT == `T1BranchCross) & phi2;
     buf tickB(en,readyForNext);
   
     //wait for (currT==`Tone & phi2) to enable.
     always @ (posedge phi1) begin
-         
-			OPout <= rstAll ? 8'h00 : ((en) ? OPin : OPout);
-			prevOP <= rstAll ? 8'h00 : ((en) ? OPout : prevOP);
+            if (haltAll) begin
+                OPout <= OPout;
+                prevOP <= prevOP;
+            
+            end
+            
+			else  begin
+                OPout <= rstAll ? 8'h00 : ((en) ? OPin : OPout);
+                prevOP <= rstAll ? 8'h00 : ((en) ? OPout : prevOP);
+            end
 			
         
     end

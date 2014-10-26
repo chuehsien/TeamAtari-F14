@@ -1,10 +1,10 @@
 
 
-module plaFSM(currState,phi1,phi2,RDY,nextT, rst,brkNow,
+module plaFSM(haltAll,currState,phi1,phi2,RDY,nextT, rst,brkNow,
                 currT,intHandled, rstAll);
                 
     output [1:0] currState;
-    input phi1,phi2,RDY,rst,brkNow;
+    input haltAll,phi1,phi2,RDY,rst,brkNow;
     input [6:0] nextT;
     
     output reg[6:0] currT = `emptyT;
@@ -23,6 +23,7 @@ module plaFSM(currState,phi1,phi2,RDY,nextT, rst,brkNow,
                 nextIntHandled = 1'b0;
                 if (nextT == `Tone) begin //finished BRK setup sequence
                     nextState = `FSMfetch;
+                    nextIntHandled = 1'b1;
                 end
                 else begin 
                     nextState = currState;
@@ -80,7 +81,7 @@ module plaFSM(currState,phi1,phi2,RDY,nextT, rst,brkNow,
     end
 
     always @ (posedge phi1) begin
-        if (RDY) begin
+        if (~haltAll) begin
             
             if (rst) begin
                 currT <= `Ttwo; //T2 of BRK.    
@@ -95,6 +96,13 @@ module plaFSM(currState,phi1,phi2,RDY,nextT, rst,brkNow,
                 intHandled <= nextIntHandled;
             end
         end
+        else begin
+                currT <= currT;
+                currState <= currState;
+                rstAll <= rstAll;
+                intHandled <= intHandled;
+        end
+        
     
     end
     

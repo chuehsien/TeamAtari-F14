@@ -73,8 +73,8 @@ module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC)
   */
 endmodule
 
-module ACRlatch(rstAll,phi1,inAVR,inACR,inHC,AVR,ACR,HC);
-    input rstAll,phi1,inAVR,inACR,inHC;
+module ACRlatch(haltAll,rstAll,phi1,inAVR,inACR,inHC,AVR,ACR,HC);
+    input haltAll,rstAll,phi1,inAVR,inACR,inHC;
     output AVR,ACR,HC;
     
     reg AVR,ACR,HC = 1'b0;
@@ -84,6 +84,11 @@ module ACRlatch(rstAll,phi1,inAVR,inACR,inHC,AVR,ACR,HC);
             AVR <= 1'b0;
             ACR <= 1'b0;
             HC <= 1'b0;
+        end
+        else if (haltAll) begin
+            AVR <= AVR;
+            ACR <= ACR;
+            HC <= HC;
         end
         else begin
             AVR <= inAVR;
@@ -97,10 +102,10 @@ module ACRlatch(rstAll,phi1,inAVR,inACR,inHC,AVR,ACR,HC);
 
 endmodule
 
-module AdderHoldReg(phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes,tempAVR,tempACR,tempHC,
+module AdderHoldReg(haltAll,phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes,tempAVR,tempACR,tempHC,
 		ADL,SB,adderReg,aluAVR,aluACR,aluHC);
 
-    input phi2, ADD_ADL, ADD_SB0to6, ADD_SB7;
+    input haltAll,phi2, ADD_ADL, ADD_SB0to6, ADD_SB7;
     input [7:0] addRes;
     input tempAVR,tempACR,tempHC;
     inout [7:0] ADL, SB;
@@ -130,13 +135,22 @@ module AdderHoldReg(phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes,tempAVR,tempACR,t
     end
     */
     always @ (posedge phi2) begin
-        adderReg <= addRes;
+        if (haltAll) begin
+            adderReg <= adderReg;
+            aluAVR <= aluAVR;
+            aluACR <= aluACR;
+            aluHC <= aluHC;
+            
+        end
+        else begin
+            adderReg <= addRes;
 
-        aluAVR <= tempAVR;
+            aluAVR <= tempAVR;
 
-        aluACR <= tempACR;
+            aluACR <= tempACR;
 
-        aluHC <= tempHC;
+            aluHC <= tempHC;
+        end
 
     end
 
@@ -186,26 +200,27 @@ endmodule
 
 
 // latched on phi1, driven onto data pins in phi2(if write is done).
-module dataOutReg(phi2, en, dataIn,
+module dataOutReg(haltAll,phi2, en, dataIn,
                 dataOut);
                 
-    input phi2,en;
+    input haltAll,phi2,en;
     input [7:0] dataIn;
     output [7:0] dataOut;
 
     reg [7:0] data = 8'h00;
     
     always @(posedge phi2) begin
-        data <= dataIn;                       
+        if (haltAll) data <= data;
+        else data <= dataIn;                       
     end
     
     triState b[7:0](dataOut,data,en);
 endmodule
 
-module inputDataLatch(data,rstAll, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
+module inputDataLatch(haltAll,data,rstAll, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
                         DB,ADL,ADH);
     output [7:0] data; 
-    input rstAll, phi2, DL_DB, DL_ADL, DL_ADH;
+    input haltAll,rstAll, phi2, DL_DB, DL_ADL, DL_ADH;
     input [7:0] extDataBus;
     inout [7:0] DB, ADL, ADH;
     
@@ -222,6 +237,7 @@ module inputDataLatch(data,rstAll, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
     
     always @ (posedge phi2) begin
         if (rstAll) data <= 8'h00;
+        else if (haltAll) data <= data;
         else data <= extDataBus;
        // data <= (rstAll) ? 8'h00 :
        //          ((phi2) ? extDataBus : data);
@@ -268,11 +284,11 @@ module increment(inc, inAdd,
     
 endmodule
 
-module PC(rstAll, phi2, PCL_DB, PCL_ADL,inFromIncre,
+module PC(haltAll,rstAll, phi2, PCL_DB, PCL_ADL,inFromIncre,
             DB, ADL,
             PCout);
             
-    input rstAll,phi2, PCL_DB, PCL_ADL;
+    input haltAll,rstAll,phi2, PCL_DB, PCL_ADL;
     input [7:0] inFromIncre;
     inout [7:0] DB, ADL;
     output [7:0] PCout;
@@ -289,6 +305,7 @@ module PC(rstAll, phi2, PCL_DB, PCL_ADL,inFromIncre,
     
     always @ (posedge phi2) begin
         if (rstAll) currPC <= 8'h00;
+        else if (haltAll) currPC <= currPC;
         else currPC <= inFromIncre;
     end
     
@@ -307,10 +324,10 @@ module inverter(DB,
     
 endmodule
 
-module SPreg(rstAll,phi2,S_S, SB_S, S_ADL, S_SB, SBin,
+module SPreg(haltAll,rstAll,phi2,S_S, SB_S, S_ADL, S_SB, SBin,
             ADL, SB);
             
-    input rstAll,phi2,S_S, SB_S, S_ADL, S_SB;
+    input haltAll,rstAll,phi2,S_S, SB_S, S_ADL, S_SB;
     input [7:0] SBin;
     inout [7:0] ADL, SB;
     
@@ -325,7 +342,8 @@ module SPreg(rstAll,phi2,S_S, SB_S, S_ADL, S_SB, SBin,
 
     always @ (posedge phi2) begin
         latchOut <= (rstAll) ? 8'h00 :
-                    ((SB_S) ? SBin : latchOut);
+                    ((haltAll) ? latchOut :
+                    ((SB_S) ? SBin : latchOut));
                    
     end
     
@@ -333,11 +351,11 @@ endmodule
 
 //DSA - Decimal subtract adjust
 //DAA - Decimal add adjust
-module decimalAdjust(SBin, DSA, DAA, ACR, HC, phi2,
+module decimalAdjust(haltAll,SBin, DSA, DAA, ACR, HC, phi2,
                     dataOut);
 
     input [7:0] SBin;
-    input DSA, DAA, ACR, HC, phi2;
+    input haltAll,DSA, DAA, ACR, HC, phi2;
     output [7:0] dataOut;
    
     wire [7:0] SBin;
@@ -350,10 +368,19 @@ module decimalAdjust(SBin, DSA, DAA, ACR, HC, phi2,
     reg iACR,iHC = 1'b0;
    
     always @ (posedge phi2) begin
-        iDAA <= DAA;
-        iDSA <= DSA;
-        iACR <= ACR;
-        iHC <= HC;
+        if  (haltAll) begin
+            iDAA <= iDAA;
+            iDSA <= iDSA;
+            iACR <= iACR;
+            iHC  <= iHC;
+        end
+        
+        else begin
+            iDAA <= DAA;
+            iDSA <= DSA;
+            iACR <= ACR;
+            iHC <= HC;
+        end
     end
     
     //refer to http://imrannazar.com/Binary-Coded-Decimal-Addition-on-Atmel-AVR
@@ -396,10 +423,10 @@ module decimalAdjust(SBin, DSA, DAA, ACR, HC, phi2,
     
 endmodule
 
-module accum(accumVal,rstAll,phi2,inFromDecAdder, SB_AC, AC_DB, AC_SB,
+module accum(haltAll,accumVal,rstAll,phi2,inFromDecAdder, SB_AC, AC_DB, AC_SB,
             DB,SB);
     output [7:0] accumVal;
-    input rstAll,phi2;
+    input haltAll,rstAll,phi2;
     input [7:0] inFromDecAdder;
     input SB_AC, AC_DB, AC_SB;
     inout [7:0] DB, SB;
@@ -416,7 +443,8 @@ module accum(accumVal,rstAll,phi2,inFromDecAdder, SB_AC, AC_DB, AC_SB,
 
     always @ (posedge phi2) begin
         currAccum <= (rstAll) ? 8'h00 :
-                    ((SB_AC) ? inFromDecAdder : currAccum);
+                    ((haltAll) ? currAccum :
+                    ((SB_AC) ? inFromDecAdder : currAccum));
  
     end
     
@@ -424,10 +452,10 @@ module accum(accumVal,rstAll,phi2,inFromDecAdder, SB_AC, AC_DB, AC_SB,
 endmodule
 
 
-module AddressBusReg(phi1,hold, dataIn,
+module AddressBusReg(haltAll,phi1,hold, dataIn,
                 dataOut);
 
-    input phi1;
+    input haltAll,phi1;
     input hold;
     input [7:0] dataIn;
     output [7:0] dataOut;
@@ -439,7 +467,7 @@ module AddressBusReg(phi1,hold, dataIn,
     reg [7:0] dataOut = 8'h00;
     
     always @ (posedge phi1) begin
-        if (hold) dataOut <= dataOut;
+        if (hold|haltAll) dataOut <= dataOut;
         else dataOut <= dataIn;
         
         //dataOut <= (ld) ? dataIn : dataOut;
@@ -449,10 +477,10 @@ module AddressBusReg(phi1,hold, dataIn,
 endmodule
 
 //used for x and y registers
-module register(currVal,rstAll,phi2, load, bus_en,SBin,
+module register(haltAll,currVal,rstAll,phi2, load, bus_en,SBin,
             SB);
     output [7:0] currVal;
-    input rstAll,phi2, load, bus_en;
+    input haltAll,rstAll,phi2, load, bus_en;
     input [7:0] SBin;
     output [7:0] SB;
    
@@ -465,7 +493,8 @@ module register(currVal,rstAll,phi2, load, bus_en,SBin,
     
     always @(posedge phi2) begin
             currVal <= (rstAll) ? 8'h00 :
-                        ((load) ? SBin : currVal);
+                        ((haltAll) ? currVal :
+                        ((load) ? SBin : currVal));
 
     end
    
@@ -475,7 +504,7 @@ endmodule
 //this needs to push out B bit when its a BRK.
 //the x_set and x_clr are edge triggered.
 //everything else is ticked in when 'update' is asserted.
-module statusReg(phi1_1,phi2_1,rstAll,fastClk,DB_P,loadDBZ,flagsALU,flagsDB,
+module statusReg(haltAll,phi1_1,phi2_1,rstAll,fastClk,DB_P,loadDBZ,flagsALU,flagsDB,
                         P_DB, DBZ, ALUZ, ACR, AVR, B,
                         C_set, C_clr,
                         I_set,I_clr, 
@@ -484,7 +513,7 @@ module statusReg(phi1_1,phi2_1,rstAll,fastClk,DB_P,loadDBZ,flagsALU,flagsDB,
                         DB,ALU,opcode,DBinout,
                         status);
     output phi1_1,phi2_1;
-    input rstAll,fastClk,DB_P,loadDBZ,flagsALU,flagsDB,
+    input haltAll,rstAll,fastClk,DB_P,loadDBZ,flagsALU,flagsDB,
                         P_DB, DBZ,ALUZ, ACR, AVR,B,
                         C_set, C_clr,
                         I_set,I_clr, 
@@ -548,6 +577,15 @@ module statusReg(phi1_1,phi2_1,rstAll,fastClk,DB_P,loadDBZ,flagsALU,flagsDB,
             currVal1 <= 1'b0;
             currVal0 <= 1'b0;
         end
+        else if (haltAll) begin
+            currVal7 <= currVal7;
+            currVal6 <= currVal6;
+            currVal3 <= currVal3;
+            currVal2 <= currVal2;
+            currVal1 <= currVal1;
+            currVal0 <= currVal0;
+        end
+        
         else begin
             currVal7 <= phi1_7;
             currVal6 <= phi1_6;
