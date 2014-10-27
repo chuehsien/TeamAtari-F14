@@ -7,7 +7,7 @@
 
 `include "muxLib.v"
 
-module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, key_scan_L, data_out);
+module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_out);
     // key debounce needs FSM?
     // key matrix formed by K0-K5, kr1 reads whether value high or not.
     //parameter NUM_LINES = 228;
@@ -16,9 +16,12 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, key_scan_L, data_out);
     input [7:0] pot_scan; //when pot_scan becomes 1, capture time! 
     input kr1_L, kr2_L;
     input [3:0] addr_bus;
+    input sel;
     
     output [5:0] key_scan_L; //decide which of the 64 keys to be decoded, decodes 0-63 keys
     output [7:0] data_out; //to output the value of the key that was pressed.
+
+    
     
     wire [5:0] key_scan_L;
     
@@ -77,6 +80,7 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, key_scan_L, data_out);
      end
      
      assign key_scan_L = ~bin_ctr_key;
+     assign data_out = sel ? POT0 : {2'd0, compare_latch};
      
      always @ (posedge o2) begin
      
@@ -97,8 +101,10 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, key_scan_L, data_out);
         
         /* Potentiometer Code */
         pot_scan_reg <= pot_scan;
+	
         
-        if (addr_bus == 4'hb) begin //we need to start over again
+        if (addr_bus != 4'h0) begin //we need to start over again
+	    POTGO <= 8'h00;
             bin_ctr_pot <= 8'd0;
             POT0 <= 8'd0;
             POT1 <= 8'd0;
