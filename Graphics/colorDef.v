@@ -1,0 +1,25 @@
+`define color_grey          4'b0000
+`define color_gold          4'b0001
+`define color_orange        4'b0010
+`define color_red_orange    4'b0011
+`define color_pink          4'b0100
+`define color_purple        4'b0101
+`define color_purple_blue   4'b0110
+`define color_blue          4'b0111
+`define color_blue1         4'b1000
+`define color_light_blue    4'b1001
+`define color_turquoise     4'b1010
+`define color_green_blue    4'b1011
+`define color_green         4'b1100
+`define color_yellow_green  4'b1101
+`define color_orange_green  4'b1110
+`define color_light_green   4'b1111
+
+`define lum_0 3'b000
+`define lum_1 3'b001
+`define lum_2 3'b010
+`define lum_3 3'b011
+`define lum_4 3'b100
+`define lum_5 3'b101
+`define lum_6 3'b110
+`define lum_7 3'b111
