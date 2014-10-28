@@ -7,7 +7,7 @@
 
 `include "muxLib.v"
 
-module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_out);
+module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_out, pot_rel_0, pot_rel_1, compare_latch);
     // key debounce needs FSM?
     // key matrix formed by K0-K5, kr1 reads whether value high or not.
     //parameter NUM_LINES = 228;
@@ -18,18 +18,21 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
     input [3:0] addr_bus;
     input sel;
     
-    output [5:0] key_scan_L; //decide which of the 64 keys to be decoded, decodes 0-63 keys
+    output [3:0] key_scan_L; //decide which of the 64 keys to be decoded, decodes 0-63 keys
     output [7:0] data_out; //to output the value of the key that was pressed.
+	 output pot_rel_0, pot_rel_1;
+	 output [3:0] compare_latch; 
 
     
     
-    wire [5:0] key_scan_L;
+    wire [3:0] key_scan_L;
     
     /* Key Scan latches */
-    reg [5:0] bin_ctr_key;
+    reg [3:0] bin_ctr_key; //15-0
     integer ctr_key = 0;
-    reg [5:0] compare_latch = 6'd0;
-    reg [7:0] keycode_latch;
+    reg [3:0] compare_latch = 4'd0;
+    reg [3:0] keycode_latch;
+	 reg key_depr;
     
     
     /* Potentiometer latches */
@@ -38,7 +41,7 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
     reg [7:0] POT0, POT1, POT2, POT3, POT4, POT5, POT6, POT7;
     reg [7:0] pot_scan_reg;
     reg [7:0] ALLPOT, POTGO;
-    
+    reg pot_rel_0_reg, pot_rel_1_reg;
     integer i;
     
     
@@ -67,7 +70,7 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
      /* Note: ALLPOT not implemented yet caa 21Oct2014 */
      
      initial begin //clear EVERYTHING
-        bin_ctr_key = 6'd0;
+        bin_ctr_key = 4'd0;
         bin_ctr_pot = 8'd0;  
         POT0 <= 8'd0;
         POT1 <= 8'd0;
@@ -77,10 +80,14 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
         POT5 <= 8'd0;
         POT6 <= 8'd0;
         POT7 <= 8'd0;
+		  pot_rel_0_reg <= 1'd0; //turn off transistor0
+		  pot_rel_1_reg <= 1'd0; //turn off transistor1
      end
      
      assign key_scan_L = ~bin_ctr_key;
-     assign data_out = sel ? POT0 : {2'd0, compare_latch};
+     assign data_out = sel ? POT0 : {4'd0, keycode_latch};
+	  assign pot_rel_0 = pot_rel_0_reg;
+	  assign pot_rel_1 = pot_rel_1_reg;
      
      always @ (posedge o2) begin
      
@@ -92,19 +99,30 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
         //at certain line values, check kr2_L for value also
         //don't include debounce yet. include debounce? LATER. 
         
-        if (kr1_L == 1'd0) compare_latch <= bin_ctr_key;
-        if (bin_ctr_key < 6'd63) bin_ctr_key <= bin_ctr_key + 1; //increment the counter
-        else bin_ctr_key <= 6'd0; //reset
+        if ((kr1_L == 1'd0) begin
+		  
+			if (key_depr == 1'b0))begin //key has not been depressed, first time kr1_L went low
+				compare_latch <= bin_ctr_key;
+				key_depr <= 1'b1;
+			end
+			else begin //key depressed has been noted, and the key is still being depressed
+				keycode_latch <= compare_latch; //ready for confirmation to the CPU
+				
+			end
+			
+			end
+        if (bin_ctr_key < 4'd15) bin_ctr_key <= bin_ctr_key + 1; //increment the counter
+        else bin_ctr_key <= 4'd0; //reset
         
         
 
         
         /* Potentiometer Code */
-        pot_scan_reg <= pot_scan;
+        pot_scan_reg <= pot_scan; //may need to put this value in ALLPOT also
 	
         
         if (addr_bus != 4'h0) begin //we need to start over again
-	    POTGO <= 8'h00;
+				POTGO <= 8'h00;
             bin_ctr_pot <= 8'd0;
             POT0 <= 8'd0;
             POT1 <= 8'd0;
@@ -116,6 +134,8 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
             POT7 <= 8'd0;
             pot_scan_reg <= 8'd0; //clear the "lines"
             ctr_pot = 0; //reset the pot counter
+				pot_rel_0_reg <= 1'd0; //turn off transistor0
+				pot_rel_1_reg <= 1'd0; //turn off transistor1
         end
         else if (ctr_pot < 228) begin
             //we are still in the cycle
@@ -136,6 +156,8 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
             ctr_pot = 0; //reset the pot counter
             bin_ctr_pot <= 8'd0;
             pot_scan_reg <= 8'd0; //clear the "lines"
+				pot_rel_0_reg <= 1'd1; //turn on transistor0 to clear the cap
+				pot_rel_1_reg <= 1'd1; //turn on transistor1 to clear the cap
         end
         
      end

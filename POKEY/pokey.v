@@ -6,7 +6,7 @@
  
 `include "IOControl.v"
 
-module POKEY (o2, cs0_L, cs1, rw_ctrl, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, irq_L, audio_out, data_bus, bclk);
+module POKEY (o2, cs0_L, cs1, rw_ctrl, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, irq_L, audio_out, pot_rel_0, pot_rel_1, compare_latch, data_bus, bclk);
     
     //use the pinout to decide what inputs/outputs POKEY should have 
     //need to be careful about timing issues especially when polling..
@@ -23,16 +23,18 @@ module POKEY (o2, cs0_L, cs1, rw_ctrl, pot_scan, kr1_L, kr2_L, addr_bus, sel, ke
     input sel;
     
     // output oclk; //serial output clock
-    output [5:0] key_scan_L; //0 - 63, which key do we want to scan? BINARY. 
+    output [3:0] key_scan_L; //0 - 15, which key do we want to scan? BINARY. 
     output irq_L; //interrupt request
     output audio_out; //for audio generation chip
+	 output pot_rel_0, pot_rel_1;
+	 output [3:0] compare_latch;
     
     inout [7:0] data_bus; //keycode latch values are output here too
     inout bclk;//bidirection clock
 
     
     
-    IOControl iocontrol_mod(.o2(o2), .pot_scan(pot_scan), .kr1_L(kr1_L), .kr2_L(kr2_L), .addr_bus(addr_bus), .sel(sel), .key_scan_L(key_scan_L), .data_out(data_bus));
+    IOControl iocontrol_mod(.o2(o2), .pot_scan(pot_scan), .kr1_L(kr1_L), .kr2_L(kr2_L), .addr_bus(addr_bus), .sel(sel), .key_scan_L(key_scan_L), .data_out(data_bus), .pot_rel_0(pot_rel_0), .pot_rel_1(pot_rel_1), .compare_latch(compare_latch));
 	 
 	 
     
