@@ -54,7 +54,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, DMACTL, CHACTL, HSCROL, VSCRO
       output reg [7:0] PENH = 8'd0;
       output reg [7:0] PENV = 8'd0;
       output reg [2:0] ANTIC_writeEn = 3'd0;
-      output charMode;
+      output [1:0] charMode;
       output [1:0] numLines;
       output [8:0] width;
       output [7:0] height;
@@ -113,14 +113,16 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, DMACTL, CHACTL, HSCROL, VSCRO
       wire loadMSRH;
       wire incrMSR;
       wire loadMSRdata;
-      wire charMode;
       wire [1:0] colorSel;
       wire loadChar;
       wire loadDLIST;
       wire ANTIC_writeDLIST;
       wire [7:0] data_reverse;
       wire [7:0] MSRdata_reverse;
-
+      wire DLIST_DMA_en = DMACTL[5];
+      wire ANTIC_writeDLI;
+      wire ANTIC_clearDLI;
+      wire ANTIC_writeNMI;
       
       // * Temp:
       assign printDLIST = {DLISTH_bus, DLISTL_bus};
@@ -142,12 +144,15 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, DMACTL, CHACTL, HSCROL, VSCRO
                        .loadPtr(loadPtr), .loadMSRL(loadMSRL), .loadMSRH(loadMSRH), .incrMSR(incrMSR), .loadMSRdata(loadMSRdata),
                        .mode(mode), .numBytes(numBytes), .charMode(charMode), .loadChar(loadChar),
                        .blankCount(blankCount), .loadDLIST(loadDLIST), .ANTIC_writeDLIST(ANTIC_writeDLIST), .numLines(numLines),
-                       .width(width), .height(height),
+                       .width(width), .height(height), .ANTIC_writeDLI(ANTIC_writeDLI), .ANTIC_clearDLI(ANTIC_clearDLI),
+                       .ANTIC_writeNMI(ANTIC_writeNMI),
                        .idle(idle), .loadMSRstate(loadMSRstate), .DLISTend(DLISTend));
       
       // Update DLISTPTR (JUMP instruction)
       assign DLISTL_bus = loadDLIST ? newDLISTptr[7:0] : (incrDLIST ? DLISTL : 8'hzz);
       assign DLISTH_bus = loadDLIST ? newDLISTptr[15:8] : 8'hzz;
+      
+      assign NMIRES_NMIST_bus = ANTIC_writeDLI ? 8'h80 : (ANTIC_clearDLI ? 8'h00 : 8'hzz);
       
       // Reverse character bits
       assign data_reverse = {data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]};
@@ -172,154 +177,162 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, DMACTL, CHACTL, HSCROL, VSCRO
           incrDLIST <= 1'b0;
           loadMSRdata_hold <= 1'b0;
           newDLISTptr <= 16'd0;
+          IR <= 8'd0;
         end
            
         else begin
         
           // * TODO: Add vertical blank occurrence signal to dataTranslate module
           
-          // Memory Scan Register changes
-          if (loadMSRL)
-            MSR[7:0] <= IR;
-          else if (loadMSRH)
-            MSR[15:8] <= IR;
-            
-          if (incrMSR)
-            MSR <= MSR + 16'd1;
-          
-          if (loadDLISTL)
-            newDLISTptr[7:0] <= IR;
-          else if (loadDLISTH)
-            newDLISTptr[15:8] <= IR;
-          
           if (ANTIC_writeDLIST)
             ANTIC_writeEn <= 3'd2;
+          else if (ANTIC_writeNMI)
+            ANTIC_writeEn <= 3'd6;
           else
             ANTIC_writeEn <= 3'd0;
-        
-          case (currState)
-              `FSMinit:
-                begin
-                  nextState <= `FSMload1;
-                  addressIn <= {DLISTH_bus, DLISTL_bus};
-                  DLISTL <=  DLISTL_bus;
-                  loadAddr <= 1'b1;
-                  DMA <= `DMA_on;
-                end
-                
-              `FSMload1:
-                begin
-                  nextState <= `FSMload2;
-                  DMA <= `DMA_off;
-                  IR_rdy <= 1'b0;
-                  loadAddr <= 1'b0;
-                  incrDLIST <= 1'b0;
-                end
+          
+          //if (DLIST_DMA_en) begin
+          
+            // Memory Scan Register changes
+            if (loadMSRL)
+              MSR[7:0] <= IR;
+            else if (loadMSRH)
+              MSR[15:8] <= IR;
               
-              `FSMload2:
-                begin
-                
-                  /* Next State Logic */
-                
-                  // Continue loading instructions
-                  if (loadIR) begin
-                    nextState <= `FSMload1;  
-                    DMA <= `DMA_on;
-                  end
-                  // Pause loading instruction
-                  else
-                    nextState <= `FSMidle;
-                
-                  /* Output Logic */
-
-                  if (loadMSRdata_hold) begin
-                    MSRdata <= data;
-                    MSRdata_rdy <= 1'b1;
-                    loadMSRdata_hold <= 1'b0;
-                  end
-                  
-                  else if (loadChar) begin
-                    case (charByte)
-                      8'd0: charData[7:0] <= data_reverse;
-                      8'd1: charData[15:8] <= data_reverse;
-                      8'd2: charData[23:16] <= data_reverse;
-                      8'd3: charData[31:24] <= data_reverse;
-                      8'd4: charData[39:32] <= data_reverse;
-                      8'd5: charData[47:40] <= data_reverse;
-                      8'd6: charData[55:48] <= data_reverse;
-                      8'd7: charData[63:56] <= data_reverse;
-                    endcase
-                    charByte <= charByte + 8'd1;
-                    if (charByte == 8'd7)
-                      charLoaded <= 1'b1;
-                  end
-                  
-                  else begin
-                    if (~loadPtr) begin
-                      incrDLIST <= 1'b1;
-                      DLISTL <= DLISTL + 8'd1;
-                      ANTIC_writeEn <= 3'd1;
-                    end
-                    IR <= data;
-                    IR_rdy <= 1'b1;
-                  end
-                end
-                
-              `FSMidle:
-                begin
-                  // Clear previously set control signals
-                  IR_rdy <= 1'b0;
-                  MSRdata_rdy <= 1'b0;
-                  incrDLIST <= 1'b0;
-                  
-                  // Load next display list instruction
-                  if (loadIR) begin
+            if (incrMSR)
+              MSR <= MSR + 16'd1;
+            
+            if (loadDLISTL)
+              newDLISTptr[7:0] <= IR;
+            else if (loadDLISTH)
+              newDLISTptr[15:8] <= IR;
+          
+            case (currState)
+                `FSMinit:
+                  begin
                     nextState <= `FSMload1;
-                    DMA <= `DMA_on;
                     addressIn <= {DLISTH_bus, DLISTL_bus};
-                    DLISTL <= DLISTL_bus;
+                    DLISTL <=  DLISTL_bus;
                     loadAddr <= 1'b1;
-                  end
-                  
-                  // Load Memory Scan Register data
-                  else if (loadMSRdata) begin
-                    nextState <= `FSMload1;
                     DMA <= `DMA_on;
-                    addressIn <= MSR;
-                    loadAddr <= 1'b1;
-                    loadMSRdata_hold <= 1'b1;
                   end
                   
-                  // Load characters from character set
-                  else if (loadChar) begin
-                    if (charByte < 8'd8) begin
+                `FSMload1:
+                  begin
+                    nextState <= `FSMload2;
+                    DMA <= `DMA_off;
+                    IR_rdy <= 1'b0;
+                    loadAddr <= 1'b0;
+                    incrDLIST <= 1'b0;
+                  end
+                
+                `FSMload2:
+                  begin
+                  
+                    /* Next State Logic */
+                  
+                    // Continue loading instructions
+                    if (loadIR) begin
+                      nextState <= `FSMload1;  
+                      DMA <= `DMA_on;
+                    end
+                    // Pause loading instruction
+                    else
+                      nextState <= `FSMidle;
+                  
+                    /* Output Logic */
+
+                    if (loadMSRdata_hold) begin
+                      MSRdata <= data;
+                      MSRdata_rdy <= 1'b1;
+                      loadMSRdata_hold <= 1'b0;
+                    end
+                    
+                    else if (loadChar) begin
+                      case (charByte)
+                        8'd0: charData[7:0] <= data_reverse;
+                        8'd1: charData[15:8] <= data_reverse;
+                        8'd2: charData[23:16] <= data_reverse;
+                        8'd3: charData[31:24] <= data_reverse;
+                        8'd4: charData[39:32] <= data_reverse;
+                        8'd5: charData[47:40] <= data_reverse;
+                        8'd6: charData[55:48] <= data_reverse;
+                        8'd7: charData[63:56] <= data_reverse;
+                      endcase
+                      charByte <= charByte + 8'd1;
+                      if (charByte == 8'd7)
+                        charLoaded <= 1'b1;
+                    end
+                    
+                    else begin
+                      if (~loadPtr) begin
+                        incrDLIST <= 1'b1;
+                        DLISTL <= DLISTL + 8'd1;
+                        ANTIC_writeEn <= 3'd1;
+                      end
+                      IR <= data;
+                      IR_rdy <= 1'b1;
+                    end
+                  end
+                  
+                `FSMidle:
+                  begin
+                    // Clear previously set control signals
+                    IR_rdy <= 1'b0;
+                    MSRdata_rdy <= 1'b0;
+                    incrDLIST <= 1'b0;
+                    
+                    // Load next display list instruction
+                    if (loadIR) begin
                       nextState <= `FSMload1;
                       DMA <= `DMA_on;
-                      charLoaded <= 1'b0;
-                      addressIn <= {CHBASE, 8'h00} + (MSRdata*8) + charByte;
+                      addressIn <= {DLISTH_bus, DLISTL_bus};
+                      DLISTL <= DLISTL_bus;
                       loadAddr <= 1'b1;
                     end
+                    
+                    // Load Memory Scan Register data
+                    else if (loadMSRdata) begin
+                      nextState <= `FSMload1;
+                      DMA <= `DMA_on;
+                      addressIn <= MSR;
+                      loadAddr <= 1'b1;
+                      loadMSRdata_hold <= 1'b1;
+                    end
+                    
+                    // Load characters from character set
+                    else if (loadChar) begin
+                      if (charByte < 8'd8) begin
+                        nextState <= `FSMload1;
+                        DMA <= `DMA_on;
+                        charLoaded <= 1'b0;
+                        addressIn <= {CHBASE, 8'h00} + (MSRdata*8) + charByte;
+                        loadAddr <= 1'b1;
+                      end
+                      else begin
+                        nextState <= `FSMidle;
+                        charByte <= 8'd0;
+                      end
+                    end
+                    
+                    // Continue to idle state
                     else begin
+                      charLoaded <= 1'b0;
                       nextState <= `FSMidle;
-                      charByte <= 8'd0;
                     end
                   end
-                  
-                  // Continue to idle state
-                  else begin
-                    charLoaded <= 1'b0;
-                    nextState <= `FSMidle;
-                  end
-                end
-          endcase
+            endcase
+          //end
         end
       end
       
       always @ (negedge Fphi0 or posedge rst) begin
         if (rst)
           currState <= `FSMinit;
-        else
-          currState <= nextState;
+        else //begin
+          //if (DLIST_DMA_en)
+            currState <= nextState;
+        //end
       end
       
 endmodule
