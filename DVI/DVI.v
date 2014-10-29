@@ -1,5 +1,5 @@
 // Top module to display output to DVI
-// last updated: 10/13/2014 2200H
+// last updated: 10/13/2014 1800H
 // Adapted from Team Dragonforce
 
 `include "DVI_ODDR.v"
@@ -10,7 +10,7 @@
 `define idle 1'b1
 
 module DVI(clock, reset, data, SDA, SCL, DVI_V, DVI_H, DVI_D, DVI_XCLK_P,
-           DVI_XCLK_N, DVI_DE, DVI_RESET_B , request);
+           DVI_XCLK_N, DVI_DE, DVI_RESET_B , request, x, y, border);
 
   input clock;
   input reset;
@@ -24,15 +24,19 @@ module DVI(clock, reset, data, SDA, SCL, DVI_V, DVI_H, DVI_D, DVI_XCLK_P,
   output DVI_XCLK_P, DVI_XCLK_N;
   output DVI_DE;
   output DVI_RESET_B;
-  output reg request;
+  output reg request = 1'b0;
+  output [11:0] x, y;
+  output border;
 
   wire reset;
   wire IIC_done;
   wire border;
   wire vs, hs;
   
-  reg offset, next_offset;
-  reg state;
+  reg offset = 1'b1;
+  reg next_offset = 1'b0;
+  reg state = `init;
+  reg sync_reset = 1'b1;
   
   assign DVI_RESET_B = ~reset;
 
@@ -41,7 +45,7 @@ module DVI(clock, reset, data, SDA, SCL, DVI_V, DVI_H, DVI_D, DVI_XCLK_P,
                 .hs(hs), .vs(vs), .DVI_XCLK_P(DVI_XCLK_P), .DVI_XCLK_N(DVI_XCLK_N),
                 .DVI_DE(DVI_DE), .DVI_V(DVI_V), .DVI_H(DVI_H), .DVI_D(DVI_D));
   
-  SyncGen sync(.clock(clock), .rst(reset), .vs(vs), .hs(hs), .border(border));    // * TODO: Reset triggered when new data frame arrives
+  SyncGen sync(.clock(clock), .rst(sync_reset|reset), .vs(vs), .hs(hs), .border(border), .x(x), .y(y));    // * TODO: Reset triggered when new data frame arrives
 
   IIC_init init(.clk(clock), .reset(reset), .pclk_gt_65MHz(1'b0),
                 .SDA(SDA), .SCL(SCL), .done(IIC_done));
@@ -50,14 +54,18 @@ module DVI(clock, reset, data, SDA, SCL, DVI_V, DVI_H, DVI_D, DVI_XCLK_P,
   always @(posedge clock or posedge reset) begin
     if (reset) begin
       state <= `init;
-      offset <= 1'b0;
+      offset <= 1'b1;
+      sync_reset <= 1'b1;
 	 end
     else begin
+      offset <= next_offset;
       case (state)
         `init:
           begin
-            if (IIC_done)
+            if (IIC_done) begin
               state <= `idle;
+              sync_reset <= 1'b0;
+            end
           end
         
         `idle:
@@ -69,19 +77,25 @@ module DVI(clock, reset, data, SDA, SCL, DVI_V, DVI_H, DVI_D, DVI_XCLK_P,
   end
   
   // Data request and offset FSM
-  always @(negedge clock) begin
-    if (border) begin
+  always @(negedge clock or posedge reset) begin
+    if (reset) begin
       request <= 1'b0;
-      next_offset <= offset;
+      next_offset <= 1'b0;
     end
     else begin
-      if (offset) begin
-        next_offset <= 1'b0;
-        request <= 1'b1;
+      if (border) begin
+        request <= 1'b0;
+        next_offset <= offset;
       end
       else begin
-        request <= 1'b0;
-        next_offset <= 1'b1;
+        if (offset) begin
+          next_offset <= 1'b0;
+          request <= 1'b1;
+        end
+        else begin
+          request <= 1'b0;
+          next_offset <= 1'b1;
+        end
       end
     end
 	end

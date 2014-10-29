@@ -1,5 +1,5 @@
 // Dedicated Dual Data Rate Output (ODDR) modules for DVI
-// last updated: 10/13/2014 2200H
+// last updated: 10/07/2014 1800H
 
 module DVI_ODDR(data, offset, border, clock, hs, vs, DVI_XCLK_P, DVI_XCLK_N, DVI_DE, DVI_V, DVI_H, DVI_D);
 
@@ -36,7 +36,7 @@ module DVI_ODDR(data, offset, border, clock, hs, vs, DVI_XCLK_P, DVI_XCLK_N, DVI
 		red <= red_p;
 		green <= green_p;
 		blue <= blue_p;
-	end  
+	end
   
   // ODDR module instantiations
   ODDR ODDR_DVI_XCLK_P(.C(clock), .Q(dvi_xclk_p_nodly), .D1(1'b1), .D2(1'b0), .R(1'b0), .S(1'b0), .CE(1'b1));
