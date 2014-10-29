@@ -7,7 +7,7 @@
 
 `include "muxLib.v"
 
-module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_out, pot_rel_0, pot_rel_1, compare_latch);
+module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_out, pot_rel_0, pot_rel_1, compare_latch, keycode_latch, key_depr);
     // key debounce needs FSM?
     // key matrix formed by K0-K5, kr1 reads whether value high or not.
     //parameter NUM_LINES = 228;
@@ -22,6 +22,8 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
     output [7:0] data_out; //to output the value of the key that was pressed.
 	 output pot_rel_0, pot_rel_1;
 	 output [3:0] compare_latch; 
+	 output [3:0] keycode_latch;
+	 output key_depr;
 
     
     
@@ -30,7 +32,7 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
     /* Key Scan latches */
     reg [3:0] bin_ctr_key; //15-0
     integer ctr_key = 0;
-    reg [3:0] compare_latch = 4'd0;
+    reg [3:0] compare_latch;
     reg [3:0] keycode_latch;
 	 reg key_depr;
     
@@ -82,6 +84,10 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
         POT7 <= 8'd0;
 		  pot_rel_0_reg <= 1'd0; //turn off transistor0
 		  pot_rel_1_reg <= 1'd0; //turn off transistor1
+		  
+		  //keyscan stuff
+		  keycode_latch <= 4'd0;
+		  compare_latch <= 4'd0;
      end
      
      assign key_scan_L = ~bin_ctr_key;
@@ -105,16 +111,17 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
 				compare_latch <= bin_ctr_key;
 				key_depr <= 1'b1;
 			end
-			else if (keycode_latch != compare_latch) begin //key depressed has been noted, and the key is still being depressed, but value not recorded yet
+			else if ((keycode_latch != compare_latch) && (compare_latch == bin_ctr_key)) begin //key depressed has been noted, and the key is still being depressed, but value not recorded yet
 				keycode_latch <= compare_latch; //ready for confirmation to the CPU, value in keycode_latch
-                //NOTE: if more than one button pressed, will record the updated one
+                //NOTE: if more than one button pressed, will not record the updated one
+					 //i THINK it will just not register anything if there are two buttons pressed at same time
 			end
-            else begin //value has already been recorded but the button is still depressed
-                continue
-            end
+			//else begin //value has already been recorded but the button is still depressed
+                //continue;
+			//end
 			
         end
-        else begin //kr1_L is high, no buttons being pressed
+        else if (compare_latch == bin_ctr_key) begin //kr1_L is high, no buttons being pressed and we are checking the same button
             if ((key_depr == 1'b1) && (keycode_latch != 4'd0)) begin //not pressed anymore but had been previously and value already recorded
                 keycode_latch <= 4'd0; //clear the keycode_latch
                 compare_latch <= 4'd0; //clear the compare_latch
@@ -123,9 +130,9 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
             else if (key_depr == 1'b1) begin //key had been depressed earlier, but now not pressed anymore and was only pressed for one cycle: it's debouncing
                 key_depr <= 1'b0;            
             end
-            else begin
-                continue //no key earlier depressed, just continue
-            end
+            //else begin
+                //continue; //no key earlier depressed, just continue
+            //end
         end
             
             
