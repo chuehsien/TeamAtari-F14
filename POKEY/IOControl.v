@@ -99,18 +99,37 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
         //at certain line values, check kr2_L for value also
         //don't include debounce yet. include debounce? LATER. 
         
-        if ((kr1_L == 1'd0) begin
+        if (kr1_L == 1'd0) begin // there is a button being pressed
 		  
-			if (key_depr == 1'b0))begin //key has not been depressed, first time kr1_L went low
+			if (key_depr == 1'b0) begin //key has not been depressed, first time kr1_L went low
 				compare_latch <= bin_ctr_key;
 				key_depr <= 1'b1;
 			end
-			else begin //key depressed has been noted, and the key is still being depressed
-				keycode_latch <= compare_latch; //ready for confirmation to the CPU
-				
+			else if (keycode_latch != compare_latch) begin //key depressed has been noted, and the key is still being depressed, but value not recorded yet
+				keycode_latch <= compare_latch; //ready for confirmation to the CPU, value in keycode_latch
+                //NOTE: if more than one button pressed, will record the updated one
 			end
+            else begin //value has already been recorded but the button is still depressed
+                continue
+            end
 			
-			end
+        end
+        else begin //kr1_L is high, no buttons being pressed
+            if ((key_depr == 1'b1) && (keycode_latch != 4'd0)) begin //not pressed anymore but had been previously and value already recorded
+                keycode_latch <= 4'd0; //clear the keycode_latch
+                compare_latch <= 4'd0; //clear the compare_latch
+                key_depr <= 1'b0; //clear the status that key had been earlier pressed
+            end
+            else if (key_depr == 1'b1) begin //key had been depressed earlier, but now not pressed anymore and was only pressed for one cycle: it's debouncing
+                key_depr <= 1'b0;            
+            end
+            else begin
+                continue //no key earlier depressed, just continue
+            end
+        end
+            
+            
+        /*Actual Scanning Process*/
         if (bin_ctr_key < 4'd15) bin_ctr_key <= bin_ctr_key + 1; //increment the counter
         else bin_ctr_key <= 4'd0; //reset
         
