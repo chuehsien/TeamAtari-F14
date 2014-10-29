@@ -13,7 +13,7 @@
 module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, DMACTL, CHACTL, HSCROL, VSCROL, PMBASE, CHBASE, 
              WSYNC, NMIEN, DB, NMIRES_NMIST_bus, DLISTL_bus, DLISTH_bus, address, AN, 
              halt_L, NMI_L, RDY_L, REF_L, RNMI_L, phi0, IR_out, loadIR, VCOUNT, PENH, PENV, 
-             ANTIC_writeEn, charMode,
+             ANTIC_writeEn, charMode, numLines, width, height,
              printDLIST, currState, data, MSR, loadMSR_both, loadDLIST_both,
              IR_rdy, mode, numBytes, MSRdata, DLISTL, blankCount, addressIn, loadMSRdata, 
              charData, newDLISTptr, loadDLIST, DLISTend, idle, loadMSRstate);
@@ -55,6 +55,9 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, DMACTL, CHACTL, HSCROL, VSCRO
       output reg [7:0] PENV = 8'd0;
       output reg [2:0] ANTIC_writeEn = 3'd0;
       output charMode;
+      output [1:0] numLines;
+      output [8:0] width;
+      output [7:0] height;
       
       // Extras (remove later on)
       output [15:0] printDLIST;
@@ -138,7 +141,8 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, DMACTL, CHACTL, HSCROL, VSCRO
                        .loadDLISTL(loadDLISTL), .loadDLISTH(loadDLISTH),
                        .loadPtr(loadPtr), .loadMSRL(loadMSRL), .loadMSRH(loadMSRH), .incrMSR(incrMSR), .loadMSRdata(loadMSRdata),
                        .mode(mode), .numBytes(numBytes), .charMode(charMode), .loadChar(loadChar),
-                       .blankCount(blankCount), .loadDLIST(loadDLIST), .ANTIC_writeDLIST(ANTIC_writeDLIST),
+                       .blankCount(blankCount), .loadDLIST(loadDLIST), .ANTIC_writeDLIST(ANTIC_writeDLIST), .numLines(numLines),
+                       .width(width), .height(height),
                        .idle(idle), .loadMSRstate(loadMSRstate), .DLISTend(DLISTend));
       
       // Update DLISTPTR (JUMP instruction)

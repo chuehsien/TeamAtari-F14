@@ -33,7 +33,7 @@ module display(USER_CLK, GPIO_SW_C, IIC_SDA_VIDEO, IIC_SCL_VIDEO,
   wire [11:0] DVI_D;
   
   reg [5:0] clkdiv;
-  reg [14:0] addrB;
+  reg [14:0] addrB = 15'd0;
   
   assign DVI_D11 = DVI_D[11];
   assign DVI_D10 = DVI_D[10];
@@ -111,6 +111,9 @@ module display(USER_CLK, GPIO_SW_C, IIC_SDA_VIDEO, IIC_SCL_VIDEO,
   wire [15:0] address;
   wire charMode;
   wire vblank, hblank;
+  wire [1:0] numLines;
+  wire [8:0] width;
+  wire [7:0] height;
   
   //TEMP
   wire [7:0] IR;
@@ -130,14 +133,15 @@ module display(USER_CLK, GPIO_SW_C, IIC_SDA_VIDEO, IIC_SCL_VIDEO,
               .DB(DB), .NMIRES_NMIST_bus(NMIRES_NMIST_bus), .DLISTL_bus(DLISTL_bus), .DLISTH_bus(DLISTH_bus),
               .address(address), .AN(AN), .halt_L(), .NMI_L(), .RDY_L(), .REF_L(), .RNMI_L(), .phi0(), 
               .IR_out(IR), .loadIR(), .VCOUNT(VCOUNT), .PENH(PENH), .PENV(PENV), .ANTIC_writeEn(ANTIC_writeEn), 
-              .charMode(charMode), .printDLIST(dlist), .currState(currState), .data(), .MSR(MSR), .loadDLIST_both(), 
+              .charMode(charMode), .numLines(numLines), .width(width), .height(height),
+              .printDLIST(dlist), .currState(currState), .data(), .MSR(MSR), .loadDLIST_both(), 
               .loadMSR_both(), .IR_rdy(IR_rdy), .mode(mode), .numBytes(), .MSRdata(), 
               .DLISTL(DLISTL), .blankCount(), .addressIn(), .loadMSRdata(),
               .charData(), .newDLISTptr(), .loadDLIST(), .DLISTend(DLISTend), 
               .idle(idle), .loadMSRstate(loadMSRstate));
   
   GTIA gtia(.address(), .AN(AN), .CS(), .DEL(), .OSC(), .RW(), .trigger(), .Fphi0(Fphi0), .rst(rst), .charMode(charMode),
-            .DLISTend(DLISTend), 
+            .DLISTend(DLISTend), .numLines(numLines), .width(width), .height(height),
             .COLPM3(COLPM3), .COLPF0(COLPF0), .COLPF1(COLPF1), .COLPF2(COLPF2), .COLPF3(COLPF3), .COLBK(COLBK),
             .PRIOR(PRIOR), .VDELAY(VDELAY), .GRACTL(GRACTL), .HITCLR(HITCLR),
             .DB(), .switch(),

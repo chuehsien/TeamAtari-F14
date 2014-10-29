@@ -14,3 +14,9 @@
 `define mode_1_col_16_lum     2'b01
 `define mode_9_col_lum        2'b10
 `define mode_16_col_1_lum     2'b11
+
+
+`define one   2'b00
+`define two   2'b01
+`define four  2'b10
+`define eight 2'b11

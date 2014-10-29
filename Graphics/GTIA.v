@@ -4,7 +4,8 @@
 `include "GTIA_modeDef.v"
 `include "colorTable.v"
 
-module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTend,
+module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTend, numLines,
+            width, height,
             COLPM3, COLPF0, COLPF1, COLPF2, COLPF3, COLBK, PRIOR, VDELAY, GRACTL, HITCLR,
             DB, switch,
             HPOSP0_M0PF_bus, HPOSP1_M1PF_bus, HPOSP2_M2PF_bus, HPOSP3_M3PF_bus, HPOSM0_P0PF_bus, 
@@ -28,6 +29,9 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
       input rst;
       input charMode;
       input DLISTend;
+      input [1:0] numLines;
+      input [8:0] width;
+      input [7:0] height;
       
       // Memory-mapped register inputs
       input [7:0] COLPM3;
@@ -202,7 +206,7 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
             if (charMode) begin
               
               // End of entire display block
-              if ((x == 9'd319)&&(y == 8'd191)) begin
+              if ((x == (width-1))&&(y == (height-1))) begin
                 x <= 9'd0;
                 y <= 8'd0;
                 vblank <= 1'b1;
@@ -210,7 +214,7 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
               
               else begin
                 // Transition from end of 40 blocks to start of next line of blocks
-                if ((x == 9'd319)&&((y % 8) == 8'd7)) begin
+                if ((x == (width-1))&&((y % 8) == 8'd7)) begin
                   x <= 9'd0;
                   y <= y + 8'd1;
                   hblank <= 1'b1;
@@ -241,18 +245,71 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
           
             // Display line by line
             else begin
-              if (x < 9'd159) // * TODO: Set parameters here
-                x <= x + 9'd1;
-              else begin
-                x <= 9'd0;
-                hblank <= 1'b1;
-                if (y < 8'd191)
-                  y <= y + 8'd1;
-                else begin
-                  y <= 8'd0;
-                  vblank <= 1'b1;
-                end
-              end
+
+              case (numLines)
+              
+                // 1 scan line per mode line
+                `one:
+                  begin
+                    if (x < (width-1)) // * TODO: Set parameters here
+                      x <= x + 9'd1;
+                    else begin
+                      x <= 9'd0;
+                      hblank <= 1'b1;
+                      if (y < (height-1))
+                        y <= y + 8'd1;
+                      else begin
+                        y <= 8'd0;
+                        vblank <= 1'b1;
+                      end
+                    end
+                  end
+                
+                // 2 scan lines per mode line
+                `two:
+                  begin
+                    // Transition from end of screen to start
+                    if ((x == (width-1))&&(y == (height-1))) begin // * TODO: Set parameters here
+                      x <= 9'd0;
+                      y <= 8'd0;
+                    end
+                    else begin
+                      
+                      // Transition from end of mode line to next mode line
+                      if ((x == (width-1))&&((y % 2) == 1)) begin
+                        x <= 9'd0;
+                        y <= y + 8'd1;
+                      end
+                      
+                      else begin
+                        
+                        // Transition from lower pixel to next upper pixel
+                        if ((y % 2) == 1) begin
+                          x <= x + 9'd1;
+                          y <= y + 8'd1;
+                        end
+                        
+                        // Transition from upper pixel to lower pixel
+                        else begin
+                          y <= y + 8'd1;
+                        end
+                      
+                      end
+                      
+                    end
+                  end
+                
+                `four:
+                  begin
+                  
+                  end
+                
+                `eight:
+                  begin
+                  
+                  end
+                  
+              endcase
             end
           end
         end
