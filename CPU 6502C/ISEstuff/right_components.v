@@ -567,7 +567,7 @@ module statusReg(haltAll,phi1_1,phi2_1,rstAll,fastClk,DB_P,loadDBZ,flagsALU,flag
     assign load1 = ((phi1) ? phi1_1 : ((phi2) ? phi2_1 : 1'b0));
     assign load0 = ((phi1) ? phi1_0 : ((phi2) ? phi2_0 : 1'b0));
  */  
-    always @ (posedge fastClk) begin
+    always @ (posedge fastClk) begin //need fast clock to load on both phi1 and phi2.
     
         if (rstAll) begin
             currVal7 <= 1'b0;

@@ -271,6 +271,7 @@ module controlLatch(phi1,phi2,inControl,outControl);
 endmodule
 
 module instructionRegister(haltAll,rstAll,currT,phi1,phi2,OPin,OPout,prevOP);
+
     input haltAll,rstAll;
     input [6:0] currT;
     input phi1,phi2;
@@ -281,7 +282,7 @@ module instructionRegister(haltAll,rstAll,currT,phi1,phi2,OPin,OPout,prevOP);
     wire en, readyForNext;
 
     assign readyForNext = (currT == `Tone || currT == `T1NoBranch ||
-                        currT == `T1BranchNoCross || currT == `T1BranchCross) & phi2;
+                        currT == `T1BranchNoCross || currT == `T1BranchCross) & ~phi1;
     buf tickB(en,readyForNext);
   
     //wait for (currT==`Tone & phi2) to enable.

@@ -18,7 +18,7 @@ module top_6502C(phi1,phi2,SRflags,opcode,opcodeToIR,second_first_int,nmiPending
                 HALT, IRQ_L, NMI_L, RES_L, SO, phi0_in,fastClk,extDB,	
                 RDY,phi1_out, SYNC, extABL, extABH, phi2_out, RW,
                 Accum,Xreg,Yreg);
-
+        
             output phi1,phi2;
             output [7:0] SRflags;
             output [7:0] opcode,opcodeToIR;
