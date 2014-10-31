@@ -157,7 +157,7 @@ module display(USER_CLK, GPIO_SW_C, IIC_SDA_VIDEO, IIC_SCL_VIDEO,
             .dBuf_data(dBuf_data), .dBuf_addr(dBuf_addr), .dBuf_writeEn(dBuf_writeEn),
             .vblank(vblank), .hblank(hblank));
                
-  memoryMap map(.Fclk(~Fphi0), .clk(phi2), .CPU_writeEn(1'b0), .ANTIC_writeEn(ANTIC_writeEn), .GTIA_writeEn(5'd0),
+  memoryMap map(.Fclk(~Fphi0), .clk(phi2), .rst(rst), .CPU_writeEn(1'b0), .ANTIC_writeEn(ANTIC_writeEn), .GTIA_writeEn(5'd0),
                 .CPU_addr(address), .VCOUNT_in(VCOUNT), .PENH_in(PENH), .PENV_in(PENV), .CPU_data(DB), 
                 .NMIRES_NMIST_bus(NMIRES_NMIST_bus), .DLISTL_bus(DLISTL_bus), .DLISTH_bus(DLISTH_bus),
                 .HPOSP0_M0PF_bus(HPOSP0_M0PF_bus), .HPOSP1_M1PF_bus(HPOSP1_M1PF_bus), .HPOSP2_M2PF_bus(HPOSP2_M2PF_bus),
@@ -170,7 +170,8 @@ module display(USER_CLK, GPIO_SW_C, IIC_SDA_VIDEO, IIC_SCL_VIDEO,
                 .CONSPK_CONSOL_bus(CONSPK_CONSOL_bus),
                 .DMACTL(DMACTL), .CHACTL(CHACTL), .HSCROL(HSCROL), .VSCROL(VSCROL), .PMBASE(PMBASE),
                 .CHBASE(CHBASE), .WSYNC(WSYNC), .NMIEN(NMIEN), .COLPM3(COLPM3), .COLPF0(COLPF0), .COLPF1(COLPF1), .COLPF2(COLPF2),
-                .COLPF3(COLPF3), .COLBK(COLBK), .PRIOR(PRIOR), .VDELAY(VDELAY), .GRACTL(GRACTL), .HITCLR(HITCLR));
+                .COLPF3(COLPF3), .COLBK(COLBK), .PRIOR(PRIOR), .VDELAY(VDELAY), .GRACTL(GRACTL), .HITCLR(HITCLR),
+                .NMIRES_NMIST(NMIRES_NMIST));
 
   displayBlockMem dbm(.clka(Fphi0), .wea(dBuf_writeEn), .addra(dBuf_addr), .dina(dBuf_data), .clkb(clk_DVI),
                       .addrb(addrB), .doutb(doutB));
@@ -192,14 +193,14 @@ module display(USER_CLK, GPIO_SW_C, IIC_SDA_VIDEO, IIC_SCL_VIDEO,
   chipscope_ila ila (
     .CONTROL(CONTROL0), // INOUT BUS [35:0]
     .CLK(clk_DVI), // IN
-    .TRIG0(AN), // IN BUS [3:0]
+    .TRIG0({1'b0, ANTIC_writeEn}), // IN BUS [3:0]
     .TRIG1(IR), // IN BUS [7:0]
     .TRIG2(currState), // IN BUS [1:0]
     .TRIG3(mode), // IN BUS [3:0]
     .TRIG4(dlist), // IN BUS [15:0]
-    .TRIG5({6'd0, loadMSRstate}), // IN BUS [7:0]
-    .TRIG6(dBuf_addr[7:0]), // IN BUS [7:0]
-    .TRIG7(dBuf_addr[15:8]), // IN BUS [7:0]
+    .TRIG5(COLPF0), // IN BUS [7:0]
+    .TRIG6(NMIRES_NMIST_bus), // IN BUS [7:0]
+    .TRIG7(NMIRES_NMIST), // IN BUS [7:0]
     .TRIG8(idle), // IN BUS [0:0]
     .TRIG9(IR_rdy) // IN BUS [0:0]
   );
