@@ -302,7 +302,7 @@ module top_6502C(extAB_b1,phi1,phi2,SRflags,opcode,opcodeToIR,second_first_int,n
             wire [64:0] nextControlSigs;
             wire [2:0] activeInt;
             wire [6:0] newT;
-            logicControl   control(currT,opcode,prevOpcode,phi1,phi2,activeInt,rel_forward,aluACR,ACR,SR_contents,
+            logicControl   control(currT,opcode,prevOpcode,phi1,phi2,activeInt,rel_forward,aluACR,AVR,ACR,SR_contents,
                                     newT,controlSigs);
             //controlLatch    conLatch(phi1,phi2,nextControlSigs,controlSigs);
             

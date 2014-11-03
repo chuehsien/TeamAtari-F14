@@ -1,11 +1,11 @@
 
 
-module randomLogic2(T,OP,prevOP,phi1,phi2,activeInt,carry,statusC,decMode,control);
+module randomLogic2(T,OP,prevOP,phi1,phi2,activeInt,ovf,carry,statusC,decMode,control);
     `include "Control/controlMods.v"
     input [6:0] T;
     input [7:0] OP,prevOP;
     input [2:0] activeInt;
-    input phi1,phi2,carry,statusC,decMode;
+    input phi1,phi2,ovf,carry,statusC,decMode;
     output reg [64:0] control = 65'd0;
     wire updateAC,updateX,updateY;
     
@@ -27,7 +27,7 @@ module randomLogic2(T,OP,prevOP,phi1,phi2,activeInt,carry,statusC,decMode,contro
         
     always @ (*) begin
         //getControls(T,OP,phi1,phi2,activeInt,carry,statusC,decMode,control);
-        getControls(phi1,phi2,carry,statusC,decMode,activeInt,OP,T,control);
+        getControls(phi1,phi2,ovf,carry,statusC,decMode,activeInt,OP,T,control);
         //settle prevOP
         
        if (updateAC) control[`SB_AC] = 1'b1;

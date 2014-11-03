@@ -2,7 +2,7 @@ task BCS_rel;
 
 	input [6:0] T;
 	input phi1,phi2;
-	input carry,flag;
+	input ovf,carry,flag;
 	output [64:0] controlSigs;
 	output [6:0] newT;
 	reg [6:0] newT;
@@ -18,7 +18,8 @@ task BCS_rel;
 				if (phi1) begin
 				//SS,nDBADD,SBADD,SUMS,#DAA,~DAA,ADDADL,#DSA,~DSA,SBADH,ADHPCH,PCHADH,#IPC,~IPC,ADLPCL
 					controlSigs[`S_S] = 1'b1;
-					controlSigs[`DB_L_ADD] = 1'b1;
+          if (ovf)  controlSigs[`DB_ADD] = 1'b1;
+          if (~ovf) controlSigs[`DB_L_ADD] = 1'b1;
 					controlSigs[`SB_ADD] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
 					controlSigs[`nDAA] = 1'b1;
@@ -30,7 +31,7 @@ task BCS_rel;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`ADL_PCL] = 1'b1;
                     controlSigs[`nADH_ABH] = 1'b1;
-                    controlSigs[`I_ADDC] = 1'b1;
+          if (~ovf) controlSigs[`I_ADDC] = 1'b1;
 				end
 				else if (phi2) begin
 				//SUMS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBADH,#IPC,~IPC,PCLADL,DL/DB

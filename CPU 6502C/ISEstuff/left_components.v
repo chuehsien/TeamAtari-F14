@@ -240,13 +240,14 @@ module readyControl(phi2, RDY,nRW,
 endmodule
 
 
-module logicControl(currT,opcode,prevOpcode,phi1,phi2,activeInt,rel_forward,tempCarry,carry,statusReg,
+module logicControl(currT,opcode,prevOpcode,phi1,phi2,activeInt,rel_forward,tempCarry,ovf,carry,statusReg,
                                     nextT,nextControlSigs);
                                     
         input [6:0] currT;
         input [7:0] opcode,prevOpcode;
         input phi1,phi2;
         input [2:0] activeInt;
+        input ovf;
         input rel_forward,tempCarry,carry;
         input [7:0] statusReg;
         output [6:0] nextT;
@@ -258,8 +259,8 @@ module logicControl(currT,opcode,prevOpcode,phi1,phi2,activeInt,rel_forward,temp
         assign effCarry = (tempCarry & rel_forward) | (~tempCarry & ~rel_forward);
         Tcontrol    tCon(currT,opcode,effCarry,statusReg,nextT);
         
-        // the logic depends on the ticked in ACR in the ACRlatch.
-        randomLogic2     randomLog(currT,opcode,prevOpcode,phi1,phi2,activeInt,carry,statusReg[`status_C],statusReg[`status_D],nextControlSigs);
+        // the logic depends on the ticked in ACR in the ACRlatch, and AVR in the AVRlatch
+        randomLogic2     randomLog(currT,opcode,prevOpcode,phi1,phi2,activeInt,ovf,carry,statusReg[`status_C],statusReg[`status_D],nextControlSigs);
 
 endmodule
 

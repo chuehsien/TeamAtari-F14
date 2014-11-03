@@ -6,7 +6,7 @@
 `include "Control/opcodeTasks.v"
 task getControls;
                 
-    input phi1,phi2,carry,statusC,decMode;
+    input phi1,phi2,ovf,carry,statusC,decMode;
     input [2:0] activeInt;
     input [7:0] opcode;
     input [6:0] currT;
@@ -166,15 +166,16 @@ task getControls;
         `SBC_aby: SBC_aby(currT,phi1,phi2,carry,statusC,decMode,dummy_control,dummy_T);
         `SBC_abx: SBC_abx(currT,phi1,phi2,carry,statusC,decMode,dummy_control,dummy_T);
         
-        //branch instructions
-        `BPL_rel: BPL_rel(currT,phi1,phi2,carry,1'b0,dummy_control,dummy_T);
-        `BMI_rel: BMI_rel(currT,phi1,phi2,carry,1'b0,dummy_control,dummy_T);
-        `BVC_rel: BVC_rel(currT,phi1,phi2,carry,1'b0,dummy_control,dummy_T);
-        `BVS_rel: BVS_rel(currT,phi1,phi2,carry,1'b0,dummy_control,dummy_T);
-        `BCC_rel: BCC_rel(currT,phi1,phi2,carry,1'b0,dummy_control,dummy_T);
-        `BCS_rel: BCS_rel(currT,phi1,phi2,carry,1'b0,dummy_control,dummy_T);
-        `BNE_rel: BNE_rel(currT,phi1,phi2,carry,1'b0,dummy_control,dummy_T);
-        `BEQ_rel: BEQ_rel(currT,phi1,phi2,carry,1'b0,dummy_control,dummy_T);
+        //branch instructions //dont need flags because thats determined by Tcontrol
+        `BPL_rel: BPL_rel(currT,phi1,phi2,ovf,carry,1'b0,dummy_control,dummy_T);
+        `BMI_rel: BMI_rel(currT,phi1,phi2,ovf,carry,1'b0,dummy_control,dummy_T);
+        `BVC_rel: BVC_rel(currT,phi1,phi2,ovf,carry,1'b0,dummy_control,dummy_T);
+        `BVS_rel: BVS_rel(currT,phi1,phi2,ovf,carry,1'b0,dummy_control,dummy_T);
+        `BCC_rel: BCC_rel(currT,phi1,phi2,ovf,carry,1'b0,dummy_control,dummy_T);
+        `BCS_rel: BCS_rel(currT,phi1,phi2,ovf,carry,1'b0,dummy_control,dummy_T);
+        `BNE_rel: BNE_rel(currT,phi1,phi2,ovf,carry,1'b0,dummy_control,dummy_T);
+        `BEQ_rel: BEQ_rel(currT,phi1,phi2,ovf,carry,1'b0,dummy_control,dummy_T);
+        
 
         endcase
     end
