@@ -1,74 +1,53 @@
 `include "peripherals.v"
-`include "pokeyaudio.v"
-module pokey_top(USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_DIP_SW4,GPIO_DIP_SW5,GPIO_DIP_SW6,GPIO_DIP_SW7,GPIO_DIP_SW8,GPIO_SW_S,
-               HDR1_2,HDR1_4,HDR1_6,HDR1_8,HDR1_10,
-               GPIO_LED_0,GPIO_LED_1);
-    input USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_DIP_SW4,GPIO_DIP_SW5,GPIO_DIP_SW6,GPIO_DIP_SW7,GPIO_DIP_SW8,GPIO_SW_S;
-    output HDR1_2,HDR1_4,HDR1_6,HDR1_8,HDR1_10,GPIO_LED_0,GPIO_LED_1;
 
-    (* clock_signal = "yes" *) wire clk179,clk64,clk16,clk2;
+module lcd_top(USER_CLK,GPIO_SW_C);
+    input USER_CLK,GPIO_SW_C;
+    
+    wire out,clk1;
+    wire memClk_b0,memClk_b1,memClk_b2;
+
+    clockone2048 test1(USER_CLK,memClk_b0);
+    clockone1024 test2(memClk_b0,memClk_b1);
+    clockHalf    test3(memClk_b1,memClk_b2);
+    clockHalf    test4(memClk_b2,clk1);
+
+
+    clockDivider(inClk,outClk);
+
+
+
+
+
+
+
+    (* clock_signal = "yes" *) wire clk179,clk64,clk16;
     clockDivider #(28) out179(USER_CLK,clk179);
     clockDivider #(1562) out64(USER_CLK,clk64);
     clockDivider #(6250) out16(USER_CLK,clk16);
-    clockDivider #(2) out2(USER_CLK,clk2);
- 
-    wire init_L;
-    wire [7:0] AUDF1,AUDF2,AUDF3,AUDF4;
-    wire [7:0] AUDC1,AUDC2,AUDC3,AUDC4,AUDCTL;
+    
+    
+    reg init_L,AUDF1,AUDF2,AUDF3,AUDF4;
+    wire AUDC1,AUDC2,AUDC3,AUDC4,AUDCTL = 1'b0;
 
-    assign init_L = ~GPIO_SW_C;
-    assign AUDF1 = 8'h213; //to create 300Hz tone
-    assign AUDF2 = 8'd32; //to create 2kHz
-    assign AUDF3 = 8'd11; // to create 6khz
-    assign AUDF4 = 8'd5; //to create 12khz
+    AUDF1 = 8'b11010101 //to create 300Hz tone
+    AUDC1 = 
     
-    wire [2:0] distort;
-    wire volO;
-    wire [3:0] vol;
-    assign AUDC1 = {distort,volO,vol};
-    assign AUDC2 = {distort,volO,vol};
-    assign AUDC3 = {distort,volO,vol};
-    assign AUDC4 = {distort,volO,vol};
-    
-    assign AUDCTL = 8'd0;
-    
-    assign vol = {GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_DIP_SW4};
-    assign distort = {GPIO_DIP_SW6,GPIO_DIP_SW7,GPIO_DIP_SW8};
-    assign volO = GPIO_DIP_SW5;
-
     
     wire audio1,audio2,audio3,audio4;
-    wire [3:0] vol1,vol2,vol3,vol4;
-
     pokeyaudio test(init_L,clk179,clk64,clk16,AUDF1,AUDF2,AUDF3,AUDF4,
                     AUDC1,AUDC2,AUDC3,AUDC4,AUDCTL,
-                    audio1,audio2,audio3,audio4,vol1,vol2,vol3,vol4);
-                    
-    reg [1:0] sel = 1'b0;
-    wire nextChn;
-    DeBounce selDB(clk179, init_L, GPIO_SW_S, nextChn);
-    assign {GPIO_LED_0,GPIO_LED_1} = sel;
+                    audio1,audio2,audio3,audio4);
+                
     
-    always @ (posedge nextChn) begin
-        sel <= sel + 1;
-    end
-    
-    assign HDR1_2 = (sel==2'd0) ? audio1 :
-                    ((sel==2'd1) ? audio2 :
-                    ((sel==2'd2) ? audio3 :
-                    ((sel==2'd3) ? audio4 : 1'b0)));
-    assign {HDR1_4,HDR1_6,HDR1_8,HDR1_10} = (sel==2'd0) ? vol1 :
-                                            ((sel==2'd1) ? vol2 :
-                                            ((sel==2'd2) ? vol3 :
-                                            ((sel==2'd3) ? vol4 : 1'b0)));
-    
-//=======================ILA/ICON stuff=======================//
+
+// clockBuf(.CE0(GPIO_SW_DIP1),.CE1(1'B0),out,clk1,GPIO_SW_DIP1);
     
     
     wire chipClk_b0,chipClk;
     clockone2048 test11(USER_CLK,chipClk_b0);
     clockone256  test12(chipClk_b0,chipClk);
 
+    
     wire [7:0] TRIG0,TRIG1;
     wire[7:0] TRIG2,TRIG3,TRIG4,TRIG5,TRIG6,TRIG7,TRIG8,TRIG9,TRIG10,TRIG11,TRIG12,TRIG13,TRIG14,TRIG15;
     wire [35 : 0] CONTROL0,CONTROL1;
@@ -79,12 +58,12 @@ module pokey_top(USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_
     
     chipscope_ila ila0(
     .CONTROL(CONTROL0),
-    .CLK(USER_CLK),
-    .TRIG0({7'd0,USER_CLK}),
-    .TRIG1({7'd0,clk2}),
-    .TRIG2({7'd0,~clk179}),
-    .TRIG3({7'd0,~clk64}),
-    .TRIG4({7'd0,~clk16}),
+    .CLK(chipClk),
+    .TRIG0({7'd0,out}),
+    .TRIG1({7'd0,~clk1}),
+    .TRIG2(8'd0),
+    .TRIG3(8'd0),
+    .TRIG4(8'd0),
     .TRIG5(8'd0),
     .TRIG6(8'd0),
     .TRIG7(8'd0),

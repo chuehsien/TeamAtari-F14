@@ -102,7 +102,7 @@ endfunction
     output outClk;
 
     
-    reg [12:0] counter = 0;
+    reg [width:0] counter = 0;
     always @ (posedge inClk) begin
         counter <= counter + 1;
         if (counter == DIVIDE>>1) counter <= 0;

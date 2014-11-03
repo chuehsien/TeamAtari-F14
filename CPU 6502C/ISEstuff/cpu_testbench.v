@@ -217,9 +217,10 @@ module CPUtest(USER_CLK, 	CLK_27MHZ_FPGA,
     wire [7:0] OP,opcodeToIR;
     wire [7:0] Accum,Xreg,Yreg;
     wire [7:0] SRflags;
+    wire [7:0] extAB_b1;
     //wire phi1,phi2;
     //fsm to translate stuff on DB into readable format and tick the lcd.
-	top_6502C cpu(
+	top_6502C cpu(.extAB_b1(extAB_b1),
                 .SRflags(SRflags),.opcode(OP),.opcodeToIR(opcodeToIR),.second_first_int(second_first_int),.nmiPending(nmiPending),
                 .resPending(resPending),.irqPending(irqPending),.currState(currState),.accumVal(accumVal),
                 .outToPCL(outToPCL),.outToPCH(outToPCH),.A(A),.B(B),.idlContents(idlContents),.rstAll(rstAll),.ALUhold_out(ALUhold_out),
@@ -244,7 +245,7 @@ module CPUtest(USER_CLK, 	CLK_27MHZ_FPGA,
 	wire [7:0] data;
     wire clrLCD;
     //write to lcd control every phi1. before write, clear LCD.
-	lcd_control		lcd(.rst(reset), .clk(fphi0), .control(control_out), .sf_d(out),
+	lcd_control		lcd(.rst(reset), .clk(CLK_27MHZ_FPGA), .control(control_out), .sf_d(out),
 							 .writeStart(writeStart), .initDone(initDone), .writeDone(writeDone), 
 							 .dataIn(data), 
 							 .clearAll(clrLCD));
@@ -254,7 +255,7 @@ module CPUtest(USER_CLK, 	CLK_27MHZ_FPGA,
     //wire [5:0] lcdstate;
     //DeBounce #(.N(8)) deb(USER_CLK,1'b1,GPIO_SW_N,butOut);
     
-     testFSM			myTestFsm(.clkFSM(fphi0), .resetFSM(reset),.data(data),
+     testFSM			myTestFsm(.clkFSM(CLK_27MHZ_FPGA), .resetFSM(reset),.data(data),
 									 .initDone(initDone),.writeDone(writeDone),.writeStart(writeStart),.clrLCD(clrLCD),
                                      .A(Accum),.X(Xreg),.Y(Yreg),.OP(OP),
                                      .display(phi1_out),
@@ -270,7 +271,8 @@ module CPUtest(USER_CLK, 	CLK_27MHZ_FPGA,
     
     wire chipClk,chipClk_b0;
     //clockone4 test11(USER_CLK,chipClk_b);
-    clockone256  test12(CLK_27MHZ_FPGA,chipClk_b);
+    clockone2048  test12(CLK_27MHZ_FPGA,chipClk_b0);
+    clockone16  test13(chipClk_b0,chipClk_b);
     //BUFG chipscopeClk(chipClk,chipClk_b);
     
     //clockDivider    #(250000) mainClock2(USER_CLK,chipClk);
@@ -287,14 +289,14 @@ module CPUtest(USER_CLK, 	CLK_27MHZ_FPGA,
     ADH_b,
     ADL_b,
     SB_b,
-    {7'd0,phi1_out_b},
+    {7'd0,phi1_out},
     {RW,activeInt,RDY,IRQ_L,NMI_L,RES_L},
-    second_first_int,
-    opcodeToIR,
+    Accum,
+    Xreg,
     {rstAll,4'd0,addr_RAM,addr_BIOS,addr_CART},
     OP,
-    idlContents,
-    8'd0);
+    extAB_b1,
+    Yreg);
     
     // extra ila for use...
     chipscope_ila ila1(

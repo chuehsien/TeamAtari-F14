@@ -4,11 +4,10 @@
 
 
 
-module memoryMap(addr_RAM,addr_BIOS,addr_CART,
-                Fclk, clk, CPU_writeEn, ANTIC_writeEn, GTIA_writeEn, CPU_addr, 
+module memoryMap(Fclk, clk, CPU_writeEn, ANTIC_writeEn, GTIA_writeEn, CPU_addr, 
 
                  VCOUNT_in, PENH_in, PENV_in,
-                 POT0_BUS, POT1_BUS, POT2_BUS, POT3_BUS, POT4_BUS, POT5_BUS, POT6_BUS, POT7_BUS, ALLPOT_BUS, KBCODE_BUS, RANDOM_BUS, SERIN_BUS, IRQST_BUS, SKSTAT_BUS,
+                 POT0_BUS, POT2_BUS, POT3_BUS, POT4_BUS, POT5_BUS, POT6_BUS, POT7_BUS, ALLPOT_BUS, KBCODE_BUS, RANDOM_BUS, SERIN_BUS, IRQST_BUS, SKSTAT_BUS,
                  data_CART_out,
 
 
@@ -23,7 +22,6 @@ module memoryMap(addr_RAM,addr_BIOS,addr_CART,
                  AUDF1, AUDC1, AUDF2, AUDC2, AUDF3, AUDC3, AUDF4, AUDC4, AUDCTL, STIMER, SKREST, POTGO, SEROUT, SERIN, IRQEN , SKCTL
                 );
   
-  output addr_RAM,addr_BIOS,addr_CART;
   // Control signals
   input Fclk;
   input clk;
@@ -33,7 +31,7 @@ module memoryMap(addr_RAM,addr_BIOS,addr_CART,
   input [15:0] CPU_addr;
   
 
-  input [7:0] POT0_BUS, POT1_BUS, POT2_BUS, POT3_BUS, POT4_BUS, POT5_BUS, POT6_BUS, POT7_BUS, ALLPOT_BUS, KBCODE_BUS, RANDOM_BUS, SERIN_BUS, IRQST_BUS, SKSTAT_BUS;
+  input [7:0] POT0_BUS, POT2_BUS, POT3_BUS, POT4_BUS, POT5_BUS, POT6_BUS, POT7_BUS, ALLPOT_BUS, KBCODE_BUS, RANDOM_BUS, SERIN_BUS, IRQST_BUS, SKSTAT_BUS;
   input [7:0] data_CART_out;
 
 
@@ -94,7 +92,7 @@ module memoryMap(addr_RAM,addr_BIOS,addr_CART,
   output [7:0] GRACTL;
   output [7:0] HITCLR;
   
-  //outputs to POKEY
+  //POKEY Outputs
   output [7:0] AUDF1, AUDC1, AUDF2, AUDC2, AUDF3, AUDC3, AUDF4, AUDC4, AUDCTL, STIMER, SKREST, POTGO, SEROUT, SERIN, IRQEN , SKCTL;
 
   // ANTIC hardware registers
@@ -196,17 +194,16 @@ module memoryMap(addr_RAM,addr_BIOS,addr_CART,
   
   // Block RAM
   // Read clock is inverted Fphi0, write clock is phi2
-  
-  memEmptyRAM blockRAM (.clka(clk),
+  blk_mem_gen_v7_2 blockRAM (.clka(clk),
                              .wea(write_RAM),
-                             .addra(CPU_addr_b[13:0]),
+                             .addra(CPU_addr_b),
                              .dina(data_in_b),
                              .clkb(Fclk),
-                             .addrb(CPU_addr_b[13:0]),
+                             .addrb(CPU_addr_b),
                              .doutb(data_RAM_out_b));
-
+  
   //memory256x256 mem(.clock(Fclk), .we(write_RAM), .address(CPU_addr), .dataIn(data_in), .dataOut(data_RAM_out));
-  memBios bios(.clka(Fclk),.addra(CPU_addr_b[11:0]),.douta(data_BIOS_out_b));
+    memBios bios(.clka(Fclk),.addra(CPU_addr_b[11:0]),.douta(data_BIOS_out_b));
 
     
   triStateData tsd(.DB(CPU_data), .DB_out(data_out), .writeEn(CPU_writeEn), .DB_in(data_in));
@@ -470,12 +467,12 @@ module addrCheck(addr, addr_RAM,addr_BIOS,addr_CART);
   
 //  assign addr_RAM = (addr[15:12] == 4'hD) ? 1'b0 : 1'b1;
 
-  assign addr_RAM = ({1'b0,addr} < {1'b0,16'h4000}) ? 1'b1 : 1'b0; //ensure unsigned comparison 
+  assign addr_RAM = ({1'b0,addr} > {1'b0,16'h3FFF}) ? 1'b0 : 1'b1; //ensure unsigned comparison 
   //rom runs from F800 to FFFF
-  assign addr_BIOS = (addr[15:11] == 5'b11111) ? 1'b1 : 1'b0;
+  assign addr_BIOS = (addr[15:11] = 5'b11111) ? 1'b1 : 1'b0;
   
   //cart runs from 4000 to BFFF
-  assign addr_CART = (({1'b0,16'h3FFF} < {1'b0,addr}) & ( {1'b0,addr} < {1'b0,16'hC000})) ? 1'b1 : 1'b0;
+  assign addr_CART = (({1'b0,3FFF} < {1'b0,addr}) & ( {1'b0,addr} < {1'b0,16'hC000})) 1'b1 : 1'b0;
   
 endmodule
 

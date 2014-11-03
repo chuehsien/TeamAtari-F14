@@ -14,11 +14,11 @@
 
 `include "Control/plaFSM.v"
 
-module top_6502C(phi1,phi2,SRflags,opcode,opcodeToIR,second_first_int,nmiPending,resPending,irqPending,currState,accumVal,outToPCL,outToPCH,A,B,idlContents,rstAll,ALUhold_out,activeInt,currT,DB,SB,ADH,ADL,
+module top_6502C(extAB_b1,phi1,phi2,SRflags,opcode,opcodeToIR,second_first_int,nmiPending,resPending,irqPending,currState,accumVal,outToPCL,outToPCH,A,B,idlContents,rstAll,ALUhold_out,activeInt,currT,DB,SB,ADH,ADL,
                 HALT, IRQ_L, NMI_L, RES_L, SO, phi0_in,fastClk,extDB,	
                 RDY,phi1_out, SYNC, extABL, extABH, phi2_out, RW,
                 Accum,Xreg,Yreg);
-        
+            output [7:0] extAB_b1;
             output phi1,phi2;
             output [7:0] SRflags;
             output [7:0] opcode,opcodeToIR;
@@ -167,10 +167,10 @@ module top_6502C(phi1,phi2,SRflags,opcode,opcodeToIR,second_first_int,nmiPending
             //assign SB = (controlSigs[`SB_DB]) ? DB : 8'hzz;
 `endif            
             wire [7:0] A, B, ALU_out, ALUhold_out;
-            wire tempAVR,tempACR,tempHC;
+            wire tempAVR,tempACR,tempHC,tempRel_forward; //rel_forward identifies if it a rel jump is backward or forward
             ALU     my_alu(A, B, ~controlSigs[`nDAA], controlSigs[`I_ADDC], controlSigs[`SUMS], 
                         controlSigs[`ANDS], controlSigs[`EORS], controlSigs[`ORS], 
-                            controlSigs[`SRS], ALU_out, tempAVR, tempACR, tempHC);
+                            controlSigs[`SRS], ALU_out, tempAVR, tempACR, tempHC,tempRel_forward);
         
             //registers
             wire [7:0]  ADL_b3,SB_b3;
@@ -185,15 +185,15 @@ module top_6502C(phi1,phi2,SRflags,opcode,opcodeToIR,second_first_int,nmiPending
             
             Areg    a_reg(controlSigs[`O_ADD], controlSigs[`SB_ADD], SB, A);
             
-            wire aluAVR,aluACR,aluHC;
+            wire aluAVR,aluACR,aluHC,rel_forward;
             wire AVR,ACR,HC;
             wire [7:0] ADL_b4,SB_b4;
             triState addhold_b0[7:0](ADL,ADL_b4,controlSigs[`ADD_ADL]);
             triState addhold_b1[6:0](SB[6:0],SB_b4[6:0],controlSigs[`ADD_SB0to6]);
             triState addhold_b2(SB[7],SB_b4[7],controlSigs[`ADD_SB7]);
             AdderHoldReg addHold(haltAll,phi2, controlSigs[`ADD_ADL], controlSigs[`ADD_SB0to6], controlSigs[`ADD_SB7], 
-                                ALU_out, tempAVR, tempACR, tempHC,
-                                ADL_b4,SB_b4,ALUhold_out,aluAVR,aluACR,aluHC);
+                                ALU_out, tempAVR, tempACR, tempHC,tempRel_forward,
+                                ADL_b4,SB_b4,ALUhold_out,aluAVR,aluACR,aluHC,rel_forward);
             
             ACRlatch    carryLatch(haltAll,rstAll,phi1,aluAVR,aluACR,aluHC,AVR,ACR,HC);
             wire [7:0] inFromDecAdder;
@@ -223,12 +223,13 @@ module top_6502C(phi1,phi2,SRflags,opcode,opcodeToIR,second_first_int,nmiPending
             wire [7:0] extAB_b0,extAB_b1;
             //triState ABR_b0[7:0](extABH,extAB_b0,~controlSigs[`nADH_ABH]);
             //triState ABR_b1[7:0](extABL,extAB_b1,~controlSigs[`nADL_ABL]);
-            triState ABR_b0[7:0](extABH,extAB_b0,~haltAll);
-            triState ABR_b1[7:0](extABL,extAB_b1,~haltAll);
+           // triState ABR_b0[7:0](extABH,extAB_b0,~haltAll);
+           // triState ABR_b1[7:0](extABL,extAB_b1,~haltAll);
 
-            AddressBusReg   add_hi(haltAll,phi1,controlSigs[`nADH_ABH], ADH, extAB_b0);
-            AddressBusReg   add_lo(haltAll,phi1,controlSigs[`nADL_ABL], ADL, extAB_b1);
-                
+            AddressBusReg   add_hi(haltAll,phi1,controlSigs[`nADH_ABH], ADH, extABH);
+            AddressBusReg   add_lo(haltAll,phi1,controlSigs[`nADL_ABL], ADL, extABL);
+            
+            //assign holdHiLo = {controlSigs[`nADH_ABH],6'd0,controlSigs[`nADL_ABL]};
             wire [7:0] SB_b6, SB_b7;
             triState x_b0[7:0](SB,SB_b6,controlSigs[`X_SB]);
             triState y_b0[7:0](SB,SB_b7,controlSigs[`Y_SB]);
@@ -301,7 +302,7 @@ module top_6502C(phi1,phi2,SRflags,opcode,opcodeToIR,second_first_int,nmiPending
             wire [64:0] nextControlSigs;
             wire [2:0] activeInt;
             wire [6:0] newT;
-            logicControl   control(currT,opcode,prevOpcode,phi1,phi2,activeInt,aluACR,ACR,SR_contents,
+            logicControl   control(currT,opcode,prevOpcode,phi1,phi2,activeInt,rel_forward,aluACR,ACR,SR_contents,
                                     newT,controlSigs);
             //controlLatch    conLatch(phi1,phi2,nextControlSigs,controlSigs);
             

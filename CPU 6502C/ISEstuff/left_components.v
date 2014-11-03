@@ -240,20 +240,23 @@ module readyControl(phi2, RDY,nRW,
 endmodule
 
 
-module logicControl(currT,opcode,prevOpcode,phi1,phi2,activeInt,tempCarry,carry,statusReg,
+module logicControl(currT,opcode,prevOpcode,phi1,phi2,activeInt,rel_forward,tempCarry,carry,statusReg,
                                     nextT,nextControlSigs);
                                     
         input [6:0] currT;
         input [7:0] opcode,prevOpcode;
         input phi1,phi2;
         input [2:0] activeInt;
-        input tempCarry,carry;
+        input rel_forward,tempCarry,carry;
         input [7:0] statusReg;
         output [6:0] nextT;
         output wire [64:0] nextControlSigs;
         
         //next T depends on immediate ACR.
-        Tcontrol    tCon(currT,opcode,tempCarry,statusReg,nextT);
+        wire effCarry;
+        //page cross occur when jumping forward and C = 1, OR jumping backward, and c=0.
+        assign effCarry = (tempCarry & rel_forward) | (~tempCarry & ~rel_forward);
+        Tcontrol    tCon(currT,opcode,effCarry,statusReg,nextT);
         
         // the logic depends on the ticked in ACR in the ACRlatch.
         randomLogic2     randomLog(currT,opcode,prevOpcode,phi1,phi2,activeInt,carry,statusReg[`status_C],statusReg[`status_D],nextControlSigs);

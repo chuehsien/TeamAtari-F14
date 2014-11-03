@@ -17,12 +17,12 @@
 
 
 // Note: Decimal Enable (DAA) not yet understood or implemented
-module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC);
+module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC,rel_forward);
 
   input [7:0] A, B;
   input DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS;
   output [7:0] ALU_out;
-  output AVR, ACR, HC; 
+  output AVR, ACR, HC,rel_forward; 
   
   
   wire [8:0] result;
@@ -41,6 +41,8 @@ module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC)
                            ((EORS) ? (A^B) :
                            ((ORS) ? (A|B) :
                            ((SRS) ? {I_ADDC, B[7:1]} : 8'hzz))));
+                           
+    assign rel_forward = ~A[7]; //it's jumping forward if operand(from SB/DB) is positive!
   /*  
   always @ (*) begin
 
@@ -102,22 +104,22 @@ module ACRlatch(haltAll,rstAll,phi1,inAVR,inACR,inHC,AVR,ACR,HC);
 
 endmodule
 
-module AdderHoldReg(haltAll,phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes,tempAVR,tempACR,tempHC,
-		ADL,SB,adderReg,aluAVR,aluACR,aluHC);
+module AdderHoldReg(haltAll,phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes,tempAVR,tempACR,tempHC,tempRel,
+		ADL,SB,adderReg,aluAVR,aluACR,aluHC,aluRel);
 
     input haltAll,phi2, ADD_ADL, ADD_SB0to6, ADD_SB7;
     input [7:0] addRes;
-    input tempAVR,tempACR,tempHC;
+    input tempAVR,tempACR,tempHC,tempRel;
     inout [7:0] ADL, SB;
     output [7:0] adderReg;
-    output aluAVR,aluACR,aluHC;
+    output aluAVR,aluACR,aluHC,aluRel;
     
     wire phi2, ADD_ADL, ADD_SB0to6, ADD_SB7;
-    wire tempAVR,tempACR,tempHC;
+    wire tempAVR,tempACR,tempHC,tempRel;
     wire [7:0] addRes;
     wire [7:0] ADL,SB;
     reg [7:0] adderReg = 8'h00;
-    reg aluAVR,aluACR,aluHC = 1'b0;
+    reg aluAVR,aluACR,aluHC,aluRel = 1'b0;
   	/*
     always @ (posedge phi2 or posedge rstAll) begin
         adderReg <= (rstAll) ? 8'h00 :
@@ -140,6 +142,7 @@ module AdderHoldReg(haltAll,phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes,tempAVR,t
             aluAVR <= aluAVR;
             aluACR <= aluACR;
             aluHC <= aluHC;
+            aluRel <= aluRel;
             
         end
         else begin
@@ -150,6 +153,8 @@ module AdderHoldReg(haltAll,phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes,tempAVR,t
             aluACR <= tempACR;
 
             aluHC <= tempHC;
+            
+            aluRel <= tempRel;
         end
 
     end
@@ -453,12 +458,12 @@ endmodule
 
 
 module AddressBusReg(haltAll,phi1,hold, dataIn,
-                dataOut);
+                dataOut_b);
 
     input haltAll,phi1;
     input hold;
     input [7:0] dataIn;
-    output [7:0] dataOut;
+    output [7:0] dataOut_b;
 
     wire phi1;
     wire ld;
@@ -473,7 +478,7 @@ module AddressBusReg(haltAll,phi1,hold, dataIn,
         //dataOut <= (ld) ? dataIn : dataOut;
     end
    
-    
+    triState t[7:0](dataOut_b,dataOut,~haltAll);
 endmodule
 
 //used for x and y registers

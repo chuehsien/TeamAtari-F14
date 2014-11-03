@@ -1,7 +1,7 @@
-module pokeyaudio (chn1baseA,init_L,clk179,clk64,clk16,AUDF1,AUDF2,AUDF3,AUDF4,
+module pokeyaudio (init_L,clk179,clk64,clk16,AUDF1,AUDF2,AUDF3,AUDF4,
                     AUDC1,AUDC2,AUDC3,AUDC4,AUDCTL,
                     audio1,audio2,audio3,audio4,vol1,vol2,vol3,vol4);
-                    output chn1baseA;
+                   
     input init_L, clk179,clk64,clk16;
     input [7:0] AUDF1,AUDF2,AUDF3,AUDF4,
                     AUDC1,AUDC2,AUDC3,AUDC4,AUDCTL;
@@ -79,10 +79,10 @@ module pokeyaudio (chn1baseA,init_L,clk179,clk64,clk16,AUDF1,AUDF2,AUDF3,AUDF4,
     distortChn chn4d(.chnIn(chn4base),.poly4(poly4out),.poly5(poly5out),.poly17_9(poly17_9out),
                      .distort(distort4),.chnOut_distort(chn4out));                 
    //need to add vol only mode
-   assign audio1 = chn1out;
-   assign audio2 = chn2out;
-   assign audio3 = chn3out;
-   assign audio4 = chn4out;
+   assign audio1 = vol1 | chn1out;
+   assign audio2 = vol2 | chn2out;
+   assign audio3 = vol3 | chn3out;
+   assign audio4 = vol4 | chn4out;
     
 endmodule
 
@@ -230,17 +230,17 @@ module highpass(orig,filter,out);
 endmodule
 
 
-
-
 module poly4bit(clk,init_L,out);
     input clk, init_L;
     output out;
     
-    FDCPE inst3(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(in),.Q(three_two));
-    FDCPE inst2(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(three_two|init_L),.Q(two_one));
-    FDCPE inst1(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(two_one),.Q(one_zero));
-    FDCPE inst0(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(one_zero),.Q(out));
+    wire reset;
+    FDCPE inst3(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(in),.Q(three_two));
+    FDCPE inst2(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(three_two),.Q(two_one));
+    FDCPE inst1(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(two_one),.Q(one_zero));
+    FDCPE inst0(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(one_zero),.Q(out));
     
+    assign reset = three_two & two_one & one_zero & out;
     assign in = ~(one_zero ^ out); 
     
 endmodule
@@ -248,14 +248,15 @@ endmodule
 module poly5bit(clk,init_L,out);
     input clk, init_L;
     output out;
+    wire reset;
+    FDCPE inst4(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(in),.Q(four_three));
+    FDCPE inst3(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(four_three),.Q(three_two));
+    FDCPE inst2(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(three_two),.Q(two_one));
+    FDCPE inst1(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(two_one),.Q(one_zero));
+    FDCPE inst0(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(one_zero),.Q(nOut));
     
-    FDCPE inst4(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(in),.Q(four_three));
-    FDCPE inst3(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(four_three|init_L),.Q(three_two));
-    FDCPE inst2(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(three_two),.Q(two_one));
-    FDCPE inst1(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(two_one),.Q(one_zero));
-    FDCPE inst0(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(one_zero),.Q(nOut));
-    
-    assign out = ~nOut;
+    assign reset = four_three & three_two & two_one & one_zero & nOut;
+    assign out = nOut;
     assign in = ~(three_two ^ out); 
     
 endmodule
@@ -266,50 +267,47 @@ module poly17or9bit(clk,sel9,init_L,out,randNum);
     output [7:0] randNum;
     
     //first 8
-    
-    FDCPE inst7(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(first8_in),.Q(seven_six));
-    FDCPE inst6(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(seven_six),.Q(six_five));
-    FDCPE inst5(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(six_five),.Q(five_four));
-    FDCPE inst4(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(five_four),.Q(four_three));
-    FDCPE inst3(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(four_three),.Q(three_two));
-    FDCPE inst2(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(three_two),.Q(two_one));
-    FDCPE inst1(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(two_one),.Q(one_zero));
-    FDCPE inst0(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(one_zero),.Q(first8_out));
+    wire reset1;
+    FDCPE inst7(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(first8_in),.Q(seven_six));
+    FDCPE inst6(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(seven_six),.Q(six_five));
+    FDCPE inst5(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(six_five),.Q(five_four));
+    FDCPE inst4(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(five_four),.Q(four_three));
+    FDCPE inst3(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(four_three),.Q(three_two));
+    FDCPE inst2(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(three_two),.Q(two_one));
+    FDCPE inst1(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(two_one),.Q(one_zero));
+    FDCPE inst0(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(one_zero),.Q(first8_out));
+    assign reset = seven_six & six_five & five_four & four_three & three_two & two_one & one_zero & first8_out;
 
     
     assign random = ~(~first8_out ^ ~five_four);
     assign randNum = {seven_six,six_five,five_four,four_three,three_two,two_one,one_zero,first8_out};
     //last 8
-    FDCPE inst16(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(last8_in),.Q(Lseven_six));
-    FDCPE inst15(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(Lseven_six),.Q(Lsix_five));
-    FDCPE inst14(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(Lsix_five),.Q(Lfive_four));
-    FDCPE inst13(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(Lfive_four),.Q(Lfour_three));
-    FDCPE inst12(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(Lfour_three),.Q(Lthree_two));
-    FDCPE inst11(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(Lthree_two),.Q(Ltwo_one));
-    FDCPE inst10(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(Ltwo_one),.Q(Lone_zero));
-    FDCPE inst9(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(Lone_zero),.Q(last8_out));
-    
+    wire reset2;
+    FDCPE inst16(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(last8_in),.Q(Lseven_six));
+    FDCPE inst15(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(Lseven_six),.Q(Lsix_five));
+    FDCPE inst14(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(Lsix_five),.Q(Lfive_four));
+    FDCPE inst13(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(Lfive_four),.Q(Lfour_three));
+    FDCPE inst12(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(Lfour_three),.Q(Lthree_two));
+    FDCPE inst11(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(Lthree_two),.Q(Ltwo_one));
+    FDCPE inst10(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(Ltwo_one),.Q(Lone_zero));
+    FDCPE inst9(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(Lone_zero),.Q(last8_out));
+    assign reset2 = Lseven_six & Lsix_five & Lfive_four & Lfour_three & Lthree_two & Ltwo_one & Lone_zero & last8_out;
     assign last8_in = random;
     
     
     wire nor1,nor2,nor3;
-    FDCPE inst8(.PRE(1'b0),.CLR(1'b0),.C(clk),.CE(1'b1),.D(sel9),.Q(reg8out));
+    FDCPE inst8(.PRE(1'b0),.CLR(~init_L),.C(clk),.CE(1'b1),.D(sel9),.Q(reg8out));
     
     assign nor1 = ~(last8_out | sel9);
     
-    assign nor2 = ~(reg8out | ~reg8out);
+    assign nor2 = ~(reg8out | ~sel9);
     
-    assign nor3 = ~reg8out | random;
+    assign nor3 = ~(~sel9 | random);
     
-    assign first8_in = ~(init_L|nor1|nor2|nor3);
-    
+    assign first8_in = ~(~init_L|nor1|nor2|nor3);
     assign out = first8_out; //this will be output for both 9 and 17 mode.
     
 endmodule
-
-
-
-
 
 
 
