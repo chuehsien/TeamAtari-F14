@@ -25,8 +25,8 @@
 *     (c) Copyright 1995-2014 Xilinx, Inc.                                     *
 *     All rights reserved.                                                     *
 *******************************************************************************/
-// You must compile the wrapper file memEmptyRAM.v when simulating
-// the core, memEmptyRAM. When compiling the wrapper file, be sure to
+// You must compile the wrapper file memTestFull.v when simulating
+// the core, memTestFull. When compiling the wrapper file, be sure to
 // reference the XilinxCoreLib Verilog simulation library. For detailed
 // instructions, please refer to the "CORE Generator Help".
 
@@ -36,7 +36,7 @@
 
 `timescale 1ns/1ps
 
-module memEmptyRAM(
+module memTestFull(
   clka,
   wea,
   addra,
@@ -48,17 +48,17 @@ module memEmptyRAM(
 
 input clka;
 input [0 : 0] wea;
-input [13 : 0] addra;
+input [15 : 0] addra;
 input [7 : 0] dina;
 input clkb;
-input [13 : 0] addrb;
+input [15 : 0] addrb;
 output [7 : 0] doutb;
 
 // synthesis translate_off
 
   BLK_MEM_GEN_V7_2 #(
-    .C_ADDRA_WIDTH(14),
-    .C_ADDRB_WIDTH(14),
+    .C_ADDRA_WIDTH(16),
+    .C_ADDRB_WIDTH(16),
     .C_ALGORITHM(1),
     .C_AXI_ID_WIDTH(4),
     .C_AXI_SLAVE_TYPE(0),
@@ -84,16 +84,16 @@ output [7 : 0] doutb;
     .C_HAS_RSTB(0),
     .C_HAS_SOFTECC_INPUT_REGS_A(0),
     .C_HAS_SOFTECC_OUTPUT_REGS_B(0),
-    .C_INIT_FILE_NAME("no_coe_file_loaded"),
+    .C_INIT_FILE_NAME("memTestFull.mif"),
     .C_INITA_VAL("0"),
     .C_INITB_VAL("0"),
     .C_INTERFACE_TYPE(0),
-    .C_LOAD_INIT_FILE(0),
+    .C_LOAD_INIT_FILE(1),
     .C_MEM_TYPE(1),
     .C_MUX_PIPELINE_STAGES(0),
     .C_PRIM_TYPE(1),
-    .C_READ_DEPTH_A(16384),
-    .C_READ_DEPTH_B(16384),
+    .C_READ_DEPTH_A(65536),
+    .C_READ_DEPTH_B(65536),
     .C_READ_WIDTH_A(8),
     .C_READ_WIDTH_B(8),
     .C_RST_PRIORITY_A("CE"),
@@ -109,8 +109,8 @@ output [7 : 0] doutb;
     .C_USE_SOFTECC(0),
     .C_WEA_WIDTH(1),
     .C_WEB_WIDTH(1),
-    .C_WRITE_DEPTH_A(16384),
-    .C_WRITE_DEPTH_B(16384),
+    .C_WRITE_DEPTH_A(65536),
+    .C_WRITE_DEPTH_B(65536),
     .C_WRITE_MODE_A("WRITE_FIRST"),
     .C_WRITE_MODE_B("WRITE_FIRST"),
     .C_WRITE_WIDTH_A(8),

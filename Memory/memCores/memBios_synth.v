@@ -65,7 +65,7 @@ module memBios (
 );
 
   input clka;
-  input [11 : 0] addra;
+  input [10 : 0] addra;
   output [7 : 0] douta;
 
   // WARNING: This file provides a module declaration only, it does not support

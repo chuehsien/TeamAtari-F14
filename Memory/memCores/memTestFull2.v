@@ -25,8 +25,8 @@
 *     (c) Copyright 1995-2014 Xilinx, Inc.                                     *
 *     All rights reserved.                                                     *
 *******************************************************************************/
-// You must compile the wrapper file memBios.v when simulating
-// the core, memBios. When compiling the wrapper file, be sure to
+// You must compile the wrapper file memTestFull2.v when simulating
+// the core, memTestFull2. When compiling the wrapper file, be sure to
 // reference the XilinxCoreLib Verilog simulation library. For detailed
 // instructions, please refer to the "CORE Generator Help".
 
@@ -36,28 +36,36 @@
 
 `timescale 1ns/1ps
 
-module memBios(
+module memTestFull2(
   clka,
+  wea,
   addra,
-  douta
+  dina,
+  clkb,
+  addrb,
+  doutb
 );
 
 input clka;
-input [10 : 0] addra;
-output [7 : 0] douta;
+input [0 : 0] wea;
+input [15 : 0] addra;
+input [7 : 0] dina;
+input clkb;
+input [15 : 0] addrb;
+output [7 : 0] doutb;
 
 // synthesis translate_off
 
   BLK_MEM_GEN_V7_2 #(
-    .C_ADDRA_WIDTH(11),
-    .C_ADDRB_WIDTH(11),
+    .C_ADDRA_WIDTH(16),
+    .C_ADDRB_WIDTH(16),
     .C_ALGORITHM(1),
     .C_AXI_ID_WIDTH(4),
     .C_AXI_SLAVE_TYPE(0),
     .C_AXI_TYPE(1),
     .C_BYTE_SIZE(9),
     .C_COMMON_CLK(0),
-    .C_DEFAULT_DATA("FF"),
+    .C_DEFAULT_DATA("0"),
     .C_DISABLE_WARN_BHV_COLL(0),
     .C_DISABLE_WARN_BHV_RANGE(0),
     .C_ENABLE_32BIT_ADDRESS(0),
@@ -76,16 +84,16 @@ output [7 : 0] douta;
     .C_HAS_RSTB(0),
     .C_HAS_SOFTECC_INPUT_REGS_A(0),
     .C_HAS_SOFTECC_OUTPUT_REGS_B(0),
-    .C_INIT_FILE_NAME("memBios.mif"),
+    .C_INIT_FILE_NAME("memTestFull2.mif"),
     .C_INITA_VAL("0"),
     .C_INITB_VAL("0"),
     .C_INTERFACE_TYPE(0),
     .C_LOAD_INIT_FILE(1),
-    .C_MEM_TYPE(3),
+    .C_MEM_TYPE(1),
     .C_MUX_PIPELINE_STAGES(0),
     .C_PRIM_TYPE(1),
-    .C_READ_DEPTH_A(2048),
-    .C_READ_DEPTH_B(2048),
+    .C_READ_DEPTH_A(65536),
+    .C_READ_DEPTH_B(65536),
     .C_READ_WIDTH_A(8),
     .C_READ_WIDTH_B(8),
     .C_RST_PRIORITY_A("CE"),
@@ -96,13 +104,13 @@ output [7 : 0] douta;
     .C_SIM_COLLISION_CHECK("ALL"),
     .C_USE_BYTE_WEA(0),
     .C_USE_BYTE_WEB(0),
-    .C_USE_DEFAULT_DATA(1),
+    .C_USE_DEFAULT_DATA(0),
     .C_USE_ECC(0),
     .C_USE_SOFTECC(0),
     .C_WEA_WIDTH(1),
     .C_WEB_WIDTH(1),
-    .C_WRITE_DEPTH_A(2048),
-    .C_WRITE_DEPTH_B(2048),
+    .C_WRITE_DEPTH_A(65536),
+    .C_WRITE_DEPTH_B(65536),
     .C_WRITE_MODE_A("WRITE_FIRST"),
     .C_WRITE_MODE_B("WRITE_FIRST"),
     .C_WRITE_WIDTH_A(8),
@@ -111,21 +119,21 @@ output [7 : 0] douta;
   )
   inst (
     .CLKA(clka),
+    .WEA(wea),
     .ADDRA(addra),
-    .DOUTA(douta),
+    .DINA(dina),
+    .CLKB(clkb),
+    .ADDRB(addrb),
+    .DOUTB(doutb),
     .RSTA(),
     .ENA(),
     .REGCEA(),
-    .WEA(),
-    .DINA(),
-    .CLKB(),
+    .DOUTA(),
     .RSTB(),
     .ENB(),
     .REGCEB(),
     .WEB(),
-    .ADDRB(),
     .DINB(),
-    .DOUTB(),
     .INJECTSBITERR(),
     .INJECTDBITERR(),
     .SBITERR(),

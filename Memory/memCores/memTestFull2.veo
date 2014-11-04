@@ -61,15 +61,19 @@
 // (in parentheses) to your own signal names.
 
 //----------- Begin Cut here for INSTANTIATION Template ---// INST_TAG
-memBios your_instance_name (
+memTestFull2 your_instance_name (
   .clka(clka), // input clka
-  .addra(addra), // input [10 : 0] addra
-  .douta(douta) // output [7 : 0] douta
+  .wea(wea), // input [0 : 0] wea
+  .addra(addra), // input [15 : 0] addra
+  .dina(dina), // input [7 : 0] dina
+  .clkb(clkb), // input clkb
+  .addrb(addrb), // input [15 : 0] addrb
+  .doutb(doutb) // output [7 : 0] doutb
 );
 // INST_TAG_END ------ End INSTANTIATION Template ---------
 
-// You must compile the wrapper file memBios.v when simulating
-// the core, memBios. When compiling the wrapper file, be sure to
+// You must compile the wrapper file memTestFull2.v when simulating
+// the core, memTestFull2. When compiling the wrapper file, be sure to
 // reference the XilinxCoreLib Verilog simulation library. For detailed
 // instructions, please refer to the "CORE Generator Help".
 

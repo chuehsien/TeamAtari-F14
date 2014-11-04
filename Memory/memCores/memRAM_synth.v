@@ -58,7 +58,7 @@
 //    BRAM_PORTB
 //        BRAM_PORTB
 
-module memEmptyRAM (
+module memRAM (
   clka,
   wea,
   addra,

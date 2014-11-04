@@ -61,19 +61,19 @@
 // (in parentheses) to your own signal names.
 
 //----------- Begin Cut here for INSTANTIATION Template ---// INST_TAG
-memEmptyRAM your_instance_name (
+memTestFull your_instance_name (
   .clka(clka), // input clka
   .wea(wea), // input [0 : 0] wea
-  .addra(addra), // input [13 : 0] addra
+  .addra(addra), // input [15 : 0] addra
   .dina(dina), // input [7 : 0] dina
   .clkb(clkb), // input clkb
-  .addrb(addrb), // input [13 : 0] addrb
+  .addrb(addrb), // input [15 : 0] addrb
   .doutb(doutb) // output [7 : 0] doutb
 );
 // INST_TAG_END ------ End INSTANTIATION Template ---------
 
-// You must compile the wrapper file memEmptyRAM.v when simulating
-// the core, memEmptyRAM. When compiling the wrapper file, be sure to
+// You must compile the wrapper file memTestFull.v when simulating
+// the core, memTestFull. When compiling the wrapper file, be sure to
 // reference the XilinxCoreLib Verilog simulation library. For detailed
 // instructions, please refer to the "CORE Generator Help".
 

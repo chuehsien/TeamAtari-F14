@@ -41,6 +41,8 @@
 *     between this core and the Dual Port Block Memory and Single Port         *
 *     Block Memory LogiCOREs, please consult the data sheet.                   *
 *******************************************************************************/
+// Synthesized Netlist Wrapper
+// This file is provided to wrap around the synthesized netlist (if appropriate)
 
 // Interfaces:
 //    CLK.ACLK
@@ -56,20 +58,27 @@
 //    BRAM_PORTB
 //        BRAM_PORTB
 
-// The following must be inserted into your Verilog file for this
-// core to be instantiated. Change the instance name and port connections
-// (in parentheses) to your own signal names.
-
-//----------- Begin Cut here for INSTANTIATION Template ---// INST_TAG
-memBios your_instance_name (
-  .clka(clka), // input clka
-  .addra(addra), // input [10 : 0] addra
-  .douta(douta) // output [7 : 0] douta
+module memTestFull (
+  clka,
+  wea,
+  addra,
+  dina,
+  clkb,
+  addrb,
+  doutb
 );
-// INST_TAG_END ------ End INSTANTIATION Template ---------
 
-// You must compile the wrapper file memBios.v when simulating
-// the core, memBios. When compiling the wrapper file, be sure to
-// reference the XilinxCoreLib Verilog simulation library. For detailed
-// instructions, please refer to the "CORE Generator Help".
+  input clka;
+  input [0 : 0] wea;
+  input [15 : 0] addra;
+  input [7 : 0] dina;
+  input clkb;
+  input [15 : 0] addrb;
+  output [7 : 0] doutb;
+
+  // WARNING: This file provides a module declaration only, it does not support
+  //          direct instantiation. Please use an instantiation template (VEO) to
+  //          instantiate the IP within a design.
+
+endmodule
 
