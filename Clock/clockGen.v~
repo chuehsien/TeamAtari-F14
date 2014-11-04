@@ -1,0 +1,363 @@
+module clockGen179(RST,CLK27,clk288_1,clk288_2,fphi0,phi0,phi1,phi2,locked);
+    input RST,CLK27;
+    (* clock_signal = "yes" *)output clk288_1,clk288_2,fphi0,phi0,phi1,phi2;
+        output [4:0] locked;
+
+    wire CLK27_b;
+    
+    BUFG clkb(CLK27_b,CLK27);
+    
+    //generate fphi0 and phi0.
+    wire clk288_0,locked0,fphi0_b,phi0_b;
+    dcmShift0   makephi0_a(RST,CLK27_b,clk288_0,locked0);
+    clockone8   makephi0_b(clk288_0,fphi0_b);
+    clockone16  makephi0_c(clk288_0,phi0_b);
+    BUFG    fphi0out(fphi0,fphi0_b);
+    BUFG    phi0out(phi0,phi0_b);
+
+    //generate phi1
+    wire clk288_1,locked1,locked2,phi1_b0,phi1_b1,CLK27_shift1;
+    dcmShift1   makephi1_a(CLK27_b,RST,CLK27_shift1,locked1);
+    dcmShift0   makephi1_b(RST,CLK27_shift1,clk288_1,locked2);
+    clockone16  makephi1_b(clk288_1,phi1_b0);
+    not         makephi1_c(phi1_b1,phi1_b0);
+    BUFG        makephi1_d(phi1,phi1_b1);
+    
+    module dcmShift1(CLKIN_IN, 
+                 RST_IN, 
+                 CLK0_OUT, 
+                 LOCKED_OUT);
+                 
+    //generate phi2
+    wire clk288_2, locked3,locked4, phi2_b,CLK27_shift1;
+    wire phi2_c,phi2_d,phi2_e,phi2_f;
+    dcmShift2   makephi2_a(CLK27_b,RST,CLK27_shift2,locked3);
+    dcmShift0   makephi1_b(RST,CLK27_shift2,clk288_2,locked4);
+    clockone16  makephi2_b(clk288_2,phi2_b);
+    not         makephi2_c(phi2_c,phi2_b);
+    not         makephi2_d(phi2_d,phi2_c);
+    not         makephi2_e(phi2_e,phi2_d);
+    not         makephi2_f(phi2_f,phi2_e);    
+    
+    BUFG        makephi2_g(phi2,phi2_f);
+    
+    assign locked = {locked0,locked1,locked2,locked3,locked4};
+
+endmodule
+
+module dcmShift0(RST,clk27, clk288,locked);
+    input RST,clk27;
+    output clk288,locked;
+    
+    wire CLKFB,CLKFB_b;
+    BUFG fbBuf(CLKFB,CLKFB_b);
+    
+    wire clkin_b,clkout_b;
+    BUFG inclk(clkin_b,clk27);
+    BUFG outclk(clk288,clkout_b);
+    
+    
+    DCM_ADV #( .CLKDV_DIVIDE(2.0), // Divide by: 1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5 
+    // 7.0,7.5,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0 or 16.0 
+    .CLKFX_DIVIDE(15), // Can be any integer from 1 to 32 
+    .CLKFX_MULTIPLY(16), // Can be any integer from 2 to 32 
+    .CLKIN_DIVIDE_BY_2("FALSE"), // TRUE/FALSE to enable CLKIN divide by two feature 
+    .CLKIN_PERIOD(37.04), // Specify period of input clock in ns from 1.25 to 1000.00 
+    .CLKOUT_PHASE_SHIFT("FIXED"), // Specify phase shift mode of NONE, FIXED, 
+    // VARIABLE_POSITIVE, VARIABLE_CENTER or DIRECT 
+    .CLK_FEEDBACK("1X"), // Specify clock feedback of NONE, 1X or 2X 
+    .DCM_AUTOCALIBRATION("TRUE"), // DCM calibration circuitry "TRUE"/"FALSE" 
+    .DCM_PERFORMANCE_MODE("MAX_SPEED"), // Can be MAX_SPEED or MAX_RANGE 
+    .DESKEW_ADJUST("SYSTEM_SYNCHRONOUS"), // SOURCE_SYNCHRONOUS, SYSTEM_SYNCHRONOUS or // an integer from 0 to 15 
+    .DFS_FREQUENCY_MODE("LOW"), // HIGH or LOW frequency mode for frequency synthesis 
+    .DLL_FREQUENCY_MODE("LOW"), // LOW, HIGH, or HIGH_SER frequency mode for DLL 
+    .DUTY_CYCLE_CORRECTION("TRUE"), // Duty cycle correction, "TRUE"/"FALSE"
+    .FACTORY_JF(16'hf0f0), // FACTORY JF value suggested to be set to 16’hf0f0 
+    .PHASE_SHIFT(0), // Amount of fixed phase shift from -255 to 1023 
+    .SIM_DEVICE("VIRTEX5"), // Set target device, "VIRTEX4" or "VIRTEX5" 
+    .STARTUP_WAIT("FALSE") // Delay configuration DONE until DCM LOCK, "TRUE"/"FALSE" 
+        ) DCM_ADV_inst ( 
+        .CLK0(CLKFB_b), // 0 degree DCM CLK output 
+        .CLK180(), // 180 degree DCM CLK output 
+        .CLK270(), // 270 degree DCM CLK output 
+        .CLK2X(), // 2X DCM CLK output 
+        .CLK2X180(), // 2X, 180 degree DCM CLK out 
+        .CLK90(), // 90 degree DCM CLK output 
+        .CLKDV(), // Divided DCM CLK out (CLKDV_DIVIDE) 
+        .CLKFX(clkout_b), // DCM CLK synthesis out (M/D) 
+        .CLKFX180(), // 180 degree CLK synthesis out 
+        .DO(), // 16-bit data output for Dynamic Reconfiguration Port (DRP) 
+        .DRDY(), // Ready output signal from the DRP 
+        .LOCKED(locked), // DCM LOCK status output 
+        .PSDONE(), // Dynamic phase adjust done output 
+        .CLKFB(CLKFB), // DCM clock feedback 
+        .CLKIN(clkin_b), // Clock input (from IBUFG, BUFG or DCM) 
+        .DADDR(16'd0), // 7-bit address for the DRP 
+        .DCLK(1'b0), // Clock for the DRP 
+        .DEN(1'd1), // Enable input for the DRP 
+        .DI(16'd0), // 16-bit data input for the DRP 
+        .DWE(1'b0), // Active high allows for writing configuration memory 
+        .PSCLK(1'b0), // Dynamic phase adjust clock input 
+        .PSEN(1'b0), // Dynamic phase adjust enable input 
+        .PSINCDEC(1'b0), // Dynamic phase adjust increment/decrement 
+        .RST(RST) // DCM asynchronous reset input 
+        );
+
+endmodule
+
+
+module dcmShift1m(RST,clk27, clk288,locked);
+    input RST,clk27;
+    output clk288,locked;
+    
+    wire CLKFB,CLKFB_b;
+    BUFG fbBuf(CLKFB,CLKFB_b);
+    
+    wire clkin_b,clkout_b;
+    BUFG inclk(clkin_b,clk27);
+    BUFG outclk(clk288,clkout_b);
+    
+    
+    DCM_ADV #( .CLKDV_DIVIDE(2.0), // Divide by: 1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5 
+    // 7.0,7.5,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0 or 16.0 
+    .CLKFX_DIVIDE(15), // Can be any integer from 1 to 32 
+    .CLKFX_MULTIPLY(16), // Can be any integer from 2 to 32 
+    .CLKIN_DIVIDE_BY_2("FALSE"), // TRUE/FALSE to enable CLKIN divide by two feature 
+    .CLKIN_PERIOD(37.04), // Specify period of input clock in ns from 1.25 to 1000.00 
+    .CLKOUT_PHASE_SHIFT("FIXED"), // Specify phase shift mode of NONE, FIXED, 
+    // VARIABLE_POSITIVE, VARIABLE_CENTER or DIRECT 
+    .CLK_FEEDBACK("1X"), // Specify clock feedback of NONE, 1X or 2X 
+    .DCM_AUTOCALIBRATION("TRUE"), // DCM calibration circuitry "TRUE"/"FALSE" 
+    .DCM_PERFORMANCE_MODE("MAX_SPEED"), // Can be MAX_SPEED or MAX_RANGE 
+    .DESKEW_ADJUST("SYSTEM_SYNCHRONOUS"), // SOURCE_SYNCHRONOUS, SYSTEM_SYNCHRONOUS or // an integer from 0 to 15 
+    .DFS_FREQUENCY_MODE("LOW"), // HIGH or LOW frequency mode for frequency synthesis 
+    .DLL_FREQUENCY_MODE("LOW"), // LOW, HIGH, or HIGH_SER frequency mode for DLL 
+    .DUTY_CYCLE_CORRECTION("TRUE"), // Duty cycle correction, "TRUE"/"FALSE"
+    .FACTORY_JF(16'hf0f0), // FACTORY JF value suggested to be set to 16’hf0f0 
+    .PHASE_SHIFT(20), // Amount of fixed phase shift from -255 to 1023 
+    .SIM_DEVICE("VIRTEX5"), // Set target device, "VIRTEX4" or "VIRTEX5" 
+    .STARTUP_WAIT("FALSE") // Delay configuration DONE until DCM LOCK, "TRUE"/"FALSE" 
+        ) DCM_ADV_inst ( 
+        .CLK0(CLKFB_b), // 0 degree DCM CLK output 
+        .CLK180(), // 180 degree DCM CLK output 
+        .CLK270(), // 270 degree DCM CLK output 
+        .CLK2X(), // 2X DCM CLK output 
+        .CLK2X180(), // 2X, 180 degree DCM CLK out 
+        .CLK90(), // 90 degree DCM CLK output 
+        .CLKDV(), // Divided DCM CLK out (CLKDV_DIVIDE) 
+        .CLKFX(clkout_b), // DCM CLK synthesis out (M/D) 
+        .CLKFX180(), // 180 degree CLK synthesis out 
+        .DO(), // 16-bit data output for Dynamic Reconfiguration Port (DRP) 
+        .DRDY(), // Ready output signal from the DRP 
+        .LOCKED(locked), // DCM LOCK status output 
+        .PSDONE(), // Dynamic phase adjust done output 
+        .CLKFB(CLKFB), // DCM clock feedback 
+        .CLKIN(clkin_b), // Clock input (from IBUFG, BUFG or DCM) 
+        .DADDR(16'd0), // 7-bit address for the DRP 
+        .DCLK(1'b0), // Clock for the DRP 
+        .DEN(1'd1), // Enable input for the DRP 
+        .DI(16'd0), // 16-bit data input for the DRP 
+        .DWE(1'b0), // Active high allows for writing configuration memory 
+        .PSCLK(1'b0), // Dynamic phase adjust clock input 
+        .PSEN(1'b0), // Dynamic phase adjust enable input 
+        .PSINCDEC(1'b0), // Dynamic phase adjust increment/decrement 
+        .RST(RST) // DCM asynchronous reset input 
+        );
+
+endmodule
+
+module dcmShift2m(RST,clk27, clk288,locked);
+    input RST,clk27;
+    output clk288,locked;
+    
+    wire CLKFB,CLKFB_b;
+    BUFG fbBuf(CLKFB,CLKFB_b);
+    
+    wire clkin_b,clkout_b;
+    BUFG inclk(clkin_b,clk27);
+    BUFG outclk(clk288,clkout_b);
+    
+    
+    DCM_ADV #( .CLKDV_DIVIDE(2.0), // Divide by: 1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5 
+    // 7.0,7.5,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0 or 16.0 
+    .CLKFX_DIVIDE(15), // Can be any integer from 1 to 32 
+    .CLKFX_MULTIPLY(16), // Can be any integer from 2 to 32 
+    .CLKIN_DIVIDE_BY_2("FALSE"), // TRUE/FALSE to enable CLKIN divide by two feature 
+    .CLKIN_PERIOD(37.04), // Specify period of input clock in ns from 1.25 to 1000.00 
+    .CLKOUT_PHASE_SHIFT("FIXED"), // Specify phase shift mode of NONE, FIXED, 
+    // VARIABLE_POSITIVE, VARIABLE_CENTER or DIRECT 
+    .CLK_FEEDBACK("1X"), // Specify clock feedback of NONE, 1X or 2X 
+    .DCM_AUTOCALIBRATION("TRUE"), // DCM calibration circuitry "TRUE"/"FALSE" 
+    .DCM_PERFORMANCE_MODE("MAX_SPEED"), // Can be MAX_SPEED or MAX_RANGE 
+    .DESKEW_ADJUST("SYSTEM_SYNCHRONOUS"), // SOURCE_SYNCHRONOUS, SYSTEM_SYNCHRONOUS or // an integer from 0 to 15 
+    .DFS_FREQUENCY_MODE("LOW"), // HIGH or LOW frequency mode for frequency synthesis 
+    .DLL_FREQUENCY_MODE("LOW"), // LOW, HIGH, or HIGH_SER frequency mode for DLL 
+    .DUTY_CYCLE_CORRECTION("TRUE"), // Duty cycle correction, "TRUE"/"FALSE"
+    .FACTORY_JF(16'hf0f0), // FACTORY JF value suggested to be set to 16’hf0f0 
+    .PHASE_SHIFT(60), // Amount of fixed phase shift from -255 to 1023 
+    .SIM_DEVICE("VIRTEX5"), // Set target device, "VIRTEX4" or "VIRTEX5" 
+    .STARTUP_WAIT("FALSE") // Delay configuration DONE until DCM LOCK, "TRUE"/"FALSE" 
+        ) DCM_ADV_inst ( 
+        .CLK0(CLKFB_b), // 0 degree DCM CLK output 
+        .CLK180(), // 180 degree DCM CLK output 
+        .CLK270(), // 270 degree DCM CLK output 
+        .CLK2X(), // 2X DCM CLK output 
+        .CLK2X180(), // 2X, 180 degree DCM CLK out 
+        .CLK90(), // 90 degree DCM CLK output 
+        .CLKDV(), // Divided DCM CLK out (CLKDV_DIVIDE) 
+        .CLKFX(clkout_b), // DCM CLK synthesis out (M/D) 
+        .CLKFX180(), // 180 degree CLK synthesis out 
+        .DO(), // 16-bit data output for Dynamic Reconfiguration Port (DRP) 
+        .DRDY(), // Ready output signal from the DRP 
+        .LOCKED(locked), // DCM LOCK status output 
+        .PSDONE(), // Dynamic phase adjust done output 
+        .CLKFB(CLKFB), // DCM clock feedback 
+        .CLKIN(clkin_b), // Clock input (from IBUFG, BUFG or DCM) 
+        .DADDR(16'd0), // 7-bit address for the DRP 
+        .DCLK(1'b0), // Clock for the DRP 
+        .DEN(1'd1), // Enable input for the DRP 
+        .DI(16'd0), // 16-bit data input for the DRP 
+        .DWE(1'b0), // Active high allows for writing configuration memory 
+        .PSCLK(1'b0), // Dynamic phase adjust clock input 
+        .PSEN(1'b0), // Dynamic phase adjust enable input 
+        .PSINCDEC(1'b0), // Dynamic phase adjust increment/decrement 
+        .RST(RST) // DCM asynchronous reset input 
+        );
+
+endmodule
+
+module clockGen50(CLK100,out);
+    input CLK100;
+    output out;
+endmodule
+
+
+
+module clockHalf(inClk,outClk);
+    input inClk;
+    output reg outClk = 1'b0;
+    
+    always @ (posedge inClk) begin
+        outClk <= ~outClk;
+    end
+    
+endmodule
+
+module clockone4(inClk,outClk);
+    input inClk;
+    output outClk;
+    
+    reg [1:0] count;
+    
+    always @ (posedge inClk) begin
+        count <= count + 1;
+    end
+    
+    assign outClk = count[1];
+    
+endmodule
+
+module clockone8(inClk,outClk);
+    input inClk;
+    output outClk;
+    
+    reg [2:0] count;
+    
+    always @ (posedge inClk) begin
+        count <= count + 1;
+    end
+    
+    assign outClk = count[2];
+    
+endmodule
+
+module clockone16(inClk,outClk);
+    input inClk;
+    output outClk;
+    
+    reg [3:0] count;
+    
+    always @ (posedge inClk) begin
+        count <= count + 1;
+    end
+    
+    assign outClk = count[3];
+    
+endmodule
+
+
+
+module clockone256(inClk,outClk);
+    input inClk;
+    output outClk;
+    
+    reg [7:0] count;
+    
+    always @ (posedge inClk) begin
+            count <= count + 1;
+    end
+    
+    assign outClk = count[7];
+endmodule
+
+module clockone1024(inClk,outClk);
+    input inClk;
+    output outClk;
+    
+    reg [9:0] count;
+    
+    always @ (posedge inClk) begin
+        count <= count + 1;
+    end
+    
+    assign outClk = count[9];
+endmodule
+
+module clockone2048(inClk,outClk);
+    input inClk;
+    output outClk;
+    
+    reg [10:0] count;
+    
+    always @ (posedge inClk) begin
+        count <= count + 1;
+    end
+    
+    assign outClk = count[10];
+endmodule
+
+
+module clockDivider(inClk,outClk);
+    parameter DIVIDE = 500;
+    
+function integer log2;
+    input [31:0] value;
+    for (log2=0; value>0; log2=log2+1)
+    value = value>>1;
+endfunction
+    
+    parameter width = log2(DIVIDE);
+        
+    input inClk;
+    output outClk;
+
+    
+    reg [width:0] counter = 0;
+    always @ (posedge inClk) begin
+        counter <= counter + 1;
+        if (counter == DIVIDE>>1) counter <= 0;
+    end
+    
+
+    wire en;
+    assign en = (counter == 0);
+
+    reg outClk = 1'b0;
+    
+    always @ (posedge inClk) begin
+            if (en) outClk <= ~outClk;
+            else outClk <= outClk;
+    end
+
+    
+endmodule
