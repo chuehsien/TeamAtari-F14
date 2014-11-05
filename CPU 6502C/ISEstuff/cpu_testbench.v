@@ -15,7 +15,7 @@ press north button to display current eDB on lcd.
 press east button to clear lcd.
 the lower byte of eAB is always on the leds.
 */
-module CPUtest(USER_CLK, 	CLK_27MHZ_FPGA,		   
+module CPUtest(CLK_27MHZ_FPGA,		   
 			   GPIO_SW_E,			   
 			   GPIO_SW_S,			   
 			   GPIO_SW_N,
@@ -33,9 +33,9 @@ module CPUtest(USER_CLK, 	CLK_27MHZ_FPGA,
 				LCD_FPGA_RS, LCD_FPGA_RW, LCD_FPGA_E,
 			   LCD_FPGA_DB7, LCD_FPGA_DB6, LCD_FPGA_DB5, LCD_FPGA_DB4,
                
-               HDR1_2,HDR1_4,HDR1_6,HDR1_8,HDR1_10,HDR1_12,HDR1_14,HDR1_16,HDR1_18,HDR1_20,HDR1_22,HDR1_24,HDR1_26,HDR1_28,HDR1_30,HDR1_32,HDR1_34);
+               HDR1_2,HDR1_4,HDR1_6,HDR1_8,HDR1_10,HDR1_12,HDR1_14,HDR1_16,HDR1_18,HDR1_20,HDR1_22,HDR1_24,HDR1_26,HDR1_28,HDR1_30,HDR1_32,HDR1_34,HDR1_36);
 
-	input	   USER_CLK,CLK_27MHZ_FPGA;
+	input	   CLK_27MHZ_FPGA;
 	/* switch C is reset, E is clear, S is resetFSM, W is nextString */
 	input	   GPIO_SW_E, GPIO_SW_S,  GPIO_SW_N, GPIO_SW_W;
 	input      GPIO_DIP_SW1,
@@ -49,7 +49,7 @@ module CPUtest(USER_CLK, 	CLK_27MHZ_FPGA,
 	output	LCD_FPGA_RS,LCD_FPGA_RW,LCD_FPGA_E;
 	output  LCD_FPGA_DB7, LCD_FPGA_DB6, LCD_FPGA_DB5, LCD_FPGA_DB4;
 	
-	output  HDR1_2,HDR1_4,HDR1_6,HDR1_8,HDR1_10,HDR1_12,HDR1_14,HDR1_16,HDR1_18,HDR1_20,HDR1_22,HDR1_24,HDR1_26,HDR1_28,HDR1_30,HDR1_32,HDR1_34;	
+	output  HDR1_2,HDR1_4,HDR1_6,HDR1_8,HDR1_10,HDR1_12,HDR1_14,HDR1_16,HDR1_18,HDR1_20,HDR1_22,HDR1_24,HDR1_26,HDR1_28,HDR1_30,HDR1_32,HDR1_34,HDR1_36;	
 	wire		[2:0]	control_out; //rs, rw, en
 	wire		[3:0]   out;
 	wire				reset;
@@ -72,82 +72,51 @@ module CPUtest(USER_CLK, 	CLK_27MHZ_FPGA,
 	wire	resetFSM;
 
 
-    wire phi0_in;
     
     wire HALT,RDY, IRQ_L, NMI_L, RES_L, SO;
     
-    wire phi1_out, SYNC, phi2_out, RW;
-    wire [7:0] extABH,extABL; //Address Bus Low and High
-    wire [7:0] extDB; //Data Bus
-    
-    
-    wire mainClock;
-   // BUFG muxmain(mainClock,USER_CLK);
-    //buf muxmain(mainClock,CLK_27MHZ_FPGA);
-   //RW=1 => read mode.
+    wire phi1_out,phi2_out,SYNC,RW;
+    wire [7:0] extABH,extABL,extDB; 
+    wire [7:0] extABH_b,extABL_b,extDB_b; 
+
+   wire phi0_in,fphi0;
+   clockGen179 makeclock(GPIO_SW_S,CLK_27MHZ_FPGA,phi0_in,fphi0,locked);
    
-   //wire phi0_lag,fphi0,locked;
-   wire phi0_in_b,phi1_out_b,phi2_out_b;
-   clockGen179 makeclock(GPIO_SW_S,CLK_27MHZ_FPGA,phi0_lag,fphi0,phi0_in,locked);
-   //BUFG clockb(phi0_in,phi0_in_b);
-   
-    wire memClk; //target inClk = 1.79 * 2 = 3.6Mhz
-    wire memClk_b0,memClk_b1,memClk_b2,memClk_b3;
-    //clockDivider    #(3) mainClock(USER_CLK,inClk); 
-    //clockDivider    #(5000000) cpuClock(USER_CLK,memClk_b0); //now its 10Mhz, slow down to 1Hz. divide by 3300.
-    //clockone4 test1(USER_CLK,memClk_b0);
-    //clockHalf test2(memClk_b0,memClk_b1);
-    //clockHalf    test3(memClk_b1,memClk_b2);
-    //clockHalf    test4(memClk_b2,memClk_b3);
-    //buf clkBuf0(phi0_in,memClk_b3);
-   /* 
-    wire h2,h4,h6,h8;
-    BUFG t1(h2,phi1_out);
-    BUFG t2(h4,fphi0);
-    BUFG t3(h6,phi1_out_b);
-    BUFG t4(h8,phi2_out_b);
-    assign HDR1_2 = h2;
-    assign HDR1_4 = h4;
-    assign HDR1_6 = h6;
-    assign HDR1_8 = h8;
-   */
-    //assign HDR1_2 = 1'b0;
-    //assign HDR1_4 = 1'b0;
-    //assign HDR1_6 = 1'b0;
-    //assign HDR1_8 = 1'b0;
+
      /*-------------------------------------------------------------*/
     // mem stuff
     
     wire fastClk;
-    //buf fast(fastClk,memClk_b2);
-    buf fast(fastClk,~fphi0); //x2 phi1 speed.
+    buf fast(fastClk,fphi0); //x2 phi1 speed.
     
     (* clock_signal = "yes" *)wire memReadClock,memWriteClock;
-    buf writeclk(memWriteClock,phi1_out); 
-    buf readclk(memReadClock,~fphi0); //read clock is doublespeed, and inverted of phi1 (which means same as phi0).
-    //buf readclk(memReadClock,~memClk_b2);
-   
+    
+   //read clock is doublespeed, and inverted of phi1 (which means same as phi0).
+
+    BUFG  mW(memWriteClock,phi1_out);
+    BUFG  mR(memReadClock,fphi0);
+   // assign memWriteClock = phi1_out;
+    //assign memReadClock = fphi0;
     wire [15:0] memAdd,memAdd_b;
     wire [7:0] memOut,memOut_b,memDBin;
     assign memAdd = {extABH,extABL};
     buf memB0[7:0](memOut,memOut_b);
     buf memB1[15:0](memAdd_b,memAdd);
     buf memB2[7:0](memDBin,extDB);
-	/*
-    triState busDriver[7:0](extDB,memOut,RW);
+	
+    wire readData;
+    assign readData = RW;
+    triState8 busDriver(extDB,memOut_b,RW);
     
-    memTestFull mem( 
-      .clka(memWriteClock), // input clka
+    memTestFullSingle mem( 
+      .clka(memReadClock), // input clka
       .wea(~RW), // input [0 : 0] wea
       .addra(memAdd_b), // input [15 : 0] addra
-      .dina(memDBin), // input [7 : 0] dina
-      .clkb(memReadClock),
-      .addrb(memAdd_b),
-      .doutb(memOut_b) // output [7 : 0] douta
+      .dina(extDB), // input [7 : 0] dina
+      .douta(memOut_b) // output [7 : 0] douta
     );
 
-    
-    */ 
+
    
 /* wire [7:0] bios_data_out;
   memBios mem(
@@ -167,10 +136,10 @@ module CPUtest(USER_CLK, 	CLK_27MHZ_FPGA,
    
     assign HDR1_30 = ((16'h4000 <= {1'b0,memAdd_b}) & ({1'b0,memAdd_b} < 16'h8000)) ? 1'b1 : 1'b0;
     assign HDR1_32 = ((16'h8000 <= {1'b0,memAdd_b}) & ({1'b0,memAdd_b} < 16'hC000)) ? 1'b1 : 1'b0;
-   assign HDR1_34 = memReadClock;
+    assign HDR1_34 = phi1_out;
+    assign HDR1_36 = memWriteClock;
     
-    
-   
+   /*
     memoryMap   integrateMem(.addr_RAM(addr_RAM),.addr_BIOS(addr_BIOS),.addr_CART(addr_CART),
                 .Fclk(memReadClock), .clk(memWriteClock), .CPU_writeEn(~RW), .CPU_addr(memAdd_b), 
                  .data_CART_out(data_CART),
@@ -178,7 +147,7 @@ module CPUtest(USER_CLK, 	CLK_27MHZ_FPGA,
                 );
     
     
-    
+    */
     
     /*-------------------------------------------------------------*/
     // cpu stuff
@@ -186,48 +155,50 @@ module CPUtest(USER_CLK, 	CLK_27MHZ_FPGA,
     
     
     
-    DeBounce #(.N(8)) rdyB(phi0_in,1'b1,GPIO_DIP_SW1,HALT);
-    DeBounce #(.N(8)) irqB(phi0_in,1'b1,GPIO_DIP_SW2,IRQ_L);
-    DeBounce #(.N(8)) nmiB(phi0_in,1'b1,GPIO_DIP_SW3,NMI_L);
-    DeBounce #(.N(8)) resB(phi0_in,1'b1,GPIO_DIP_SW4,RES_L);
+    DeBounce #(.N(8)) rdyB(fphi0,1'b1,GPIO_DIP_SW1,HALT);
+    DeBounce #(.N(8)) irqB(fphi0,1'b1,GPIO_DIP_SW2,IRQ_L);
+    DeBounce #(.N(8)) nmiB(fphi0,1'b1,GPIO_DIP_SW3,NMI_L);
+    DeBounce #(.N(8)) resB(fphi0,1'b1,GPIO_DIP_SW4,RES_L);
     
     
    // not invAgain[3:0]({RDY,IRQ_L,NMI_L,RES_L},{nRDY,nIRQ_L,nNMI_L,nRES_L});
 	assign SO = 1'b0;
-	//assign phi0_in = ~GPIO_SW_S; //pressing button => phi1 tick.
+    
+    wire [6:0] currT,currT_b;
 
-    wire [6:0] currT;
-    //wire [2:0] dbDrivers,sbDrivers,adlDrivers,adhDrivers;
     wire [7:0] DB,ADH,ADL,SB,DB_b,ADH_b,ADL_b,SB_b;
+    
     wire [2:0] activeInt;
     
-    wire memReadClock_b;
-    buf b[31:0]({DB_b,ADH_b,ADL_b,SB_b},{DB,ADH,ADL,SB});
-   
-    buf b3(memReadClock_b,memReadClock);
+    buf b0[7:0](DB_b,DB);
+    buf b1[7:0](SB_b,SB);
+    buf b2[7:0](ADH_b,ADH);
+    buf b3[7:0](ADL_b,ADL);
+    
+    buf b_a[7:0](extDB_b,extDB);
+    buf b_b[7:0](extABL_b,extABL);
+    buf b_c[7:0](extABH_b,extABH);
+    buf b_d[7:0](extABH_b,extABH);
+    buf b_e[6:0](currT_b,currT);
+
     wire [7:0] ALUhold_out;
     wire rstAll,nmiPending,resPending,irqPending;
-     buf b1(phi0_in_b,phi0_in);
-    //buf b4(phi1_out_b,phi1_out);
-    //buf b5(phi2_out_b,phi2_out);
-
     wire [7:0] idlContents,A,B,outToPCL,outToPCH,accumVal;
     wire [1:0] currState;
     wire [7:0] second_first_int;
-    wire [7:0] OP,opcodeToIR;
+    wire [7:0] OP,opcodeToIR,prevOpcode;
     wire [7:0] Accum,Xreg,Yreg;
-    wire [7:0] SRflags;
-    wire [7:0] extAB_b1;
-    //wire phi1,phi2;
-    //fsm to translate stuff on DB into readable format and tick the lcd.
-	top_6502C cpu(.extAB_b1(extAB_b1),
+    wire [7:0] extAB_b1,SRflags,holdAB,SR_contents;
+
+	top_6502C cpu(.prevOpcode(prevOpcode),.extAB_b1(extAB_b1),.SR_contents(SR_contents),.holdAB(holdAB),
                 .SRflags(SRflags),.opcode(OP),.opcodeToIR(opcodeToIR),.second_first_int(second_first_int),.nmiPending(nmiPending),
                 .resPending(resPending),.irqPending(irqPending),.currState(currState),.accumVal(accumVal),
                 .outToPCL(outToPCL),.outToPCH(outToPCH),.A(A),.B(B),.idlContents(idlContents),.rstAll(rstAll),.ALUhold_out(ALUhold_out),
                 .activeInt(activeInt),.currT(currT),
+                
                 .DB(DB),.SB(SB),.ADH(ADH),.ADL(ADL),
-                .HALT(HALT),.IRQ_L(IRQ_L), .NMI_L(NMI_L), .RES_L(RES_L), .SO(SO), .phi0_in(phi0_in), .fastClk(fastClk),
-                .RDY(RDY),.extDB(extDB), .phi1_out(phi1_out), .SYNC(SYNC), .extABH(extABH),.extABL(extABL), .phi2_out(phi2_out), .RW(RW),
+                .HALT(HALT),.IRQ_L(IRQ_L), .NMI_L(NMI_L), .RES_L(RES_L), .SO(SO), .phi0_in(phi0_in),.fastClk(fastClk),
+                .RDY(RDY),.extDB(extDB), .phi1_out(phi1_out), .phi2_out(phi2_out),.SYNC(SYNC), .extABH(extABH),.extABL(extABL),  .RW(RW),
                 .Accum(Accum),.Xreg(Xreg),.Yreg(Yreg));
 
     
@@ -238,9 +209,9 @@ module CPUtest(USER_CLK, 	CLK_27MHZ_FPGA,
 	assign GPIO_LED_W = initDone;
     assign reset = GPIO_SW_W;
     assign GPIO_LED_N = SYNC;
+
+	assign {GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7} = extABL;
     
-	//buf tada0(GPIO_LED_N,memReadClock);
-	buf tada2[7:0]({GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7},extABL);
     
 	wire [7:0] data;
     wire clrLCD;
@@ -250,11 +221,6 @@ module CPUtest(USER_CLK, 	CLK_27MHZ_FPGA,
 							 .dataIn(data), 
 							 .clearAll(clrLCD));
 
-
-    //wire butOut;
-    //wire [5:0] lcdstate;
-    //DeBounce #(.N(8)) deb(USER_CLK,1'b1,GPIO_SW_N,butOut);
-    
      testFSM			myTestFsm(.clkFSM(CLK_27MHZ_FPGA), .resetFSM(reset),.data(data),
 									 .initDone(initDone),.writeDone(writeDone),.writeStart(writeStart),.clrLCD(clrLCD),
                                      .A(Accum),.X(Xreg),.Y(Yreg),.OP(OP),
@@ -267,15 +233,11 @@ module CPUtest(USER_CLK, 	CLK_27MHZ_FPGA,
     // chipscope stuff
 
 
-    wire [7:0] TRIG0,TRIG1,TRIG2,TRIG3,TRIG4,TRIG5,TRIG6,TRIG7,TRIG8,TRIG9,TRIG10,TRIG11,TRIG12,TRIG13,TRIG14,TRIG15;
+   // wire [7:0] TRIG0,TRIG1,TRIG2,TRIG3,TRIG4,TRIG5,TRIG6,TRIG7,TRIG8,TRIG9,TRIG10,TRIG11,TRIG12,TRIG13,TRIG14,TRIG15;
     
     wire chipClk,chipClk_b0;
-    //clockone4 test11(USER_CLK,chipClk_b);
-    clockone2048  test12(CLK_27MHZ_FPGA,chipClk_b0);
-    clockone16  test13(chipClk_b0,chipClk_b);
-    //BUFG chipscopeClk(chipClk,chipClk_b);
-    
-    //clockDivider    #(250000) mainClock2(USER_CLK,chipClk);
+
+    clockoneX #(.width(14))  test12(CLK_27MHZ_FPGA,chipClk_b);
     
     wire [35 : 0] CONTROL0,CONTROL1;
     chipscope_ila ila0(
@@ -284,7 +246,7 @@ module CPUtest(USER_CLK, 	CLK_27MHZ_FPGA,
     extABH,
     extABL,
     extDB,
-    {1'b0,currT},
+    {1'b0,currT_b},
     DB_b,
     ADH_b,
     ADL_b,
@@ -293,10 +255,10 @@ module CPUtest(USER_CLK, 	CLK_27MHZ_FPGA,
     {RW,activeInt,RDY,IRQ_L,NMI_L,RES_L},
     Accum,
     Xreg,
-    {rstAll,4'd0,addr_RAM,addr_BIOS,addr_CART},
+    prevOpcode,
     OP,
-    extAB_b1,
-    Yreg);
+    holdAB,
+    SR_contents);
     
     // extra ila for use...
     chipscope_ila ila1(
@@ -304,20 +266,20 @@ module CPUtest(USER_CLK, 	CLK_27MHZ_FPGA,
     chipClk_b,
     memAdd_b[15:8],
     memAdd_b[7:0],
-    memOut,
-    {1'b0,currT},
+    memOut_b,
+    {1'b0,currT_b},
     outToPCH,
     outToPCL,
-    {7'd0,memReadClock_b},
-    {7'd0,memWriteClock},
+    8'd0,
+    8'd0,
     {7'd0,fastClk},
-    {7'd0,1'b0},
-    {7'd0,phi1},
-    {7'd0,1'b0},
-    TRIG12,
-    TRIG13,
-    TRIG14,
-    TRIG15);
+    8'd0,
+    8'd0,
+    8'd0,
+    8'd0,
+    8'd0,
+    8'd0,
+    8'd0);
 
     chipscope_icon2 icon(
     .CONTROL0(CONTROL0),

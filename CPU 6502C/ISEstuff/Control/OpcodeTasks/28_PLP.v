@@ -2,15 +2,15 @@ task PLP;
 
 	input [6:0] T;
 	input phi1,phi2;
-	output [64:0] controlSigs;
+	output [65:0] controlSigs;
 	output [6:0] newT;
 	reg [6:0] newT;
 
 	
-	reg [64:0] controlSigs;
+	reg [65:0] controlSigs;
 	
 	begin
-		controlSigs = 65'd0;
+		controlSigs = 66'd0;
     
     case (T)
     
@@ -44,6 +44,7 @@ task PLP;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
+                    controlSigs[`DB_P] = 1'b1;
         end
       end
       
@@ -62,7 +63,7 @@ task PLP;
 					controlSigs[`PCL_ADL] = 1'b1;
 					controlSigs[`ADL_PCL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
-                    controlSigs[`DB_P] = 1'b1;
+                    
         end
         else if(phi2) begin
           //SUMS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBDB,PCHADH,PCLADL,DL/DB

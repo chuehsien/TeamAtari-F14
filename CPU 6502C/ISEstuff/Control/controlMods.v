@@ -11,12 +11,12 @@ task getControls;
     input [7:0] opcode;
     input [6:0] currT;
     
-    output [64:0] dummy_control;
+    output [65:0] dummy_control;
     
     reg [6:0] dummy_T;
     
     begin
-        dummy_control = 65'd0;
+        dummy_control = 66'd0;
         dummy_T = `emptyT;
         case (opcode)
         `BRK    : BRK(currT,phi1,phi2,activeInt,dummy_control,dummy_T); 

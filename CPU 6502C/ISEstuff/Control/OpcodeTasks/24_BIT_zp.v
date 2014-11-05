@@ -2,15 +2,15 @@ task BIT_zp;
 
 	input [6:0] T;
 	input phi1,phi2;
-	output [64:0] controlSigs;
+	output [65:0] controlSigs;
 	output [6:0] newT;
 	reg [6:0] newT;
 
 	
-	reg [64:0] controlSigs;
+	reg [65:0] controlSigs;
 	
 	begin
-		controlSigs = 65'd0;
+		controlSigs = 66'd0;
     
     case (T)
     
@@ -63,6 +63,7 @@ task BIT_zp;
 					controlSigs[`PCL_ADL] = 1'b1;
 					controlSigs[`ADL_PCL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
+                    controlSigs[`FLAG_DB] = 1'b1;
                     //adderhold <= accum & operand, pc ++, next fetched byte go to DB
         end
         else if(phi2) begin

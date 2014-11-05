@@ -2,15 +2,15 @@ task TAY;
 
 	input [6:0] T;
 	input phi1,phi2;
-	output [64:0] controlSigs;
+	output [65:0] controlSigs;
 	output [6:0] newT;
 	reg [6:0] newT;
 
 	
-	reg [64:0] controlSigs;
+	reg [65:0] controlSigs;
 	
 	begin
-		controlSigs = 65'd0;
+		controlSigs = 66'd0;
 		case (T)
 
 			
@@ -31,7 +31,7 @@ task TAY;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
 					controlSigs[`ADL_PCL] = 1'b1;
-                    controlSigs[`FLAG_DB] = 1'b1;
+          controlSigs[`STORE_DB] = 1'b1;
 				end
 				else if (phi2) begin
 				//SUMS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBDB,PCHADH,PCLADL
@@ -43,6 +43,7 @@ task TAY;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
+          controlSigs[`FLAG_DB] = 1'b1;
 				end
 			
 			end

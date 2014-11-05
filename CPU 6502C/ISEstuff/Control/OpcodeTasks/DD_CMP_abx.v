@@ -3,15 +3,15 @@ task CMP_abx;
 	input [6:0] T;
 	input phi1,phi2;
 	input carry;
-	output [64:0] controlSigs;
+	output [65:0] controlSigs;
 	output [6:0] newT;
 	reg [6:0] newT;
 
 	
-	reg [64:0] controlSigs;
+	reg [65:0] controlSigs;
 	
 	begin
-		controlSigs = 65'd0;
+		controlSigs = 66'd0;
 		case (T)
 			 `TzeroNoCrossPg: begin
 			newT = `Tone;

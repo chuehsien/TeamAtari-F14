@@ -14,15 +14,60 @@
 /* Changelog:
 
 */
+/* 
 
+module sigLatch(clk,in,out);
+  input clk, in;
+  output out;
+  
+  wire ffin;
+  assign ffin = out ? 1'b0 : in;
+  FDCPE #(.INIT(1'b0)) FF0(.Q(out),.C(clk),.CE(1'b1),.CLR(1'b0),.D(ffin),.PRE(1'b0));
+endmodule */
+
+module sigLatch(clk,in,out);
+  input clk, in;
+  output out;
+  
+  wire ffout;
+  assign ffin = (ffout) ? 1'b0 : in;
+  FDCPE #(.INIT(1'b0)) FF0(.Q(ffout),.C(clk),.CE(1'b1),.CLR(1'b0),.D(ffin),.PRE(1'b0));
+  /*
+  always @ (posedge clk) begin
+      out <= (out == 1) ? 1'b0 : in;
+  end
+*/
+  assign out = ffout | in;
+endmodule
+
+  
+
+
+module FlipFlop8(clk,in,en,out);
+    input clk;
+    input [7:0] in;
+    input en;
+    output [7:0] out;
+    
+    FDCPE #(.INIT(1'b0)) FF0(.Q(out[0]),.C(clk),.CE(en),.CLR(1'b0),.D(in[0]),.PRE(1'b0));
+    FDCPE #(.INIT(1'b0)) FF1(.Q(out[1]),.C(clk),.CE(en),.CLR(1'b0),.D(in[1]),.PRE(1'b0));
+    FDCPE #(.INIT(1'b0)) FF2(.Q(out[2]),.C(clk),.CE(en),.CLR(1'b0),.D(in[2]),.PRE(1'b0));
+    FDCPE #(.INIT(1'b0)) FF3(.Q(out[3]),.C(clk),.CE(en),.CLR(1'b0),.D(in[3]),.PRE(1'b0));
+   
+    FDCPE #(.INIT(1'b0)) FF4(.Q(out[4]),.C(clk),.CE(en),.CLR(1'b0),.D(in[4]),.PRE(1'b0));
+    FDCPE #(.INIT(1'b0)) FF5(.Q(out[5]),.C(clk),.CE(en),.CLR(1'b0),.D(in[5]),.PRE(1'b0));
+    FDCPE #(.INIT(1'b0)) FF6(.Q(out[6]),.C(clk),.CE(en),.CLR(1'b0),.D(in[6]),.PRE(1'b0));
+    FDCPE #(.INIT(1'b0)) FF7(.Q(out[7]),.C(clk),.CE(en),.CLR(1'b0),.D(in[7]),.PRE(1'b0));
+
+endmodule
 
 // Note: Decimal Enable (DAA) not yet understood or implemented
-module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC,rel_forward);
+module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC,relDirection);
 
   input [7:0] A, B;
   input DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS;
   output [7:0] ALU_out;
-  output AVR, ACR, HC,rel_forward; 
+  output AVR, ACR, HC,relDirection; 
   
   
   wire [8:0] result;
@@ -42,7 +87,7 @@ module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC,
                            ((ORS) ? (A|B) :
                            ((SRS) ? {I_ADDC, B[7:1]} : 8'hzz))));
                            
-    assign rel_forward = ~A[7]; //it's jumping forward if operand(from SB/DB) is positive!
+   assign relDirection = ~A[7];
   /*  
   always @ (*) begin
 
@@ -120,22 +165,7 @@ module AdderHoldReg(haltAll,phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes,tempAVR,t
     wire [7:0] ADL,SB;
     reg [7:0] adderReg = 8'h00;
     reg aluAVR,aluACR,aluHC,aluRel = 1'b0;
-  	/*
-    always @ (posedge phi2 or posedge rstAll) begin
-        adderReg <= (rstAll) ? 8'h00 :
-                    ((phi2) ? addRes : adderReg);
 
-        aluAVR <= (rstAll) ? 1'b0 :
-                    ((phi2) ? tempAVR : aluAVR);
-
-        aluACR <= (rstAll) ? 1'b0 :
-                    ((phi2) ? tempACR : aluACR);
-
-        aluHC <= (rstAll) ? 1'b0 :
-                    ((phi2) ? tempHC : aluHC);
-
-    end
-    */
     always @ (posedge phi2) begin
         if (haltAll) begin
             adderReg <= adderReg;
@@ -147,13 +177,9 @@ module AdderHoldReg(haltAll,phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes,tempAVR,t
         end
         else begin
             adderReg <= addRes;
-
             aluAVR <= tempAVR;
-
             aluACR <= tempACR;
-
             aluHC <= tempHC;
-            
             aluRel <= tempRel;
         end
 
@@ -212,14 +238,12 @@ module dataOutReg(haltAll,phi2, en, dataIn,
     input [7:0] dataIn;
     output [7:0] dataOut;
 
-    reg [7:0] data = 8'h00;
+    wire nHaltAll;
+    not make(nHaltAll,haltAll);
+    FlipFlop8 dor(phi2,dataIn,nHaltAll&en,dataOut);
     
-    always @(posedge phi2) begin
-        if (haltAll) data <= data;
-        else data <= dataIn;                       
-    end
+ 
     
-    triState b[7:0](dataOut,data,en);
 endmodule
 
 module inputDataLatch(haltAll,data,rstAll, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
@@ -244,8 +268,6 @@ module inputDataLatch(haltAll,data,rstAll, phi2, DL_DB, DL_ADL, DL_ADH,extDataBu
         if (rstAll) data <= 8'h00;
         else if (haltAll) data <= data;
         else data <= extDataBus;
-       // data <= (rstAll) ? 8'h00 :
-       //          ((phi2) ? extDataBus : data);
                     
     end
 
@@ -458,27 +480,27 @@ endmodule
 
 
 module AddressBusReg(haltAll,phi1,hold, dataIn,
-                dataOut_b);
+                dataOut);
 
     input haltAll,phi1;
     input hold;
     input [7:0] dataIn;
-    output [7:0] dataOut_b;
-
-    wire phi1;
-    wire ld;
-    wire [7:0] dataIn;
-
-    reg [7:0] dataOut = 8'h00;
+    output [7:0] dataOut;
     
+    //wire ce;
+    //nor findce(ce,hold,haltAll);
+    FlipFlop8 test(phi1,dataIn,~(hold|haltAll),dataOut);
+    /*
+    reg [7:0] dataOut = 8'd0;
     always @ (posedge phi1) begin
         if (hold|haltAll) dataOut <= dataOut;
         else dataOut <= dataIn;
         
         //dataOut <= (ld) ? dataIn : dataOut;
     end
-   
-    triState t[7:0](dataOut_b,dataOut,~haltAll);
+    
+    assign dataABH = (haltAll) ? 8'bzzzzzzzz : dataOut;
+*/
 endmodule
 
 //used for x and y registers
@@ -509,27 +531,26 @@ endmodule
 //this needs to push out B bit when its a BRK.
 //the x_set and x_clr are edge triggered.
 //everything else is ticked in when 'update' is asserted.
-module statusReg(haltAll,phi1_1,phi2_1,rstAll,fastClk,DB_P,loadDBZ,flagsALU,flagsDB,
+module statusReg(haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
                         P_DB, DBZ, ALUZ, ACR, AVR, B,
                         C_set, C_clr,
                         I_set,I_clr, 
                         V_clr,
                         D_set,D_clr,
-                        DB,ALU,opcode,DBinout,
+                        DB,ALU,storedDB,opcode,DBinout,
                         status);
-    output phi1_1,phi2_1;
-    input haltAll,rstAll,fastClk,DB_P,loadDBZ,flagsALU,flagsDB,
+    input haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
                         P_DB, DBZ,ALUZ, ACR, AVR,B,
                         C_set, C_clr,
                         I_set,I_clr, 
                         V_clr,
                         D_set,D_clr; 
                         
-    input [7:0] DB,ALU,opcode;
+    input [7:0] DB,ALU,storedDB,opcode;
     inout [7:0] DBinout;
     output [7:0] status; //used by the FSM
     
-    wire rstAll,fastClk,DB_P,loadDBZ,flagsALU,flagsDB,
+    wire rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
                     P_DB, DBZ,ALUZ,ACR, AVR,B,
                     C_set, C_clr,
                     I_set,I_clr, 
@@ -572,7 +593,16 @@ module statusReg(haltAll,phi1_1,phi2_1,rstAll,fastClk,DB_P,loadDBZ,flagsALU,flag
     assign load1 = ((phi1) ? phi1_1 : ((phi2) ? phi2_1 : 1'b0));
     assign load0 = ((phi1) ? phi1_0 : ((phi2) ? phi2_0 : 1'b0));
  */  
-    always @ (posedge fastClk) begin //need fast clock to load on both phi1 and phi2.
+ /*
+  FDCPE #(.INIT(1'b0)) SR7(.Q(currVal7),.C(phi1),.CE(en),.CLR(rstAll),.D(phi1_7),.PRE(1'b0));
+  FDCPE #(.INIT(1'b0)) SR6(.Q(currVal6),.C(phi1),.CE(en),.CLR(rstAll),.D(phi1_6),.PRE(1'b0));
+  FDCPE #(.INIT(1'b0)) SR3(.Q(currVal3),.C(phi1),.CE(en),.CLR(rstAll),.D(phi1_3),.PRE(1'b0));
+  FDCPE #(.INIT(1'b0)) SR2(.Q(currVal2),.C(phi1),.CE(en),.CLR(rstAll),.D(phi1_2),.PRE(1'b0));
+  FDCPE #(.INIT(1'b0)) SR1(.Q(currVal1),.C(phi1),.CE(en),.CLR(rstAll),.D(phi1_1),.PRE(1'b0));
+  FDCPE #(.INIT(1'b0)) SR0(.Q(currVal0),.C(phi1),.CE(en),.CLR(rstAll),.D(phi1_0),.PRE(1'b0));
+ */
+ 
+    always @ (posedge phi1) begin
     
         if (rstAll) begin
             currVal7 <= 1'b0;
@@ -602,7 +632,7 @@ module statusReg(haltAll,phi1_1,phi2_1,rstAll,fastClk,DB_P,loadDBZ,flagsALU,flag
     end
 
     
-    wire class1,class2,class3,class4; //diff classes of opcodes affect diff opcodes.
+    wire class1,class2,class3,class4; //diff classes of opcodes affect diff status bits.
     assign class1 = (opcode == `ADC_abs || opcode == `ADC_abx || opcode == `ADC_aby || opcode == `ADC_imm || 
                  opcode == `ADC_izx || opcode == `ADC_izy || opcode == `ADC_zp  || opcode == `ADC_zpx ||
                  opcode == `SBC_abs || opcode == `SBC_abx || opcode == `SBC_aby || opcode == `SBC_imm || 
@@ -620,11 +650,13 @@ module statusReg(haltAll,phi1_1,phi2_1,rstAll,fastClk,DB_P,loadDBZ,flagsALU,flag
             opcode == `TXA || opcode == `TXS || opcode == `TYA);             
             
     //N bit
+    wire special_7;
+    assign special_7 = storedDB[7];
     assign phi1_7 = loadDBZ ? currVal7 :
                     ((flagsALU) ? ALU[7] :
+                    ((flagsDB&class4) ? special_7 :
                      (flagsDB ? DB[7] : 
-                     (DB_P ? DB[7] : currVal7)));
-                     
+                     (DB_P ? DB[7] : currVal7))));
                      
     //assign phi2_7 = (flagsDB & class4) ? DB[7] : currVal7;
     
@@ -649,11 +681,13 @@ module statusReg(haltAll,phi1_1,phi2_1,rstAll,fastClk,DB_P,loadDBZ,flagsALU,flag
    // assign phi2_2 = currVal2;           
     
     //Z bit
+    wire special_1;
+    assign special_1 = ~(|storedDB);
     assign phi1_1 = loadDBZ ? DBZ :
                     (flagsALU ? (ALUZ) :
-                    (flagsDB ? (class4 ? DBZ  : (class3 ? currVal1 :(DBZ))) :
+                    (flagsDB ? (class4 ? special_1 : DBZ) :
                     (DB_P ? DB[1] : currVal1)));
-                   
+     
     //assign phi2_1 = (flagsDB & class4) ? (DBZ) : currVal1;
     
     //C bit
@@ -834,7 +868,7 @@ module prechargeMos(rstAll,phi2,
    
     bufif1 (weak1, highz0) a[7:0](bus,pullupReg,1'b1);
  */
-    buf a[7:0](bus,pull); 
+    bufif1 a[7:0](bus,pull,phi2); 
 endmodule
 
 module opendrainMosADL(rstAll,O_ADL0, O_ADL1, O_ADL2,

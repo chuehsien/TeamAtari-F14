@@ -4,21 +4,21 @@ task BRK;
 	input [6:0] T;
 	input phi1,phi2;
     input [2:0] active_interrupt;
-	output [64:0] controlSigs;
+	output [65:0] controlSigs;
 	output [6:0] newT;
 	reg [6:0] newT;
 
 	
-	reg [64:0] controlSigs;
+	reg [65:0] controlSigs;
 	
 	begin
-		controlSigs = 65'd0;
+		controlSigs = 66'd0;
     
     case (T)
     
       (`Tzero) : begin
 		newT = `Tone;
-        controlSigs[`SET_I] = 1'b1;
+        
         if (phi1) begin
             if (active_interrupt == `RST_i) begin
                 controlSigs[`O_ADL1] = 1'b1; //create address fffd
@@ -43,6 +43,7 @@ task BRK;
 					controlSigs[`PCL_PCL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
                     controlSigs[`nADH_ABH] = 1'b1;
+          
                     //adderhold <= fetched PC_lo (jump vector).
         end
         else if(phi2) begin
@@ -291,6 +292,7 @@ task BRK;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
                     controlSigs[`nADH_ABH] = 1'b1;
+                    controlSigs[`SET_I] = 1'b1;
                     //new data just came in, enable DL_DB.
                     //new vector address loaded to extAB on tick.
         end

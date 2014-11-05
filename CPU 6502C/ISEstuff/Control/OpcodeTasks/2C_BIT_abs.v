@@ -2,15 +2,15 @@ task BIT_abs;
 
 	input [6:0] T;
 	input phi1,phi2;
-	output [64:0] controlSigs;
+	output [65:0] controlSigs;
 	output [6:0] newT;
 	reg [6:0] newT;
 
 	
-	reg [64:0] controlSigs;
+	reg [65:0] controlSigs;
 	
 	begin
-		controlSigs = 65'd0;
+		controlSigs = 66'd0;
     
     case (T)
     
@@ -39,6 +39,7 @@ task BIT_abs;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
+                    controlSigs[`FLAG_DB] = 1'b1;
         end
       end
       
@@ -58,6 +59,7 @@ task BIT_abs;
 					controlSigs[`PCL_ADL] = 1'b1;
 					controlSigs[`ADL_PCL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
+                    controlSigs[`FLAG_DB] = 1'b1;
         end
         else if(phi2) begin
           //ANDS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBDB,PCHADH,PCLADL
@@ -69,6 +71,7 @@ task BIT_abs;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
+                    controlSigs[`FLAG_DBZ] = 1'b1;
         end
       end
       

@@ -3,15 +3,15 @@ task BCS_rel;
 	input [6:0] T;
 	input phi1,phi2;
 	input ovf,carry,flag;
-	output [64:0] controlSigs;
+	output [65:0] controlSigs;
 	output [6:0] newT;
 	reg [6:0] newT;
 
 	
-	reg [64:0] controlSigs;
+	reg [65:0] controlSigs;
 	
 	begin
-		controlSigs = 65'd0;
+		controlSigs = 66'd0;
 		case (T)
  			`Tzero:begin
 			newT = `T1BranchCross;
@@ -30,8 +30,8 @@ task BCS_rel;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`ADL_PCL] = 1'b1;
-                    controlSigs[`nADH_ABH] = 1'b1;
           if (~ovf) controlSigs[`I_ADDC] = 1'b1;
+          controlSigs[`nADH_ABH] = 1'b1;
 				end
 				else if (phi2) begin
 				//SUMS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBADH,#IPC,~IPC,PCLADL,DL/DB

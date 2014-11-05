@@ -60,13 +60,19 @@
 `define CLR_V 7'd54
 `define SET_D 7'd55
 `define CLR_D 7'd56
+`define SET_B 7'd57
+`define CLR_B 7'd58
 
-`define NO_SIG      7'd57
-`define FLAG_DBZ    7'd58
-`define FLAG_DB     7'd59
-`define FLAG_ALU    7'd60
+`define FLAG_DBZ    7'd59
+`define FLAG_DBN    7'd60
+`define FLAG_DB     7'd61
+`define FLAG_ALU    7'd62
 
-`define nRW         7'd61
+`define STORE_DB    7'd63
+`define STORE_ALU  7'd64
+
+
+`define nRW         7'd65
 
 `define emptyControl 65'd0
 /*

@@ -116,10 +116,16 @@ module interruptLatch(haltAll,phi1,NMI_L,IRQ_Lfiltered,RES_L,outNMI_L,outIRQ_L,o
     reg outNMI_L,outIRQ_L,outRES_L = 1'b1;
 
     always @ (posedge phi1) begin
-
+        if (RES_L) begin 
             outIRQ_L <= IRQ_Lfiltered;  
             outNMI_L <= NMI_L;
-            outRES_L <= RES_L;
+        end
+        else begin
+            outIRQ_L <= outIRQ_L;  
+            outNMI_L <= outNMI_L;
+        end
+        
+        outRES_L <= RES_L;
 
     end
 
@@ -130,22 +136,21 @@ endmodule
 
 
 //captures the edge.
-module interruptControl(NMI_L, IRQ_L, RES_L,nmiDone,
+module interruptControl(rstAll,NMI_L, IRQ_L, RES_L,nmiDone,
                         nmiPending,irqPending,resPending);
                            
-    input NMI_L,IRQ_L,RES_L,nmiDone;
+    input rstAll,NMI_L,IRQ_L,RES_L,nmiDone;
     output nmiPending,irqPending,resPending;
    
-    (* clock_signal = "yes" *)wire NMI_L;
-   
-   FDCE #(
+   FDCPE_1 #(
       .INIT(1'b0) // Initial value of register (1'b0 or 1'b1)
    ) FDCE_inst (
       .Q(nmiPending),      // 1-bit Data output
-      .C(~NMI_L),      // 1-bit Clock input
+      .C(NMI_L),      // 1-bit Clock input
       .CE(1'b1),    // 1-bit Clock enable input
-      .CLR(nmiDone),  // 1-bit Asynchronous clear input
-      .D(1'b1)       // 1-bit Data input
+      .CLR(nmiDone|rstAll),  // 1-bit Asynchronous clear input
+      .D(1'b1),     // 1-bit Data input
+      .PRE(1'b0)
    );
    
     assign irqPending = ~IRQ_L;
@@ -162,7 +167,9 @@ module PLAinterruptControl(haltAll,phi1, nmiPending,resPending,irqPending,intHan
     output nmi,irq,res;
     
     //internal
-    reg nmi_latch,res_latch,irq_latch = 1'b0;
+    reg nmi_latch = 1'b0; 
+    reg res_latch = 1'b0; 
+    reg irq_latch = 1'b0; 
 
     always @ (posedge phi1) begin
        if (haltAll) begin
@@ -240,38 +247,74 @@ module readyControl(phi2, RDY,nRW,
 endmodule
 
 
-module logicControl(currT,opcode,prevOpcode,phi1,phi2,activeInt,rel_forward,tempCarry,ovf,carry,statusReg,
-                                    nextT,nextControlSigs);
+
+                                    /*
+module logicControl(updateOthers,currT,opcode,opcodeToIR,prevOpcode,phi1,phi2,activeInt,aluRel,tempOvf,tempCarry,ovf,carry,statusReg,
+                                    nextT,nextControlSigs);                                  
                                     
+        output updateOthers;              
+        input [6:0] currT;
+        input [7:0] opcode,opcodeToIR,prevOpcode;
+        input phi1,phi2;
+        input [2:0] activeInt;
+        input aluRel,tempOvf,tempCarry,ovf,carry;
+        input [7:0] statusReg;
+        output [6:0] nextT;
+        output [65:0] nextControlSigs;
+        */
+module logicControl(updateOthers,currT,opcode,prevOpcode,phi1,phi2,activeInt,aluRel,tempCarry,ovf,carry,statusReg,
+                                    nextT,nextControlSigs);                                  
+                                    
+        output updateOthers;              
         input [6:0] currT;
         input [7:0] opcode,prevOpcode;
         input phi1,phi2;
         input [2:0] activeInt;
-        input ovf;
-        input rel_forward,tempCarry,carry;
+        input aluRel,tempCarry,ovf,carry;
         input [7:0] statusReg;
         output [6:0] nextT;
-        output wire [64:0] nextControlSigs;
+        output [65:0] nextControlSigs;        
         
+        
+        wire relOpcode; //opcode which do rel jumps. (branch)
+        assign relOpcode = (opcode == `BPL_rel ||opcode == `BMI_rel ||opcode == `BVC_rel ||opcode == `BVS_rel ||opcode == `BCC_rel ||
+		opcode == `BCS_rel ||opcode == `BNE_rel ||opcode == `BEQ_rel);
         //next T depends on immediate ACR.
         wire effCarry;
         //page cross occur when jumping forward and C = 1, OR jumping backward, and c=0.
-        assign effCarry = (tempCarry & rel_forward) | (~tempCarry & ~rel_forward);
-        Tcontrol    tCon(currT,opcode,effCarry,statusReg,nextT);
+        assign effCarry = relOpcode ? ((tempCarry & aluRel) | (~tempCarry & ~aluRel)) : tempCarry;
         
+        
+        Tcontrol    tCon(currT,opcode,effCarry,statusReg,nextT);
+        wire updateOthers;
         // the logic depends on the ticked in ACR in the ACRlatch, and AVR in the AVRlatch
-        randomLogic2     randomLog(currT,opcode,prevOpcode,phi1,phi2,activeInt,ovf,carry,statusReg[`status_C],statusReg[`status_D],nextControlSigs);
-
+        randomLogic2     randomLog(updateOthers,currT,opcode,prevOpcode,phi1,phi2,activeInt,ovf,carry,statusReg[`status_C],statusReg[`status_D],nextControlSigs);
+     /*
+        randomLogicPredict   randLog(.T(currT),.nextT(nextT),.currOP(opcode),.nextOP(opcodeToIR),
+                                    .phi1(phi1),.phi2(phi2),.activeInt(activeInt),
+                                    .latchedAVR(ovf),.latchedACR(carry),
+                                    .aluholdAVR(tempOvf),.aluholdACR(tempCarry),
+                                    .statusC(statusReg[`status_C]),.statusD(statusReg[`status_D]),
+                                    .control(nextControlSigs)); 
+        //if phi1: use opcode,currT,phi2,AVR,ACR (both latched)to make decisions, 
+        // phi1 need to consider prevOpcode too. in this case uses opcode&(nextT == t2).
+       */ 
+        //if phi2: use opcodeToIR, nextT,phi1,aluAVR,aluACR to make decisions
 endmodule
 
 
-module controlLatch(phi1,phi2,inControl,outControl);
-    input phi1,phi2;
-    input [64:0] inControl;
-    output reg [64:0] outControl = `emptyControl;
+module controlLatch(fastClk,inControl,outControl);
+    input fastClk;
+    input [65:0] inControl;
+    output [65:0] outControl;
     
-    always @ (posedge phi1 or posedge phi2) 
-        outControl <= inControl;
+    reg [65:0] outControl_b = `emptyControl;
+    always @ (posedge fastClk) begin
+        outControl_b <= inControl;
+        
+    end
+    
+    buf t[65:0](outControl,outControl_b);
 endmodule
 
 module instructionRegister(haltAll,rstAll,currT,phi1,phi2,OPin,OPout,prevOP);
