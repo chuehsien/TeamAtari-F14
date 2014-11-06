@@ -93,7 +93,7 @@ module CPUtest(CLK_27MHZ_FPGA,
     
    //read clock is doublespeed, and inverted of phi1 (which means same as phi0).
 
-    BUFG  mW(memWriteClock,phi1_out);
+    //BUFG  mW(memWriteClock,phi1_out);
     BUFG  mR(memReadClock,fphi0);
    // assign memWriteClock = phi1_out;
     //assign memReadClock = fphi0;
@@ -106,8 +106,10 @@ module CPUtest(CLK_27MHZ_FPGA,
 	
     wire readData;
     assign readData = RW;
-    triState8 busDriver(extDB,memOut_b,RW);
     
+  /*  
+    triState8 busDriver(extDB,memOut_b,RW);
+  
     memTestFullSingle mem( 
       .clka(memReadClock), // input clka
       .wea(~RW), // input [0 : 0] wea
@@ -116,9 +118,10 @@ module CPUtest(CLK_27MHZ_FPGA,
       .douta(memOut_b) // output [7 : 0] douta
     );
 
-
+*/
    
-/* wire [7:0] bios_data_out;
+   /*
+ wire [7:0] bios_data_out;
   memBios mem(
     .clka(memReadClock),
     .addra({1'b1,extABH[2:0],extABL}),
@@ -126,7 +129,7 @@ module CPUtest(CLK_27MHZ_FPGA,
     );
     
     assign memOut_b = ({1'd0,extABH} >= {1'd0,8'hF8}) ? bios_data_out : 8'hff;
-   */ 
+   */
     wire addr_RAM,addr_BIOS,addr_CART;
     
     
@@ -136,18 +139,17 @@ module CPUtest(CLK_27MHZ_FPGA,
    
     assign HDR1_30 = ((16'h4000 <= {1'b0,memAdd_b}) & ({1'b0,memAdd_b} < 16'h8000)) ? 1'b1 : 1'b0;
     assign HDR1_32 = ((16'h8000 <= {1'b0,memAdd_b}) & ({1'b0,memAdd_b} < 16'hC000)) ? 1'b1 : 1'b0;
-    assign HDR1_34 = phi1_out;
-    assign HDR1_36 = memWriteClock;
+    assign HDR1_34 = phi0_in;
+    assign HDR1_36 = 1'b0;
     
-   /*
+   
     memoryMap   integrateMem(.addr_RAM(addr_RAM),.addr_BIOS(addr_BIOS),.addr_CART(addr_CART),
-                .Fclk(memReadClock), .clk(memWriteClock), .CPU_writeEn(~RW), .CPU_addr(memAdd_b), 
+                .Fclk(memReadClock), .clk(memReadClock), .CPU_writeEn(~RW), .CPU_addr(memAdd_b), 
                  .data_CART_out(data_CART),
                  .CPU_data(extDB) 
                 );
     
     
-    */
     
     /*-------------------------------------------------------------*/
     // cpu stuff
@@ -237,7 +239,7 @@ module CPUtest(CLK_27MHZ_FPGA,
     
     wire chipClk,chipClk_b0;
 
-    clockoneX #(.width(14))  test12(CLK_27MHZ_FPGA,chipClk_b);
+    clockoneX #(.width(3))  test12(CLK_27MHZ_FPGA,chipClk_b);
     
     wire [35 : 0] CONTROL0,CONTROL1;
     chipscope_ila ila0(
