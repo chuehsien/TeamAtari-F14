@@ -1,34 +1,26 @@
-module clockGen179(RST,clk27,phi0_lag,fphi0,phi0,locked);
+module clockGen179(RST,clk27,phi0,fphi0,locked);
+    parameter div = 6;
     input RST,clk27;
-    (* clock_signal = "yes" *)output phi0_lag,fphi0,phi0;
+    (* clock_signal = "yes" *)output phi0,fphi0;
     output locked;
 
-    wire clk27_b,clk576,clk576_b;
-   // BUFG b(clk27_b,clk27);
-   // BUFG b1(clk576,clk576_b);
-    //clock100_to_2864 try0(.RST(RST),.clock100(clk100_b),.clock2864(clk2864),.locked(locked));
-    
-   //produces 57.6MHz
-    clockDiv try0(.CLKIN1_IN(clk27), .RST_IN(RST), .CLK0_OUT(clk576),.LOCKED_OUT(locked));
+    wire clk576_phi0,clk1052_fphi0,clk576_phi1;
+    wire clk576_phi0_b,clk1052_fphi0_b,clk576_phi1_b;
 
-                
-    wire A,B;
-    
-    //produces 7.2Mhz clock.
-    hackishClock try1(.RST(RST),.clkin(clk576),.clkout_A(A),.clkout_B(B));
-    
-    //B IS THE LAGGING ONE. SO B = PHI0_lag
-    wire phi0_lag_b;
-    clockHalf final1(B,phi0_lag_b);
-    BUFG test0(phi0_lag,phi0_lag_b);
-    
-    //A IS THE NON LAGGING ONE
-    wire phi0_b;
-    
-    BUFG fastphi(fphi0,A);
-    
-    clockHalf final2(A,phi0_b);
-    BUFG test1(phi0,phi0_b);
+
+   //produces 57.6MHz
+    clockDiv try0(.CLKIN1_IN(clk27), .RST_IN(RST), .CLK0_OUT(clk576_phi0),.CLK2X_OUT(clk1052_fphi0), .LOCKED_OUT(locked));
+
+    clockoneX #(.width(div)) phi0make(clk576_phi0,clk576_phi0_b);
+    clockoneX #(.width(div)) fphi0make(clk1052_fphi0,clk1052_fphi0_b); 
+/*
+    clockone32 phi0make(clk576_phi0,clk576_phi0_b);
+    clockone32 fphi0make(clk1052_fphi0,clk1052_fphi0_b);
+    clockone32 phi1make(clk576_phi1,clk576_phi1_b); 
+*/
+
+    BUFG phi0out(phi0,clk576_phi0_b);
+    BUFG fphi0out(fphi0,clk1052_fphi0_b);
  
 endmodule
 
@@ -125,6 +117,19 @@ module clockone16(inClk,outClk);
 endmodule
 
 
+module clockone32(inClk,outClk);
+    input inClk;
+    output outClk;
+    
+    reg [4:0] count;
+    
+    always @ (posedge inClk) begin
+        count <= count + 1;
+    end
+    
+    assign outClk = count[4];
+    
+endmodule
 
 module clockone256(inClk,outClk);
     input inClk;
@@ -165,12 +170,29 @@ module clockone2048(inClk,outClk);
     assign outClk = count[10];
 endmodule
 
+module clockoneX(inClk,outClk);
+  
+    input inClk;
+    output outClk;
+    
+    
+    parameter width = 50;
+
+    reg [width-1:0] count;
+    
+    always @ (posedge inClk) begin
+        count <= count + 1;
+    end
+    
+    assign outClk = count[width-1];
+endmodule
+
 
 module clockDivider(inClk,outClk);
     parameter DIVIDE = 500;
     
 function integer log2;
-    input [31:0] value;
+    input [50:0] value;
     for (log2=0; value>0; log2=log2+1)
     value = value>>1;
 endfunction
@@ -181,7 +203,7 @@ endfunction
     output outClk;
 
     
-    reg [width:0] counter = 0;
+    reg [width-1:0] counter = 0;
     always @ (posedge inClk) begin
         counter <= counter + 1;
         if (counter == DIVIDE>>1) counter <= 0;
