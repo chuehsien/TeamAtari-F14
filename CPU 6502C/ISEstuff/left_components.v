@@ -262,7 +262,7 @@ module logicControl(updateOthers,currT,opcode,opcodeToIR,prevOpcode,phi1,phi2,ac
         output [6:0] nextT;
         output [65:0] nextControlSigs;
         */
-module logicControl(updateOthers,currT,opcode,prevOpcode,phi1,phi2,activeInt,aluRel,tempCarry,ovf,carry,statusReg,
+module logicControl(updateOthers,currT,opcode,prevOpcode,phi1,phi2,activeInt,aluRel,tempCarry,dir,carry,statusReg,
                                     nextT,nextControlSigs);                                  
                                     
         output updateOthers;              
@@ -270,7 +270,7 @@ module logicControl(updateOthers,currT,opcode,prevOpcode,phi1,phi2,activeInt,alu
         input [7:0] opcode,prevOpcode;
         input phi1,phi2;
         input [2:0] activeInt;
-        input aluRel,tempCarry,ovf,carry;
+        input aluRel,tempCarry,dir,carry;
         input [7:0] statusReg;
         output [6:0] nextT;
         output [65:0] nextControlSigs;        
@@ -288,7 +288,7 @@ module logicControl(updateOthers,currT,opcode,prevOpcode,phi1,phi2,activeInt,alu
         Tcontrol    tCon(currT,opcode,effCarry,statusReg,nextT);
         wire updateOthers;
         // the logic depends on the ticked in ACR in the ACRlatch, and AVR in the AVRlatch
-        randomLogic2     randomLog(updateOthers,currT,opcode,prevOpcode,phi1,phi2,activeInt,ovf,carry,statusReg[`status_C],statusReg[`status_D],nextControlSigs);
+        randomLogic2     randomLog(updateOthers,currT,opcode,prevOpcode,phi1,phi2,activeInt,dir,carry,statusReg[`status_C],statusReg[`status_D],nextControlSigs);
      /*
         randomLogicPredict   randLog(.T(currT),.nextT(nextT),.currOP(opcode),.nextOP(opcodeToIR),
                                     .phi1(phi1),.phi2(phi2),.activeInt(activeInt),

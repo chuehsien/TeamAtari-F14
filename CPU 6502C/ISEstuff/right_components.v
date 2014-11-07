@@ -14,16 +14,18 @@
 /* Changelog:
 
 */
-/* 
 
-module sigLatch(clk,in,out);
-  input clk, in;
+//only latch if ref clock is high.
+module sigLatchWclk(refclk,clk,in,out);
+  input refclk,clk, in;
   output out;
   
-  wire ffin;
-  assign ffin = out ? 1'b0 : in;
-  FDCPE #(.INIT(1'b0)) FF0(.Q(out),.C(clk),.CE(1'b1),.CLR(1'b0),.D(ffin),.PRE(1'b0));
-endmodule */
+  wire ffout;
+  assign ffin = (ffout) ? 1'b0 : in;
+  FDCPE #(.INIT(1'b0)) FF0(.Q(ffout),.C(clk),.CE(refclk),.CLR(1'b0),.D(ffin),.PRE(1'b0));
+
+  assign out = ffout | in;
+endmodule
 
 module sigLatch(clk,in,out);
   input clk, in;
@@ -32,15 +34,28 @@ module sigLatch(clk,in,out);
   wire ffout;
   assign ffin = (ffout) ? 1'b0 : in;
   FDCPE #(.INIT(1'b0)) FF0(.Q(ffout),.C(clk),.CE(1'b1),.CLR(1'b0),.D(ffin),.PRE(1'b0));
-  /*
-  always @ (posedge clk) begin
-      out <= (out == 1) ? 1'b0 : in;
-  end
-*/
+
   assign out = ffout | in;
 endmodule
 
   
+module FlipFlop8clr(clk,in,en,out,clr);
+    input clk;
+    input [7:0] in;
+    input en,clr;
+    output [7:0] out;
+    
+    FDCPE #(.INIT(1'b0)) FF0(.Q(out[0]),.C(clk),.CE(en),.CLR(clr),.D(in[0]),.PRE(1'b0));
+    FDCPE #(.INIT(1'b0)) FF1(.Q(out[1]),.C(clk),.CE(en),.CLR(clr),.D(in[1]),.PRE(1'b0));
+    FDCPE #(.INIT(1'b0)) FF2(.Q(out[2]),.C(clk),.CE(en),.CLR(clr),.D(in[2]),.PRE(1'b0));
+    FDCPE #(.INIT(1'b0)) FF3(.Q(out[3]),.C(clk),.CE(en),.CLR(clr),.D(in[3]),.PRE(1'b0));
+   
+    FDCPE #(.INIT(1'b0)) FF4(.Q(out[4]),.C(clk),.CE(en),.CLR(clr),.D(in[4]),.PRE(1'b0));
+    FDCPE #(.INIT(1'b0)) FF5(.Q(out[5]),.C(clk),.CE(en),.CLR(clr),.D(in[5]),.PRE(1'b0));
+    FDCPE #(.INIT(1'b0)) FF6(.Q(out[6]),.C(clk),.CE(en),.CLR(clr),.D(in[6]),.PRE(1'b0));
+    FDCPE #(.INIT(1'b0)) FF7(.Q(out[7]),.C(clk),.CE(en),.CLR(clr),.D(in[7]),.PRE(1'b0));
+
+endmodule
 
 
 module FlipFlop8(clk,in,en,out);
@@ -120,27 +135,30 @@ module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC,
   */
 endmodule
 
-module ACRlatch(haltAll,rstAll,phi1,inAVR,inACR,inHC,AVR,ACR,HC);
-    input haltAll,rstAll,phi1,inAVR,inACR,inHC;
-    output AVR,ACR,HC;
+module ACRlatch(haltAll,rstAll,phi1,inAVR,inACR,inHC,inDir,AVR,ACR,HC,dir);
+    input haltAll,rstAll,phi1,inAVR,inACR,inHC,inDir;
+    output AVR,ACR,HC,dir;
     
-    reg AVR,ACR,HC = 1'b0;
+    reg AVR,ACR,HC,dir = 1'b0;
     
     always @ (posedge phi1) begin
         if (rstAll) begin
             AVR <= 1'b0;
             ACR <= 1'b0;
             HC <= 1'b0;
+            dir <= 1'b1;
         end
         else if (haltAll) begin
             AVR <= AVR;
             ACR <= ACR;
             HC <= HC;
+            dir <= dir;
         end
         else begin
             AVR <= inAVR;
             ACR <= inACR;
-            HC <= inHC;        
+            HC <= inHC;
+            dir <= inDir;            
         end
 
     end
@@ -537,7 +555,7 @@ module statusReg(haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
                         I_set,I_clr, 
                         V_clr,
                         D_set,D_clr,
-                        DB,ALU,storedDB,opcode,DBinout,
+                        DB,ALU,storedDB,opcode,DBout,
                         status);
     input haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
                         P_DB, DBZ,ALUZ, ACR, AVR,B,
@@ -547,7 +565,7 @@ module statusReg(haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
                         D_set,D_clr; 
                         
     input [7:0] DB,ALU,storedDB,opcode;
-    inout [7:0] DBinout;
+    inout [7:0] DBout;
     output [7:0] status; //used by the FSM
     
     wire rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
@@ -558,7 +576,7 @@ module statusReg(haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
                     D_set,D_clr; 
 
     wire [7:0] DB,ALU,opcode;
-    wire [7:0] DBinout;
+    wire [7:0] DBout;
     wire [7:0] status;
     
     // internal
@@ -575,7 +593,7 @@ module statusReg(haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
 
  */
     reg currVal7,currVal6,currVal3,currVal2,currVal1,currVal0;
-    assign DBinout = (P_DB) ? status : 8'bzzzzzzzz;
+    assign DBout = (P_DB) ? status : 8'bzzzzzzzz;
     assign status = {currVal7,currVal6,1'b1,B,currVal3,currVal2,currVal1,currVal0};
     //assign currVal[5] = 1'b1;
     

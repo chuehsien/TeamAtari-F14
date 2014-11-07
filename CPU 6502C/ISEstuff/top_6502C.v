@@ -95,13 +95,7 @@ module top_6502C(prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,opcodeToI
             wire haltAll;
 			clockGen clock(HALT,phi0_in,haltAll,RDY,phi1,phi2,phi1_out,phi2_out);
             
-            //datapath modules
-            wire [7:0] DB_b0,ADL_b0,ADH_b0;
-           // triState idl_b0[7:0](DB,DB_b0,controlSigs[`DL_DB]);
-            //triState idl_b1[7:0](ADL,ADL_b0,controlSigs[`DL_ADL]);
-            //triState idl_b2[7:0](ADH,ADH_b0,controlSigs[`DL_ADH]);
-            inputDataLatch dl(haltAll,idlContents,rstAll,phi2,controlSigs[`DL_DB], controlSigs[`DL_ADL], controlSigs[`DL_ADH],extDB,
-                        DB,ADL,ADH);
+
             
             // internal signal latcher - used to latch signals across the phi1 uptick transition.
             wire nADH_ABH, nADL_ABL, DB_P, FLAG_DBZ, FLAG_ALU, FLAG_DB, P_DB, SET_C, CLR_C, SET_I, CLR_I, CLR_V, SET_D, CLR_D;
@@ -140,6 +134,37 @@ module top_6502C(prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,opcodeToI
             sigLatch l24(fastClk,controlSigs[`O_ADH0],O_ADH0);
             sigLatch l25(fastClk,controlSigs[`O_ADH1to7],O_ADH1to7);
 
+
+            wire PCH_ADH,PCL_ADL,ADD_ADL,S_ADL,DL_ADL,DL_ADH;
+            sigLatch l26(fastClk,controlSigs[`PCL_ADL],PCL_ADL);
+            sigLatch l27(fastClk,controlSigs[`PCH_ADH],PCH_ADH);
+            sigLatch l28(fastClk,controlSigs[`ADD_ADL],ADD_ADL);
+            sigLatch l29(fastClk,controlSigs[`S_ADL],S_ADL);
+            sigLatch l30(fastClk,controlSigs[`DL_ADL],DL_ADL);
+            sigLatch l31(fastClk,controlSigs[`DL_ADH],DL_ADH);
+
+            //latch signals for SR. because DB gets hazards on phi1 ticks.
+            //however, need to make sure that DB is only latched for phi1 ticks. (differentiate from latching for phi2 ticks)
+            wire [7:0] DBforSR;
+            
+            sigLatchWclk db4sr1(phi2,fastClk,DB[0],DBforSR[0]); //latch during phi2, to prepare for phi1 tick
+            sigLatchWclk db4sr2(phi2,fastClk,DB[1],DBforSR[1]);
+            sigLatchWclk db4sr3(phi2,fastClk,DB[2],DBforSR[2]);
+            sigLatchWclk db4sr4(phi2,fastClk,DB[3],DBforSR[3]);
+            sigLatchWclk db4sr5(phi2,fastClk,DB[4],DBforSR[4]);
+            sigLatchWclk db4sr6(phi2,fastClk,DB[5],DBforSR[5]);
+            sigLatchWclk db4sr7(phi2,fastClk,DB[6],DBforSR[6]);
+            sigLatchWclk db4sr8(phi2,fastClk,DB[7],DBforSR[7]);
+
+            //datapath modules
+            wire [7:0] DB_b0,ADL_b0,ADH_b0;
+           // triState idl_b0[7:0](DB,DB_b0,controlSigs[`DL_DB]);
+            //triState idl_b1[7:0](ADL,ADL_b0,controlSigs[`DL_ADL]);
+            //triState idl_b2[7:0](ADH,ADH_b0,controlSigs[`DL_ADH]);
+            inputDataLatch dl(haltAll,idlContents,rstAll,phi2,controlSigs[`DL_DB], DL_ADL, DL_ADH,extDB,
+                        DB,ADL,ADH);
+                        
+                        
             wire [7:0] inFromPC_lo, outToIncre_lo, outToPCL;
             wire PCLC;
             PcSelectReg lo_1(controlSigs[`PCL_PCL], controlSigs[`ADL_PCL], inFromPC_lo, ADL, 
@@ -148,7 +173,7 @@ module top_6502C(prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,opcodeToI
             wire [7:0] DB_b1,ADL_b1;
             //triState PClo_b0[7:0](DB,DB_b1,controlSigs[`PCL_DB]);
             //triState PClo_b1[7:0](ADL,ADL_b1,controlSigs[`PCL_ADL]);
-            PC          lo_3(haltAll,rstAll,phi2, controlSigs[`PCL_DB], controlSigs[`PCL_ADL],outToPCL,DB, ADL,inFromPC_lo);
+            PC          lo_3(haltAll,rstAll,phi2, controlSigs[`PCL_DB], PCL_ADL,outToPCL,DB, ADL,inFromPC_lo);
             
             
             wire [7:0] inFromPC_hi, outToIncre_hi, outToPCH;
@@ -158,7 +183,7 @@ module top_6502C(prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,opcodeToI
             wire [7:0] DB_b2,ADH_b2;
             //triState PChi_b0[7:0](DB,DB_b2,controlSigs[`PCH_DB]);
             //triState PChi_b1[7:0](ADH,ADH_b2,controlSigs[`PCH_ADH]);
-            PC          hi_3(haltAll,rstAll,phi2, controlSigs[`PCH_DB], controlSigs[`PCH_ADH],outToPCH,DB, ADH,inFromPC_hi);
+            PC          hi_3(haltAll,rstAll,phi2, controlSigs[`PCH_DB], PCH_ADH,outToPCH,DB, ADH,inFromPC_hi);
 `ifdef syn              
            wire ground = 1'b0;
             PULLUP pcMos1[7:0](.O(ADH));
@@ -166,12 +191,12 @@ module top_6502C(prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,opcodeToI
             PULLUP pcMos3[7:0](.O(DB));
             PULLUP pcMos4[7:0](.O(SB));
            
-            triState od_lo0(ADL[0],ground,controlSigs[`O_ADL0]);
-            triState od_lo1(ADL[1],ground,controlSigs[`O_ADL1]);
-            triState od_lo2(ADL[2],ground,controlSigs[`O_ADL2]);
+            triState od_lo0(ADL[0],ground,O_ADL0);
+            triState od_lo1(ADL[1],ground,O_ADL1);
+            triState od_lo2(ADL[2],ground,O_ADL2);
             
-            triState od_hi0(ADH[0],ground,controlSigs[`O_ADH0]);
-            triState od_hi1[6:0](ADH[7:1],ground,controlSigs[`O_ADH1to7]);
+            triState od_hi0(ADH[0],ground,O_ADH0);
+            triState od_hi1[6:0](ADH[7:1],ground,O_ADH1to7);
             
             /* 
             prechargeMos        pcMos1(rstAll,phi2,ADH); 
@@ -213,7 +238,7 @@ module top_6502C(prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,opcodeToI
             wire [7:0]  ADL_b3,SB_b3;
             //triState sp_b0[7:0](ADL,ADL_b3,controlSigs[`S_ADL]);
             //triState sp_b1[7:0](SB,SB_b3,controlSigs[`S_SB]);
-            SPreg   sp(haltAll,rstAll,phi2,controlSigs[`S_S], SB_S, controlSigs[`S_ADL], 
+            SPreg   sp(haltAll,rstAll,phi2,controlSigs[`S_S], SB_S, S_ADL, 
                         controlSigs[`S_SB], SB, ADL, SB);
                         
             wire [7:0] nDB;
@@ -223,16 +248,16 @@ module top_6502C(prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,opcodeToI
             Areg    a_reg(controlSigs[`O_ADD], controlSigs[`SB_ADD], SB, A);
             
             wire aluAVR,aluACR,aluHC,aluRel;
-            wire AVR,ACR,HC;
+            wire AVR,ACR,HC,dir;
             wire [7:0] ADL_b4,SB_b4;
             //triState addhold_b0[7:0](ADL,ADL_b4,controlSigs[`ADD_ADL]);
             //triState addhold_b1[6:0](SB[6:0],SB_b4[6:0],controlSigs[`ADD_SB0to6]);
             //triState addhold_b2(SB[7],SB_b4[7],controlSigs[`ADD_SB7]);
-            AdderHoldReg addHold(haltAll,phi2, controlSigs[`ADD_ADL], controlSigs[`ADD_SB0to6], controlSigs[`ADD_SB7], 
+            AdderHoldReg addHold(haltAll,phi2, ADD_ADL, controlSigs[`ADD_SB0to6], controlSigs[`ADD_SB7], 
                                 ALU_out, tempAVR, tempACR, tempHC,tempRel,
                                 ADL,SB,ALUhold_out,aluAVR,aluACR,aluHC,aluRel);
             
-            ACRlatch    carryLatch(haltAll,rstAll,phi1,aluAVR,aluACR,aluHC,AVR,ACR,HC);
+            ACRlatch    carryLatch(haltAll,rstAll,phi1,aluAVR,aluACR,aluHC,aluRel,AVR,ACR,HC,dir);
             wire [7:0] inFromDecAdder;
            
             /*
@@ -305,9 +330,9 @@ module top_6502C(prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,opcodeToI
                         SET_I, CLR_I,
                         CLR_V,
                         SET_D, CLR_D,
-                        DB,ALUhold_out,storedDB,opcode,DB,
+                        DBforSR,ALUhold_out,storedDB,opcode,DB,
                         SR_contents);
-           
+           //no need for ALUforSR, since aluhold doesnt change over phi1 ticks.
                     
             wire [7:0] extDB_b0;
             triState8 dor_b(extDB,extDB_b0,(~haltAll) & (controlSigs[`nRW]));
@@ -348,7 +373,7 @@ module top_6502C(prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,opcodeToI
                           
             logicControl   control(.updateOthers(updateOthers),
                                   .currT(currT),.opcode(opcode),.prevOpcode(prevOpcode),.phi1(phi1),.phi2(phi2),
-                                  .activeInt(activeInt),.aluRel(aluRel),.tempCarry(aluACR),.ovf(AVR),.carry(ACR),.statusReg(SR_contents),
+                                  .activeInt(activeInt),.aluRel(aluRel),.tempCarry(aluACR),.dir(dir),.carry(ACR),.statusReg(SR_contents),
                                     .nextT(newT),.nextControlSigs(controlSigs));    
 /* 
           logicControl(updateOthers,currT,opcode,prevOpcode,phi1,phi2,activeInt,aluRel,tempCarry,ovf,carry,statusReg,

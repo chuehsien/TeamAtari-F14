@@ -63,18 +63,14 @@ module memRAM (
   wea,
   addra,
   dina,
-  clkb,
-  addrb,
-  doutb
+  douta
 );
 
   input clka;
   input [0 : 0] wea;
   input [13 : 0] addra;
   input [7 : 0] dina;
-  input clkb;
-  input [13 : 0] addrb;
-  output [7 : 0] doutb;
+  output [7 : 0] douta;
 
   // WARNING: This file provides a module declaration only, it does not support
   //          direct instantiation. Please use an instantiation template (VEO) to

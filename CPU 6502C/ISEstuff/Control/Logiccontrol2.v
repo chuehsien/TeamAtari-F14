@@ -1,10 +1,10 @@
-module randomLogic2(updateOthers,T,OP,prevOP,phi1,phi2,activeInt,ovf,carry,statusC,decMode,control);
+module randomLogic2(updateOthers,T,OP,prevOP,phi1,phi2,activeInt,dir,carry,statusC,decMode,control);
     `include "Control/controlMods.v"
     output updateOthers;
     input [6:0] T;
     input [7:0] OP,prevOP;
     input [2:0] activeInt;
-    input phi1,phi2,ovf,carry,statusC,decMode;
+    input phi1,phi2,dir,carry,statusC,decMode;
     output reg [65:0] control = 65'd0;
     wire updateAC,updateX,updateY,updateStoredDB,updateOthers,updateDBZ;
     
@@ -35,7 +35,7 @@ module randomLogic2(updateOthers,T,OP,prevOP,phi1,phi2,activeInt,ovf,carry,statu
     always @ (*) begin
         control = 66'd0;
         //getControls(T,OP,phi1,phi2,activeInt,carry,statusC,decMode,control);
-        getControls(phi1,phi2,ovf,carry,statusC,decMode,activeInt,OP,T,control);
+        getControls(phi1,phi2,dir,carry,statusC,decMode,activeInt,OP,T,control);
         //settle prevOP
         
       if (updateAC) begin

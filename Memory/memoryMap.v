@@ -197,16 +197,14 @@ module memoryMap(addr_RAM,addr_BIOS,addr_CART,
   // Block RAM
   // Read clock is inverted Fphi0, write clock is phi2
   
-  memEmptyRAM blockRAM (.clka(clk),
+  memRAM blockRAM (.clka(clk),
                              .wea(write_RAM),
                              .addra(CPU_addr_b[13:0]),
                              .dina(data_in_b),
-                             .clkb(Fclk),
-                             .addrb(CPU_addr_b[13:0]),
-                             .doutb(data_RAM_out_b));
+                             .douta(data_RAM_out_b));
 
   //memory256x256 mem(.clock(Fclk), .we(write_RAM), .address(CPU_addr), .dataIn(data_in), .dataOut(data_RAM_out));
-  memBios bios(.clka(Fclk),.addra(CPU_addr_b[11:0]),.douta(data_BIOS_out_b));
+  memBios bios(.clka(clk),.addra(CPU_addr_b[10:0]),.douta(data_BIOS_out_b));
 
     
   triStateData tsd(.DB(CPU_data), .DB_out(data_out), .writeEn(CPU_writeEn), .DB_in(data_in));

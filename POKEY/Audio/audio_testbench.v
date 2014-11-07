@@ -32,7 +32,7 @@ module pokey_top(USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_
     
     assign AUDCTL = 8'd0;
     
-    assign vol = {GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_DIP_SW4};
+    assign vol = ~{GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_DIP_SW4};
     assign distort = {GPIO_DIP_SW6,GPIO_DIP_SW7,GPIO_DIP_SW8};
     assign volO = GPIO_DIP_SW5;
 
@@ -44,7 +44,7 @@ module pokey_top(USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_
                     AUDC1,AUDC2,AUDC3,AUDC4,AUDCTL,
                     audio1,audio2,audio3,audio4,vol1,vol2,vol3,vol4);
                     
-    reg [1:0] sel = 1'b0;
+    reg [1:0] sel = 2'b0;
     wire nextChn;
     DeBounce selDB(clk179, init_L, GPIO_SW_S, nextChn);
     assign {GPIO_LED_0,GPIO_LED_1} = sel;
@@ -64,7 +64,7 @@ module pokey_top(USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_
     
 //=======================ILA/ICON stuff=======================//
     
-    
+    /*
     wire chipClk_b0,chipClk;
     clockone2048 test11(USER_CLK,chipClk_b0);
     clockone256  test12(chipClk_b0,chipClk);
@@ -96,7 +96,7 @@ module pokey_top(USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_
     .TRIG13(8'd0),
     .TRIG14(8'd0),
     .TRIG15(8'd0));
-    
+    */
 endmodule
 
 module clockGen(HALT,phi0_in,

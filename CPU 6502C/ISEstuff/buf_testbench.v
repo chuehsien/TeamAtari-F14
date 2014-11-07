@@ -8,7 +8,7 @@ module lcd_top(CLK_27MHZ_FPGA,GPIO_SW_C,HDR1_2,HDR1_4,HDR1_6,HDR1_8,GPIO_LED_C);
    
     //clockGen179     clockdiv(1'b0,CLK_27MHZ_FPGA,phi0,,);
     
-   clockGen179(.RST(GPIO_SW_C),.clk100(CLK_27MHZ_FPGA),.fphi0(fphi0),.phi0(phi0),.phi1(phi1),.phi2(phi2),.locked(locked));
+   //clockGen179(.RST(GPIO_SW_C),.clk100(CLK_27MHZ_FPGA),.fphi0(fphi0),.phi0(phi0),.phi1(phi1),.phi2(phi2),.locked(locked));
                      
     assign HDR1_2 = fphi0;
     assign HDR1_4 = phi0;
