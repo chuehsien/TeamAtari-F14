@@ -7,7 +7,7 @@
 `include "lcd_control.v"
 `include "testFSM.v"
 
-`define DIV 8'd6
+`define DIV 8'd4
 /*
 description:
 press west button to reset lcd
@@ -97,7 +97,7 @@ module CPUtest(CLK_27MHZ_FPGA,
     // mem stuff
     
     wire fastClk;
-    buf fast(fastClk,fphi0); //x2 phi1 speed.
+    BUFG fast(fastClk,fphi0); //x2 phi1 speed.
     
     (* clock_signal = "yes" *)wire memReadClock,memWriteClock;
     
@@ -120,11 +120,11 @@ module CPUtest(CLK_27MHZ_FPGA,
     //buf memB0[7:0](memOut,memOut_b);
     //buf memB1[15:0](memAdd_b,memAdd);
     //buf memB2[7:0](memDBin,extDB);
-/*	
-
+	
+/*
     triState8 busDriver(extDB,memOut_b,RW);
   
-    memTestFullSingle mem( 
+    memTestFull2 mem( 
       .clka(memReadClock), // input clka
       .wea(~RW), // input [0 : 0] wea
       .addra(memAdd), // input [15 : 0] addra
@@ -148,15 +148,13 @@ module CPUtest(CLK_27MHZ_FPGA,
     assign HDR1_34 = 1'b0;
     assign HDR1_36 = 1'b0;
     
-   
+  
     memoryMap   integrateMem(.addr_RAM(addr_RAM),.addr_BIOS(addr_BIOS),.addr_CART(addr_CART),
                 .Fclk(memReadClock), .clk(memReadClock), .CPU_writeEn(~RW), .CPU_addr(memAdd), 
                  .data_CART_out(data_CART),
                  .CPU_data(extDB) 
                 );
-    
-   
-    
+
     /*-------------------------------------------------------------*/
     // cpu stuff
     
@@ -203,9 +201,9 @@ module CPUtest(CLK_27MHZ_FPGA,
     wire [7:0] second_first_int;
     wire [7:0] OP,opcodeToIR,prevOpcode;
     wire [7:0] Accum,Xreg,Yreg;
-    wire [7:0] extAB_b1,SRflags,holdAB,SR_contents;
+    wire [7:0] DBforSR,extAB_b1,SRflags,holdAB,SR_contents;
 
-	top_6502C cpu(.prevOpcode(prevOpcode),.extAB_b1(extAB_b1),.SR_contents(SR_contents),.holdAB(holdAB),
+	top_6502C cpu(.DBforSR(DBforSR),.prevOpcode(prevOpcode),.extAB_b1(extAB_b1),.SR_contents(SR_contents),.holdAB(holdAB),
                 .SRflags(SRflags),.opcode(OP),.opcodeToIR(opcodeToIR),.second_first_int(second_first_int),.nmiPending(nmiPending),
                 .resPending(resPending),.irqPending(irqPending),.currState(currState),.accumVal(accumVal),
                 .outToPCL(outToPCL),.outToPCH(outToPCH),.A(A),.B(B),.idlContents(idlContents),.rstAll(rstAll),.ALUhold_out(ALUhold_out),
@@ -263,7 +261,7 @@ module CPUtest(CLK_27MHZ_FPGA,
     
     wire chipClk,chipClk_b0;
 
-    clockoneX #(.width(`DIV-3))  test12(CLK_27MHZ_FPGA,chipClk_b);
+    clockoneX #(.width(`DIV-2))  test12(CLK_27MHZ_FPGA,chipClk_b);
     
     wire [35 : 0] CONTROL0,CONTROL1;
     chipscope_ila ila0(
@@ -281,9 +279,9 @@ module CPUtest(CLK_27MHZ_FPGA,
     {RW,activeInt,RDY,IRQ_L,NMI_L,RES_L},
     Accum,
     Xreg,
-    count,
+    {7'd0,fphi0},
     OP,
-    holdAB,
+    Yreg,
     SR_contents);
     
     // extra ila for use...

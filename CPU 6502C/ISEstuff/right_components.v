@@ -15,16 +15,38 @@
 
 */
 
+module sigLatchWclk8(refclk,clk,in,out);
+  input refclk,clk;
+  input [7:0] in;
+  output [7:0] out;
+  
+  reg [7:0] ffout = 1'b0;
+ // assign ffin = (ffout) ? 1'b0 : in;
+  always @ (posedge clk) begin
+    ffout <= (refclk) ? in : 8'd0;
+  end
+  
+  //FDCPE #(.INIT(1'b0)) FF0(.Q(ffout),.C(clk),.CE(refclk),.CLR(1'b0),.D(ffin),.PRE(1'b0));
+
+  assign out = ffout | in;
+  
+endmodule
+
 //only latch if ref clock is high.
 module sigLatchWclk(refclk,clk,in,out);
   input refclk,clk, in;
   output out;
   
-  wire ffout;
-  assign ffin = (ffout) ? 1'b0 : in;
-  FDCPE #(.INIT(1'b0)) FF0(.Q(ffout),.C(clk),.CE(refclk),.CLR(1'b0),.D(ffin),.PRE(1'b0));
+  reg ffout = 1'b0;
+ // assign ffin = (ffout) ? 1'b0 : in;
+  always @ (posedge clk) begin
+    ffout <= (refclk) ? in : 1'b0;
+  end
+  
+  //FDCPE #(.INIT(1'b0)) FF0(.Q(ffout),.C(clk),.CE(refclk),.CLR(1'b0),.D(ffin),.PRE(1'b0));
 
   assign out = ffout | in;
+  
 endmodule
 
 module sigLatch(clk,in,out);
@@ -103,62 +125,36 @@ module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC,
                            ((SRS) ? {I_ADDC, B[7:1]} : 8'hzz))));
                            
    assign relDirection = ~A[7];
-  /*  
-  always @ (*) begin
 
-    AVR = 1'b0;
-    ACR = 1'b0;
-    HC = 1'b0;
-
-        // Addition operation: A + B + Cin
-        // Perform in two steps to produce half-carry value
-        // Overflow if (A[7]==B[7]) && (ALU_out[7]!=A[7]) 
-        if (SUMS) begin
-          {HC, ALU_out[3:0]} = A[3:0] + B[3:0] + I_ADDC;
-          {ACR, ALU_out[7:4]} = A[7:4] + B[7:4] + HC;
-          AVR = (A[7]==B[7]) & (A[7]!=ALU_out[7]); 
-        end
-        else if (ANDS)
-          ALU_out = A & B;
-        else if (EORS)
-          ALU_out = A ^ B;
-        else if (ORS)
-          ALU_out = A | B;
-        else if (SRS) begin// which to shift? A or B? can we just default to A.
-          //ALU_out = {1'b0, ALU_out[7:1]};
-          ALU_out = {I_ADDC, B[7:1]};
-          // need to shift out the carry i thk.
-          ACR = B[0];
-        end
-    
-  end
-  */
 endmodule
 
-module ACRlatch(haltAll,rstAll,phi1,inAVR,inACR,inHC,inDir,AVR,ACR,HC,dir);
-    input haltAll,rstAll,phi1,inAVR,inACR,inHC,inDir;
-    output AVR,ACR,HC,dir;
+module ACRlatch(haltAll,phi1,
+                in_nDSA,in_nDAA,inAVR,inACR,inHC,inDir,
+                nDSA,nDAA,AVR,ACR,HC,dir);
+    input haltAll,phi1,in_nDSA,in_nDAA,inAVR,inACR,inHC,inDir;
+    output nDSA,nDAA,AVR,ACR,HC,dir;
     
     reg AVR,ACR,HC,dir = 1'b0;
+    reg nDSA,nDAA = 1'b1;
     
     always @ (posedge phi1) begin
-        if (rstAll) begin
-            AVR <= 1'b0;
-            ACR <= 1'b0;
-            HC <= 1'b0;
-            dir <= 1'b1;
-        end
-        else if (haltAll) begin
+
+        if (haltAll) begin
             AVR <= AVR;
             ACR <= ACR;
             HC <= HC;
             dir <= dir;
+            nDSA <= nDSA;
+            nDAA <= nDAA;
         end
         else begin
             AVR <= inAVR;
             ACR <= inACR;
             HC <= inHC;
             dir <= inDir;            
+            nDSA <= in_nDSA;
+            nDAA <= in_nDAA;
+            
         end
 
     end
@@ -167,22 +163,24 @@ module ACRlatch(haltAll,rstAll,phi1,inAVR,inACR,inHC,inDir,AVR,ACR,HC,dir);
 
 endmodule
 
-module AdderHoldReg(haltAll,phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes,tempAVR,tempACR,tempHC,tempRel,
-		ADL,SB,adderReg,aluAVR,aluACR,aluHC,aluRel);
+module AdderHoldReg(haltAll,phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, 
+    addRes,temp_nDSA,temp_nDAA,tempAVR,tempACR,tempHC,tempRel,
+		ADL,SB,
+    adderReg,alu_nDSA,alu_nDAA,aluAVR,aluACR,aluHC,aluRel);
 
     input haltAll,phi2, ADD_ADL, ADD_SB0to6, ADD_SB7;
     input [7:0] addRes;
-    input tempAVR,tempACR,tempHC,tempRel;
+    input temp_nDSA,temp_nDAA,tempAVR,tempACR,tempHC,tempRel;
     inout [7:0] ADL, SB;
     output [7:0] adderReg;
-    output aluAVR,aluACR,aluHC,aluRel;
+    output alu_nDSA,alu_nDAA,aluAVR,aluACR,aluHC,aluRel;
     
     wire phi2, ADD_ADL, ADD_SB0to6, ADD_SB7;
     wire tempAVR,tempACR,tempHC,tempRel;
     wire [7:0] addRes;
     wire [7:0] ADL,SB;
     reg [7:0] adderReg = 8'h00;
-    reg aluAVR,aluACR,aluHC,aluRel = 1'b0;
+    reg alu_nDSA, alu_nDAA, aluAVR,aluACR,aluHC,aluRel = 1'b0;
 
     always @ (posedge phi2) begin
         if (haltAll) begin
@@ -191,6 +189,8 @@ module AdderHoldReg(haltAll,phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes,tempAVR,t
             aluACR <= aluACR;
             aluHC <= aluHC;
             aluRel <= aluRel;
+            alu_nDSA <= alu_nDSA;
+            alu_nDAA <= alu_nDAA;
             
         end
         else begin
@@ -199,6 +199,8 @@ module AdderHoldReg(haltAll,phi2, ADD_ADL, ADD_SB0to6, ADD_SB7, addRes,tempAVR,t
             aluACR <= tempACR;
             aluHC <= tempHC;
             aluRel <= tempRel;
+            alu_nDSA <= temp_nDSA;
+            alu_nDAA <= temp_nDAA;
         end
 
     end
@@ -283,10 +285,8 @@ module inputDataLatch(haltAll,data,rstAll, phi2, DL_DB, DL_ADL, DL_ADH,extDataBu
     triState adh[7:0](ADH,data,DL_ADH);
     
     always @ (posedge phi2) begin
-        if (rstAll) data <= 8'h00;
-        else if (haltAll) data <= data;
-        else data <= extDataBus;
-                    
+        if (haltAll) data <= data;
+        else data <= extDataBus;              
     end
 
 endmodule
@@ -349,8 +349,8 @@ module PC(haltAll,rstAll, phi2, PCL_DB, PCL_ADL,inFromIncre,
     assign PCout = currPC;
     
     always @ (posedge phi2) begin
-        if (rstAll) currPC <= 8'h00;
-        else if (haltAll) currPC <= currPC;
+       // if (rstAll) currPC <= 8'h00;
+        if (haltAll) currPC <= currPC;
         else currPC <= inFromIncre;
     end
     
@@ -386,9 +386,10 @@ module SPreg(haltAll,rstAll,phi2,S_S, SB_S, S_ADL, S_SB, SBin,
     triState sb[7:0](SB,latchOut,S_SB);
 
     always @ (posedge phi2) begin
-        latchOut <= (rstAll) ? 8'h00 :
-                    ((haltAll) ? latchOut :
-                    ((SB_S) ? SBin : latchOut));
+    
+        if (haltAll) latchOut <= latchOut;
+        else if (SB_S) latchOut <= SBin;
+        else latchOut <= latchOut;
                    
     end
     
@@ -397,74 +398,46 @@ endmodule
 //DSA - Decimal subtract adjust
 //DAA - Decimal add adjust
 module decimalAdjust(haltAll,SBin, DSA, DAA, ACR, HC, phi2,
-                    dataOut);
-
-    input [7:0] SBin;
-    input haltAll,DSA, DAA, ACR, HC, phi2;
-    output [7:0] dataOut;
-   
-    wire [7:0] SBin;
-    wire DSA,DAA,ACR,HC,phi2;
-    wire [7:0] dataOut;
+                    data);
     
-    //internal
-    reg [7:0] data = 8'h00;
-    reg iDSA,iDAA =1'b0;
-    reg iACR,iHC = 1'b0;
-   
-    always @ (posedge phi2) begin
-        if  (haltAll) begin
-            iDAA <= iDAA;
-            iDSA <= iDSA;
-            iACR <= iACR;
-            iHC  <= iHC;
-        end
-        
-        else begin
-            iDAA <= DAA;
-            iDSA <= DSA;
-            iACR <= ACR;
-            iHC <= HC;
-        end
-    end
+    input haltAll;
+    input [7:0] SBin;
+    input DSA, DAA, ACR, HC, phi2;
+    output reg [7:0] data;
+ 
     
     //refer to http://imrannazar.com/Binary-Coded-Decimal-Addition-on-Atmel-AVR
-    //tada. settled. refer to webstie for more details
+
     always @ (*) begin
         data = SBin;
-        if (iDAA) begin
-            if (SBin[3:0] > 4'd9 || iHC) begin
+
+        if (DAA) begin
+            if (SBin[3:0] > 4'd9 || HC) begin
                 data = data + 8'h06;
             end
                 
-            if (iACR || (SBin > 8'h99)) begin
+            if (ACR || (SBin > 8'h99)) begin
                 data = data + 8'h60;
                 // BCD carry has occurred. Do anything??
             end 
         
         end
         
-        else if (iDSA)//decimal mode
+        else if (DSA)//decimal mode
         begin
-            if (~iHC) begin //always minus, except when HC = 1.
+            if (~HC) begin //always minus, except when HC = 1.
                 data = data - 8'h06;
             end
-            if (~iACR) begin
+            if (~ACR) begin
             data = data - 8'h60;
             end
         end 
-        //else begin
-        //direct pass-through
-        //    data = SBin;
-        //end
+        else data = SBin;
+            
+        
+        
     end
-    
-    //always @ (posedge phi2) begin
-    //    dataOut <= data;
-    //end
-    assign dataOut = data;
 
-    // this module is a mess!
     
 endmodule
 
@@ -487,9 +460,10 @@ module accum(haltAll,accumVal,rstAll,phi2,inFromDecAdder, SB_AC, AC_DB, AC_SB,
     triState SB_b[7:0](SB,currAccum,AC_SB);
 
     always @ (posedge phi2) begin
-        currAccum <= (rstAll) ? 8'h00 :
-                    ((haltAll) ? currAccum :
-                    ((SB_AC) ? inFromDecAdder : currAccum));
+    
+        if (haltAll) currAccum <= currAccum;
+        else if (SB_AC) currAccum <= inFromDecAdder;
+        else currAccum <= currAccum;
  
     end
     
@@ -537,10 +511,11 @@ module register(haltAll,currVal,rstAll,phi2, load, bus_en,SBin,
     assign SB = (bus_en) ? currVal : 8'bzzzzzzzz;
     
     always @(posedge phi2) begin
-            currVal <= (rstAll) ? 8'h00 :
-                        ((haltAll) ? currVal :
-                        ((load) ? SBin : currVal));
-
+    
+        if (haltAll) currVal <= currVal;
+        else if (load) currVal <= SBin;
+        else currVal <= currVal;
+       
     end
    
     
@@ -549,7 +524,7 @@ endmodule
 //this needs to push out B bit when its a BRK.
 //the x_set and x_clr are edge triggered.
 //everything else is ticked in when 'update' is asserted.
-module statusReg(haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
+module statusReg(phi1_1,phi1_7,haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
                         P_DB, DBZ, ALUZ, ACR, AVR, B,
                         C_set, C_clr,
                         I_set,I_clr, 
@@ -557,6 +532,7 @@ module statusReg(haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
                         D_set,D_clr,
                         DB,ALU,storedDB,opcode,DBout,
                         status);
+    output phi1_1,phi1_7;
     input haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
                         P_DB, DBZ,ALUZ, ACR, AVR,B,
                         C_set, C_clr,
@@ -579,67 +555,17 @@ module statusReg(haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
     wire [7:0] DBout;
     wire [7:0] status;
     
-    // internal
-   // wire [7:0] currVal;
-//    = 8'b0010_0000;
-    
-    // bit arrangement: (bit 7) NV_BDIZC (bit 0) - bit 5 has no purpose.
-    //assign currVal[4] = B;
-    /* 
-    always @ (B) begin
-        currVal[4] = B;
-    end
-    
 
- */
     reg currVal7,currVal6,currVal3,currVal2,currVal1,currVal0;
     assign DBout = (P_DB) ? status : 8'bzzzzzzzz;
     assign status = {currVal7,currVal6,1'b1,B,currVal3,currVal2,currVal1,currVal0};
-    //assign currVal[5] = 1'b1;
-    
-    
-    
+
     //Negative
     wire phi1_7,phi1_6,phi1_3,phi1_2,phi1_1,phi1_0;
-  /*  wire phi2_7,phi2_6,phi2_3,phi2_2,phi2_1,phi2_0;
-    
-    wire load7,load6,load3,load2,load1,load0;
-    assign load7 = ((phi1) ? phi1_7 : ((phi2) ? phi2_7 : 1'b0));
-    assign load6 = ((phi1) ? phi1_6 : ((phi2) ? phi2_6 : 1'b0));
-    assign load3 = ((phi1) ? phi1_3 : ((phi2) ? phi2_3 : 1'b0));
-    assign load2 = ((phi1) ? phi1_2 : ((phi2) ? phi2_2 : 1'b0));
-    assign load1 = ((phi1) ? phi1_1 : ((phi2) ? phi2_1 : 1'b0));
-    assign load0 = ((phi1) ? phi1_0 : ((phi2) ? phi2_0 : 1'b0));
- */  
- /*
-  FDCPE #(.INIT(1'b0)) SR7(.Q(currVal7),.C(phi1),.CE(en),.CLR(rstAll),.D(phi1_7),.PRE(1'b0));
-  FDCPE #(.INIT(1'b0)) SR6(.Q(currVal6),.C(phi1),.CE(en),.CLR(rstAll),.D(phi1_6),.PRE(1'b0));
-  FDCPE #(.INIT(1'b0)) SR3(.Q(currVal3),.C(phi1),.CE(en),.CLR(rstAll),.D(phi1_3),.PRE(1'b0));
-  FDCPE #(.INIT(1'b0)) SR2(.Q(currVal2),.C(phi1),.CE(en),.CLR(rstAll),.D(phi1_2),.PRE(1'b0));
-  FDCPE #(.INIT(1'b0)) SR1(.Q(currVal1),.C(phi1),.CE(en),.CLR(rstAll),.D(phi1_1),.PRE(1'b0));
-  FDCPE #(.INIT(1'b0)) SR0(.Q(currVal0),.C(phi1),.CE(en),.CLR(rstAll),.D(phi1_0),.PRE(1'b0));
- */
  
     always @ (posedge phi1) begin
     
-        if (rstAll) begin
-            currVal7 <= 1'b0;
-            currVal6 <= 1'b0;
-            currVal3 <= 1'b0;
-            currVal2 <= 1'b0;
-            currVal1 <= 1'b0;
-            currVal0 <= 1'b0;
-        end
-        else if (haltAll) begin
-            currVal7 <= currVal7;
-            currVal6 <= currVal6;
-            currVal3 <= currVal3;
-            currVal2 <= currVal2;
-            currVal1 <= currVal1;
-            currVal0 <= currVal0;
-        end
-        
-        else begin
+        begin
             currVal7 <= phi1_7;
             currVal6 <= phi1_6;
             currVal3 <= phi1_3;
@@ -650,7 +576,7 @@ module statusReg(haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
     end
 
     
-    wire class1,class2,class3,class4; //diff classes of opcodes affect diff status bits.
+    wire class1,class2,class3,class4,class5; //diff classes of opcodes affect diff status bits.
     assign class1 = (opcode == `ADC_abs || opcode == `ADC_abx || opcode == `ADC_aby || opcode == `ADC_imm || 
                  opcode == `ADC_izx || opcode == `ADC_izy || opcode == `ADC_zp  || opcode == `ADC_zpx ||
                  opcode == `SBC_abs || opcode == `SBC_abx || opcode == `SBC_aby || opcode == `SBC_imm || 
@@ -664,9 +590,12 @@ module statusReg(haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
                         opcode == `EOR_abs ||opcode == `EOR_imm ||opcode == `EOR_zp || opcode == `EOR_zpx) ;  
      
     assign class3 = (opcode == `BIT_zp || opcode == `BIT_abs);
-    assign class4 = (opcode == `TAX || opcode == `TAY || opcode == `TSX || 
-            opcode == `TXA || opcode == `TXS || opcode == `TYA);             
-            
+    assign class4 = (opcode == `TAX || opcode == `TAY ||  
+            opcode == `TXA ||  opcode == `TYA || opcode == `TSX);             
+    
+    assign class5 = (opcode == `CMP_izx ||opcode == `CMP_izy ||opcode == `CMP_aby ||opcode == `CMP_abx ||
+                        opcode == `CMP_abs ||opcode == `CMP_imm ||opcode == `CMP_zp || opcode == `CMP_zpx);
+                        
     //N bit
     wire special_7;
     assign special_7 = storedDB[7];
@@ -680,7 +609,7 @@ module statusReg(haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
     
     //V bit
     assign phi1_6 = loadDBZ ? currVal6 :
-                    (flagsALU ? (class1 ? AVR : (class2 ? currVal6 : AVR)) :
+                    (flagsALU ? ((class1|class3) ? AVR : currVal6) :
                     (flagsDB ? (class3 ? DB[6] : currVal6) :
                     (DB_P ? DB[6] :  (V_clr ? 1'b0 : currVal6))));
     
@@ -702,10 +631,18 @@ module statusReg(haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
     wire special_1;
     assign special_1 = ~(|storedDB);
     assign phi1_1 = loadDBZ ? DBZ :
-                    (flagsALU ? (ALUZ) :
-                    (flagsDB ? (class4 ? special_1 : DBZ) :
-                    (DB_P ? DB[1] : currVal1)));
-     
+                    ((flagsDB&class3) ? currVal1 :
+                    ((flagsDB&class4) ? special_1 :
+                    (flagsDB ? DBZ :
+                    (flagsALU ? ALUZ :
+                    (DB_P ? DB[1] : currVal1)))));
+          /*          
+                    (flagsALU ? ((ALU == 8'd0)) :
+                    ((flagsDB & class4) ? special_1 :
+                    (flagsDB ? (class3 ? currVal1 : (DB == 8'd0) ):
+                    (DB_P ? DB[1] : currVal1))));
+     */
+
     //assign phi2_1 = (flagsDB & class4) ? (DBZ) : currVal1;
     
     //C bit

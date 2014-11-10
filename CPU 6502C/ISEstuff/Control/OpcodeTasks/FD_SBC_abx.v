@@ -193,6 +193,7 @@ task SBC_abx;
 					controlSigs[`nI_PC] = 1'b1;
                     controlSigs[`nADL_ABL] = 1'b1;
                     controlSigs[`I_ADDC] = 1'b1;
+                    controlSigs[`nADL_ABL] = 1'b1;
 			end
 			end
 		endcase

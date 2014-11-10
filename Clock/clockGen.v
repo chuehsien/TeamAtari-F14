@@ -11,8 +11,8 @@ module clockGen179(RST,clk27,phi0,fphi0,locked);
    //produces 57.6MHz
     clockDiv try0(.CLKIN1_IN(clk27), .RST_IN(RST), .CLK0_OUT(clk576_phi0),.CLK2X_OUT(clk1052_fphi0), .LOCKED_OUT(locked));
 
-    clockoneX #(.width(div)) phi0make(clk576_phi0,clk576_phi0_b);
-    clockoneX #(.width(div)) fphi0make(clk1052_fphi0,clk1052_fphi0_b); 
+    clockoneX #(.width(div+1)) phi0make(clk576_phi0,clk576_phi0_b);
+    clockoneX #(.width(div+1)) fphi0make(clk1052_fphi0,clk1052_fphi0_b); 
 /*
     clockone32 phi0make(clk576_phi0,clk576_phi0_b);
     clockone32 fphi0make(clk1052_fphi0,clk1052_fphi0_b);

@@ -2,45 +2,26 @@
 `include "Control/Tcontrol.v"
 `include "Control/Logiccontrol2.v"
 
-module clockGen(HALT,phi0_in,
+module clockGen(HALT,phi0_in,fclk,
                 haltAll,RDY,phi1_out,phi2_out,phi1_extout,phi2_extout);
                 
-    input HALT,phi0_in;
+    input HALT,phi0_in,fclk;
     output haltAll,RDY;
-    reg haltAll;
+    reg haltAll = 1'b0;
      (* clock_signal = "yes" *) output phi1_out,phi2_out,phi1_extout,phi2_extout;
-
-    /*
-    //when disabled, phi0 is stuck at 0. which coincidentally is when phi1 stuck at 1.
-    //when enabled again, input should be already at 0 (phi1 tick just occurred), which merges nicely with the stuck at 0 phi.
-    //BUFGCE clockBuf(.O(phi0_buf),.I(phi0_in),.CE(~haltEn));
     
-    BUFGCTRL #(
-       .INIT_OUT(0),           // Initial value of BUFGCTRL output ($VALUES;)
-       .PRESELECT_I0("TRUE"), // BUFGCTRL output uses I0 input ($VALUES;)
-       .PRESELECT_I1("FALSE")  // BUFGCTRL output uses I1 input ($VALUES;)
-    )
-    BUFGCTRL_inst (
-       .O(phi0_buf),             // 1-bit output: Clock output
-       .CE0(1'b1),         // 1-bit input: Clock enable input for I0
-       .CE1(1'b0),         // 1-bit input: Clock enable input for I1
-       .I0(phi0_in),           // 1-bit input: Primary clock
-       .I1(1'b0),           // 1-bit input: Secondary clock
-       .IGNORE0(1'b1), // 1-bit input: Clock ignore input for I0
-       .IGNORE1(1'b1), // 1-bit input: Clock ignore input for I1
-       .S0(~haltEn),           // 1-bit input: Clock select for I0
-       .S1(haltEn)            // 1-bit input: Clock select for I1
-    );
-   
-   
-    //LDCPE #(.INIT(1'b0)) clockLatch(.CLR(1'b0),.PRE(1'b0),.G(~haltEn),.GE(1'b1),.D(phi0_in),.Q(phi0_latch));
-    */
+    reg stop = 1'b0;
     
     
     //latch on phi1 ticks
     always @ (negedge phi0_in) begin
-        haltAll <= HALT;
+        stop <= HALT;
     end
+    
+    always @ (posedge fclk) begin
+      haltAll <= stop;
+    end
+    
     assign RDY = haltAll;
     
     BUFG a(phi1_out,~phi0_in);

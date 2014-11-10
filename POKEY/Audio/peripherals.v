@@ -99,10 +99,11 @@ endfunction
     parameter width = log2(DIVIDE);
         
     input inClk;
-    output outClk;
+    (* clock_signal = "yes" *)output out;
 
     
     reg [width:0] counter = 0;
+    reg outClk = 1'b0;
     always @ (posedge inClk) begin
         counter <= counter + 1;
         if (counter == DIVIDE>>1) counter <= 0;
@@ -114,12 +115,12 @@ endfunction
 
     reg outClk = 1'b0;
     
-    always @ (posedge inClk) begin
+    always @ (negedge inClk) begin
             if (en) outClk <= ~outClk;
             else outClk <= outClk;
     end
 
-    
+    BUFG c(out, outClk);
 endmodule
 
 

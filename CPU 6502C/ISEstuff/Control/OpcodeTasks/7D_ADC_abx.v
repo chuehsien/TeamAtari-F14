@@ -177,6 +177,7 @@ task ADC_abx;
 					controlSigs[`PCL_PCL] = 1'b1;
 					controlSigs[`DL_ADH] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
+                    controlSigs[`I_ADDC] = 1'b1;
 			end
 			else if (phi2) begin
 				//SUMS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBADH,#IPC,~IPC
@@ -187,6 +188,7 @@ task ADC_abx;
 					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`SB_ADH] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
+                    controlSigs[`nADL_ABL] = 1'b1;
 			end	
 					
 			end

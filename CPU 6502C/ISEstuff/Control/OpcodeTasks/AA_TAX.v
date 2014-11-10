@@ -31,7 +31,7 @@ task TAX;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
 					controlSigs[`ADL_PCL] = 1'b1;
-          controlSigs[`STORE_DB] = 1'b1;
+                    controlSigs[`STORE_DB] = 1'b1;
 				end
 				else if (phi2) begin
 				//SUMS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBDB,PCHADH,PCLADL
@@ -43,7 +43,8 @@ task TAX;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
-          controlSigs[`FLAG_DB] = 1'b1;
+                    controlSigs[`FLAG_DB] = 1'b1;
+          
 				end
 			
 			end
@@ -76,6 +77,7 @@ task TAX;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
+                    
 				end
 			
 			end

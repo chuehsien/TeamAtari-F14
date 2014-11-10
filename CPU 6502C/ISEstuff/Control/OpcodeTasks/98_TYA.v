@@ -31,7 +31,8 @@ task TYA;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
 					controlSigs[`ADL_PCL] = 1'b1;
-          controlSigs[`STORE_DB] = 1'b1;
+                    controlSigs[`STORE_DB] = 1'b1;
+         
           
                     
 				end
@@ -45,7 +46,8 @@ task TYA;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
-          controlSigs[`FLAG_DB] = 1'b1;
+                    controlSigs[`FLAG_DB] = 1'b1;
+          
 				end
 			
 			end
@@ -78,6 +80,7 @@ task TYA;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
+
 				end
 			
 			end

@@ -63,7 +63,7 @@ task BIT_zp;
 					controlSigs[`PCL_ADL] = 1'b1;
 					controlSigs[`ADL_PCL] = 1'b1;
 					controlSigs[`DL_DB] = 1'b1;
-                    controlSigs[`FLAG_DB] = 1'b1;
+
                     //adderhold <= accum & operand, pc ++, next fetched byte go to DB
         end
         else if(phi2) begin
