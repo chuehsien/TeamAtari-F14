@@ -31,7 +31,7 @@ module CPUtest(CLK_27MHZ_FPGA,
                GPIO_DIP_SW7,
                GPIO_DIP_SW8,
                
-               HDR1_50,HDR1_52,HDR1_54,HDR1_56,HDR1_58,HDR1_60,HDR1_62,HDR1_64,
+               HDR1_34,HDR1_36,HDR1_38,HDR1_40,HDR1_42,HDR1_44,HDR1_46,HDR1_48,
                 
                
 				GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7,
@@ -39,7 +39,8 @@ module CPUtest(CLK_27MHZ_FPGA,
 				LCD_FPGA_RS, LCD_FPGA_RW, LCD_FPGA_E,
 			   LCD_FPGA_DB7, LCD_FPGA_DB6, LCD_FPGA_DB5, LCD_FPGA_DB4,
                
-               HDR1_2,HDR1_4,HDR1_6,HDR1_8,HDR1_10,HDR1_12,HDR1_14,HDR1_16,HDR1_18,HDR1_20,HDR1_22,HDR1_24,HDR1_26,HDR1_28,HDR1_30,HDR1_32,HDR1_34,HDR1_36);
+               HDR1_2,HDR1_4,HDR1_6,HDR1_8,HDR1_10,HDR1_12,HDR1_14,HDR1_16,HDR1_18,HDR1_20,HDR1_22,HDR1_24,HDR1_26,HDR1_28,HDR1_30,HDR1_32,
+               HDR1_50,HDR1_52,HDR1_54,HDR1_56,HDR1_58);
 
 	input	   CLK_27MHZ_FPGA;
 	/* switch C is reset, E is clear, S is resetFSM, W is nextString */
@@ -52,15 +53,16 @@ module CPUtest(CLK_27MHZ_FPGA,
                GPIO_DIP_SW6,
                GPIO_DIP_SW7,
                GPIO_DIP_SW8;
-    input HDR1_50,HDR1_52,HDR1_54,HDR1_56,HDR1_58,HDR1_60,HDR1_62,HDR1_64;
+    input HDR1_34,HDR1_36,HDR1_38,HDR1_40,HDR1_42,HDR1_44,HDR1_46,HDR1_48;
     
 	output 	GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7;
 	output 	GPIO_LED_N, GPIO_LED_W;
 	output	LCD_FPGA_RS,LCD_FPGA_RW,LCD_FPGA_E;
 	output  LCD_FPGA_DB7, LCD_FPGA_DB6, LCD_FPGA_DB5, LCD_FPGA_DB4;
 	
-	output  HDR1_2,HDR1_4,HDR1_6,HDR1_8,HDR1_10,HDR1_12,HDR1_14,HDR1_16,HDR1_18,HDR1_20,HDR1_22,HDR1_24,HDR1_26,HDR1_28,HDR1_30,HDR1_32,HDR1_34,HDR1_36;	
-	wire		[2:0]	control_out; //rs, rw, en
+	output  HDR1_2,HDR1_4,HDR1_6,HDR1_8,HDR1_10,HDR1_12,HDR1_14,HDR1_16,HDR1_18,HDR1_20,HDR1_22,HDR1_24,HDR1_26,HDR1_28,HDR1_30,HDR1_32;	
+	output HDR1_50,HDR1_52,HDR1_54,HDR1_56,HDR1_58;
+    wire		[2:0]	control_out; //rs, rw, en
 	wire		[3:0]   out;
 	wire				reset;
 	assign LCD_FPGA_DB7 = out[3];
@@ -92,7 +94,11 @@ module CPUtest(CLK_27MHZ_FPGA,
    wire phi0_in,fphi0;
    clockGen179 #(.div(`DIV)) makeclock(GPIO_SW_S,CLK_27MHZ_FPGA,phi0_in,fphi0,locked);
    
+    (* clock_signal = "yes" *) wire clk64,clk16;
 
+    clockDivider #(422) out64(CLK_27MHZ_FPGA,clk64);
+    clockDivider #(1688) out16(CLK_27MHZ_FPGA,clk16);
+    
      /*-------------------------------------------------------------*/
     // mem stuff
     
@@ -103,23 +109,13 @@ module CPUtest(CLK_27MHZ_FPGA,
     
    //read clock is doublespeed, and inverted of phi1 (which means same as phi0).
 
-    //BUFG  mW(memWriteClock,phi1_out);
     BUFG  mR(memReadClock,fphi0);
-   // assign memWriteClock = phi1_out;
-    //assign memReadClock = fphi0;
-    wire [15:0] memAdd,memAdd_b;
-    
-   // wire [15:0] antic_Add, cpu_add;
-   // assign cpu_add = {extABH_b,extABL_b};
-    //assign antic_add = 16'd0;
-    //assign memAdd = (RDY) ? antic_add : cpu_add ;
-   // if rdy for dma, send antic address to mem.cpu_add
+
+    wire [15:0] memAdd;
    
     wire [7:0] memOut,memOut_b,memDBin;
     assign memAdd = {extABH,extABL};
-    //buf memB0[7:0](memOut,memOut_b);
-    //buf memB1[15:0](memAdd_b,memAdd);
-    //buf memB2[7:0](memDBin,extDB);
+   // assign memAdd = 16'h9882;
 	
 /*
     triState8 busDriver(extDB,memOut_b,RW);
@@ -134,32 +130,45 @@ module CPUtest(CLK_27MHZ_FPGA,
 */
 
    
-
-   
     wire addr_RAM,addr_BIOS,addr_CART;
     
     
     wire [7:0] data_CART;
-    assign data_CART = {HDR1_50,HDR1_52,HDR1_54,HDR1_56,HDR1_58,HDR1_60,HDR1_62,HDR1_64};
-    assign {HDR1_28,HDR1_26,HDR1_24,HDR1_22,HDR1_20,HDR1_18,HDR1_16,HDR1_14,HDR1_12,HDR1_10,HDR1_8,HDR1_6,HDR1_4,HDR1_2} = memAdd_b[13:0];
-   
-    assign HDR1_30 = ((16'h4000 <= {1'b0,memAdd_b}) & ({1'b0,memAdd_b} < 16'h8000)) ? 1'b1 : 1'b0;
-    assign HDR1_32 = ((16'h8000 <= {1'b0,memAdd_b}) & ({1'b0,memAdd_b} < 16'hC000)) ? 1'b1 : 1'b0;
-    assign HDR1_34 = 1'b0;
-    assign HDR1_36 = 1'b0;
     
-  
+    assign data_CART = {HDR1_34,HDR1_36,HDR1_38,HDR1_40,HDR1_42,HDR1_44,HDR1_46,HDR1_48};
+    assign {HDR1_28,HDR1_26,HDR1_24,HDR1_22,HDR1_20,HDR1_18,HDR1_16,HDR1_14,HDR1_12,HDR1_10,HDR1_8,HDR1_6,HDR1_4,HDR1_2} = memAdd[13:0];
+   
+    assign HDR1_30 = ((16'h4000 <= {1'b0,memAdd}) & ({1'b0,memAdd} < 16'h8000)) ? 1'b0 : 1'b1;
+    assign HDR1_32 = ((16'h8000 <= {1'b0,memAdd}) & ({1'b0,memAdd} < 16'hC000)) ? 1'b0 : 1'b1;
+   
+   
+    wire [7:0] AUDF1,AUDC1,AUDF2,AUDC2,AUDF3,AUDC3,AUDF4,AUDC4,AUDCTL;
+    wire audio1,audio2,audio3,audio4;
+    wire [3:0] vol1,vol2,vol3,vol4;
+    assign HDR1_50 = audio3;
+    assign {HDR1_52,HDR1_54,HDR1_56,HDR1_58} = vol3;
+
+    pokeyaudio pokey(.init_L(RES_L),.clk179(fphi0),.clk64(clk64),.clk16(clk16),
+                    .AUDF1(AUDF1),.AUDF2(AUDF2),.AUDF3(AUDF3),.AUDF4(AUDF4),
+                    .AUDC1(AUDC1),.AUDC2(AUDC2),.AUDC3(AUDC3),.AUDC4(AUDC4),.AUDCTL(AUDCTL),
+                    .audio1(audio1),.audio2(audio2),.audio3(audio3),.audio4(audio4),
+                    .vol1(vol1),.vol2(vol2),.vol3(vol3),.vol4(vol4));
+                    
+    wire [15:0] cartROMadd;
+    assign cartROMadd = {HDR1_32,HDR1_30,memAdd[13:0]};
+    //memDefender mem(.clka(memReadClock),.addra(cartROMadd),.douta(data_CART));
+    
     memoryMap   integrateMem(.addr_RAM(addr_RAM),.addr_BIOS(addr_BIOS),.addr_CART(addr_CART),
                 .Fclk(memReadClock), .clk(memReadClock), .CPU_writeEn(~RW), .CPU_addr(memAdd), 
                  .data_CART_out(data_CART),
-                 .CPU_data(extDB) 
+                 .CPU_data(extDB),
+                 .AUDF1(AUDF1), .AUDC1(AUDC1), .AUDF2(AUDF2), .AUDC2(AUDC2), 
+                 .AUDF3(AUDF3), .AUDC3(AUDC3), .AUDF4(AUDF4), .AUDC4(AUDC4), .AUDCTL(AUDCTL)
                 );
 
     /*-------------------------------------------------------------*/
     // cpu stuff
-    
-    
-    
+
     /*
     DeBounce #(.N(8)) rdyB(fphi0,1'b1,GPIO_DIP_SW1,HALT);
     DeBounce #(.N(8)) irqB(fphi0,1'b1,GPIO_DIP_SW2,IRQ_L);
@@ -167,13 +176,13 @@ module CPUtest(CLK_27MHZ_FPGA,
     DeBounce #(.N(8)) resB(fphi0,1'b1,GPIO_DIP_SW4,RES_L);
     */
     
-    assign HALT = 1'b0;
     assign IRQ_L = 1'b1;
-    assign NMI_L = 1'b1;
-    wire nRES_L;
+    wire nRES_L,nNMI_L;
     assign RES_L = ~nRES_L;
+    assign NMI_L = ~nNMI_L;
     DeBounce #(.N(8)) resB(fphi0,1'b1,GPIO_SW_W,nRES_L);
-    
+    DeBounce #(.N(8)) nmiB(fphi0,1'b1,GPIO_SW_N,nNMI_L);
+    DeBounce #(.N(8)) haltiB(fphi0,1'b1,GPIO_SW_E,HALT);
     
    // not invAgain[3:0]({RDY,IRQ_L,NMI_L,RES_L},{nRDY,nIRQ_L,nNMI_L,nRES_L});
 	assign SO = 1'b0;
@@ -255,13 +264,13 @@ module CPUtest(CLK_27MHZ_FPGA,
     wire [7:0] count,countin;
     assign countin = count + 8'd1;
     FlipFlop8clr FF0(~phi0_in,countin,sense,count,nRES_L);
-    
+
     
    // wire [7:0] TRIG0,TRIG1,TRIG2,TRIG3,TRIG4,TRIG5,TRIG6,TRIG7,TRIG8,TRIG9,TRIG10,TRIG11,TRIG12,TRIG13,TRIG14,TRIG15;
     
     wire chipClk,chipClk_b0;
 
-    clockoneX #(.width(`DIV-2))  test12(CLK_27MHZ_FPGA,chipClk_b);
+    clockoneX #(.width(`DIV-3))  test12(CLK_27MHZ_FPGA,chipClk_b);
     
     wire [35 : 0] CONTROL0,CONTROL1;
     chipscope_ila ila0(
@@ -277,19 +286,19 @@ module CPUtest(CLK_27MHZ_FPGA,
     SB_b,
     {7'd0,phi1_out},
     {RW,activeInt,RDY,IRQ_L,NMI_L,RES_L},
-    Accum,
+    data_CART,
     Xreg,
-    {7'd0,fphi0},
+    {cartROMadd[15:8]},
     OP,
     Yreg,
-    SR_contents);
+    {5'd0,addr_RAM,addr_BIOS,addr_CART});
     
     // extra ila for use...
     chipscope_ila ila1(
     CONTROL1,
     chipClk_b,
-    memAdd_b[15:8],
-    memAdd_b[7:0],
+    memAdd[15:8],
+    memAdd[7:0],
     memOut_b,
     {1'b0,currT_b},
     8'd0,

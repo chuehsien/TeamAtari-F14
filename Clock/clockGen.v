@@ -188,11 +188,11 @@ module clockoneX(inClk,outClk);
 endmodule
 
 
-module clockDivider(inClk,outClk);
+module clockDivider(inClk,out);
     parameter DIVIDE = 500;
     
 function integer log2;
-    input [50:0] value;
+    input [31:0] value;
     for (log2=0; value>0; log2=log2+1)
     value = value>>1;
 endfunction
@@ -200,10 +200,11 @@ endfunction
     parameter width = log2(DIVIDE);
         
     input inClk;
-    output outClk;
+    (* clock_signal = "yes" *)output out;
 
     
-    reg [width-1:0] counter = 0;
+    reg [width:0] counter = 0;
+
     always @ (posedge inClk) begin
         counter <= counter + 1;
         if (counter == DIVIDE>>1) counter <= 0;
@@ -215,10 +216,10 @@ endfunction
 
     reg outClk = 1'b0;
     
-    always @ (posedge inClk) begin
+    always @ (negedge inClk) begin
             if (en) outClk <= ~outClk;
             else outClk <= outClk;
     end
 
-    
+    BUFG c(out,outClk);
 endmodule

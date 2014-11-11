@@ -1,18 +1,18 @@
 `include "peripherals.v"
 `include "pokeyaudio.v"
-module pokey_top(USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_DIP_SW4,
+module pokey_top(CLK_27MHZ_FPGA,USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_DIP_SW4,
                 GPIO_DIP_SW5,GPIO_DIP_SW6,GPIO_DIP_SW7,GPIO_DIP_SW8,GPIO_SW_S,
                 HDR2_2_SM_8_N,HDR2_4_SM_8_P,GPIO_LED_7,
                HDR1_2,HDR1_4,HDR1_6,HDR1_8,HDR1_10,
                GPIO_LED_0,GPIO_LED_1);
-    input USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_DIP_SW4,
-            HDR2_2_SM_8_N,HDR2_4_SM_8_P,
+    input CLK_27MHZ_FPGA,USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_DIP_SW4,            
                 GPIO_DIP_SW5,GPIO_DIP_SW6,GPIO_DIP_SW7,GPIO_DIP_SW8,GPIO_SW_S;
-    output HDR1_2,HDR1_4,HDR1_6,HDR1_8,HDR1_10,GPIO_LED_0,GPIO_LED_1,GPIO_LED_7;
+                
+    output HDR1_2,HDR1_4,HDR1_6,HDR1_8,HDR1_10,GPIO_LED_0,GPIO_LED_1,GPIO_LED_7,HDR2_2_SM_8_N,HDR2_4_SM_8_P;
 
     (* clock_signal = "yes" *) wire clk179,clk64,clk16,clk2;
     clockDivider #(28) out179(USER_CLK,clk179);
-    clockDivider #(422) out64(FPGA_CLK_27,clk64);
+    clockDivider #(1688) out64(CLK_27MHZ_FPGA,clk64);
     clockDivider #(4) out16(clk64,clk16);
     clockDivider #(2) out2(USER_CLK,clk2);
  
@@ -21,7 +21,7 @@ module pokey_top(USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_
     wire [7:0] AUDC1,AUDC2,AUDC3,AUDC4,AUDCTL;
 
     assign init_L = ~GPIO_SW_C;
-    assign AUDF1 = 8'h213; //to create 300Hz tone
+    assign AUDF1 = 8'd213; //to create 300Hz tone
     assign AUDF2 = 8'd32; //to create 2kHz
     assign AUDF3 = 8'd11; // to create 6khz
     assign AUDF4 = 8'd5; //to create 12khz
@@ -56,10 +56,11 @@ module pokey_top(USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_
     always @ (posedge nextChn) begin
         sel <= sel + 1;
     end
-    //assign HDR2_2_SM_8_N = 1'b0;
+    assign GPIO_LED_7 = 1'b1;
+    assign HDR2_2_SM_8_N = 1'b0;
     //assign HDR2_4_SM_8_P = 1'b1;
     
-    assign GPIO_LED_7 = HDR2_4_SM_8_P;
+    assign HDR2_4_SM_8_P = clk64;
     assign HDR1_2 = (sel==2'd0) ? audio1 :
                     ((sel==2'd1) ? audio2 :
                     ((sel==2'd2) ? audio3 :

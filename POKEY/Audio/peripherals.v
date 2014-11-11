@@ -87,7 +87,7 @@ module clockone2048(inClk,outClk);
     assign outClk = count[10];
 endmodule
 
-module clockDivider(inClk,outClk);
+module clockDivider(inClk,out);
     parameter DIVIDE = 500;
     
 function integer log2;
@@ -103,7 +103,7 @@ endfunction
 
     
     reg [width:0] counter = 0;
-    reg outClk = 1'b0;
+
     always @ (posedge inClk) begin
         counter <= counter + 1;
         if (counter == DIVIDE>>1) counter <= 0;
@@ -120,7 +120,7 @@ endfunction
             else outClk <= outClk;
     end
 
-    BUFG c(out, outClk);
+    BUFG c(out,outClk);
 endmodule
 
 
