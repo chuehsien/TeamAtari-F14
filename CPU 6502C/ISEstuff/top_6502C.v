@@ -208,6 +208,11 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             sigLatchWclk l57(phi1,fastClk,controlSigs[`nI_PC],nI_PC);
             sigLatchWclk l58(phi1,fastClk,controlSigs[`DEC_PC],DEC_PC);
             
+            wire ADL_PCL,ADH_PCH,PCL_PCL,PCH_PCH;
+            sigLatchWclk l59(phi1,fastClk,controlSigs[`ADL_PCL],ADL_PCL);
+            sigLatchWclk l60(phi1,fastClk,controlSigs[`ADH_PCH],ADH_PCH);
+            sigLatchWclk l61(phi1,fastClk,controlSigs[`PCL_PCL],PCL_PCL);
+            sigLatchWclk l62(phi1,fastClk,controlSigs[`PCH_PCH],PCH_PCH);
             
             /*
             wire [7:0] OPforDOR;
@@ -231,7 +236,7 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
                         
             wire [7:0] inFromPC_lo, outToIncre_lo, outToPCL;
             wire PCLC;
-            PcSelectReg lo_1(controlSigs[`PCL_PCL], controlSigs[`ADL_PCL], inFromPC_lo, ADL, 
+            PcSelectReg lo_1(PCL_PCL, ADL_PCL, inFromPC_lo, ADL, 
                         outToIncre_lo);
             decOrAddADL lo_2(~nI_PC,DEC_PC,outToIncre_lo,PCLC,outToPCL);
             wire [7:0] DB_b1,ADL_b1;
@@ -241,7 +246,7 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             
             
             wire [7:0] inFromPC_hi, outToIncre_hi, outToPCH;
-            PcSelectReg hi_1(controlSigs[`PCH_PCH], controlSigs[`ADH_PCH], inFromPC_hi, ADH, 
+            PcSelectReg hi_1(PCH_PCH, ADH_PCH, inFromPC_hi, ADH, 
                         outToIncre_hi);    
             decOrAddADH hi_2(~nI_PC,DEC_PC,PCLC,outToIncre_hi,outToPCH);                      
             wire [7:0] DB_b2,ADH_b2;
