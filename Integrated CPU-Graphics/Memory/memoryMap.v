@@ -98,14 +98,14 @@ module memoryMap(addr_RAM,addr_BIOS,addr_CART,
   output [7:0] AUDF1, AUDC1, AUDF2, AUDC2, AUDF3, AUDC3, AUDF4, AUDC4, AUDCTL, STIMER, SKREST, POTGO, SEROUT, SERIN, IRQEN , SKCTL;
 
   // ANTIC hardware registers
-  reg [7:0] DMACTL = 8'h02;       // | $D400 | Write      |                   |
+  reg [7:0] DMACTL;       // | $D400 | Write      |                   |
   reg [7:0] CHACTL;       // | $D401 | Write      |                   |
-  reg [7:0] DLISTL = 8'h03;       // | $D402 | Write/Read | ANTIC_writeEn 1/2 |
-  reg [7:0] DLISTH = 8'hA0;       // | $D403 | Write/Read | ANTIC_writeEn 2   |
+  reg [7:0] DLISTL;       // | $D402 | Write/Read | ANTIC_writeEn 1/2 |
+  reg [7:0] DLISTH;       // | $D403 | Write/Read | ANTIC_writeEn 2   |
   reg [7:0] HSCROL;       // | $D404 | Write      |                   |
   reg [7:0] VSCROL;       // | $D405 | Write      |                   |
   reg [7:0] PMBASE;       // | $D407 | Write      |                   |
-  reg [7:0] CHBASE = 8'hf8;       // | $D409 | Write      |                   |
+  reg [7:0] CHBASE;       // | $D409 | Write      |                   |
   reg [7:0] WSYNC;        // | $D40A | Write      |                   |
   reg [7:0] VCOUNT;       // | $D40B | Read       | ANTIC_writeEn 3   |
   reg [7:0] PENH;         // | $D40C | Read       | ANTIC_writeEn 4   |
@@ -136,12 +136,12 @@ module memoryMap(addr_RAM,addr_BIOS,addr_CART,
   reg [7:0] COLPM1_TRIG3; // | $D013 | Write/Read | GTIA_writeEn 20 |
   reg [7:0] COLPM2_PAL;   // | $D014 | Write/Read | GTIA_writeEn 21 |
   reg [7:0] COLPM3;       // | $D015 | Write      |                 |
-  reg [7:0] COLPF0 = 8'h5a;       // | $D016 | Write      |                 |   // Pre-initialized for testing, initialize via CPU writes in the future
-  reg [7:0] COLPF1 = 8'h38;       // | $D017 | Write      |                 |
-  reg [7:0] COLPF2 = 8'h7e;       // | $D018 | Write      |                 |
-  reg [7:0] COLPF3 = 8'h00;       // | $D019 | Write      |                 |
-  reg [7:0] COLBK = 8'h00;        // | $D01A | Write      |                 |
-  reg [7:0] PRIOR = 8'h00;        // | $D01B | Write      |                 |
+  reg [7:0] COLPF0;       // | $D016 | Write      |                 |   // Pre-initialized for testing, initialize via CPU writes in the future
+  reg [7:0] COLPF1;       // | $D017 | Write      |                 |
+  reg [7:0] COLPF2;       // | $D018 | Write      |                 |
+  reg [7:0] COLPF3;       // | $D019 | Write      |                 |
+  reg [7:0] COLBK;        // | $D01A | Write      |                 |
+  reg [7:0] PRIOR;        // | $D01B | Write      |                 |
   reg [7:0] VDELAY;       // | $D01C | Write      |                 |
   reg [7:0] GRACTL;       // | $D01D | Write      |                 |
   reg [7:0] HITCLR;       // | $D01E | Write      |                 |

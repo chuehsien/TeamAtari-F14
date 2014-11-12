@@ -1,0 +1,27 @@
+## Clock
+NET  USER_CLK             LOC="AH15";  # Bank 4, Vcco=3.3V, No DCI
+
+## Reset Button
+NET  GPIO_SW_C            LOC="AJ6";   # Bank 18, Vcco=3.3V, No DCI
+
+## VGA Connectors
+NET  DVI_D0               LOC="AB8";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_D1               LOC="AC8";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_D2               LOC="AN12";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_D3               LOC="AP12";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_D4               LOC="AA9";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_D5               LOC="AA8";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_D6               LOC="AM13";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_D7               LOC="AN13";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_D8               LOC="AA10";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_D9               LOC="AB10";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_D10              LOC="AP14";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_D11              LOC="AN14";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_DE               LOC="AE8";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_H                LOC="AM12";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_RESET_B          LOC="AK6";   # Bank 18, Vcco=3.3V, No DCI
+NET  DVI_V                LOC="AM11";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_XCLK_N           LOC="AL10";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_XCLK_P           LOC="AL11";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  IIC_SCL_VIDEO        LOC="U27";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  IIC_SDA_VIDEO        LOC="T29";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
