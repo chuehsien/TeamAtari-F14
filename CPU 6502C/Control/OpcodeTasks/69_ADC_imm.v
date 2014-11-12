@@ -23,7 +23,7 @@ task ADC_imm;
 					controlSigs[`SB_ADD] = 1'b1;
 					controlSigs[`SUMS] = 1'b1;
 					if (!decMode) controlSigs[`nDAA] = 1'b1;
-                    if (statusC) controlSigs[`I_ADDC] = 1'b1;
+          if (statusC) controlSigs[`I_ADDC] = 1'b1;
 					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`AC_SB] = 1'b1;
 					controlSigs[`ADH_PCH] = 1'b1;
@@ -36,14 +36,14 @@ task ADC_imm;
 				//SUMS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBDB,PCHADH,PCLADL
 					controlSigs[`SUMS] = 1'b1;
 					if (!decMode) controlSigs[`nDAA] = 1'b1;
-                    if (statusC) controlSigs[`I_ADDC] = 1'b1;
+          if (statusC) controlSigs[`I_ADDC] = 1'b1;
 					controlSigs[`ADD_SB7] = 1'b1;
 					controlSigs[`ADD_SB0to6] = 1'b1;
 					controlSigs[`nDSA] = 1'b1;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
-                    controlSigs[`FLAG_ALU] = 1'b1;
+           controlSigs[`FLAG_ALU] = 1'b1;
 
 				end
 			

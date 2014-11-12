@@ -4,15 +4,15 @@ task BRK;
 	input [6:0] T;
 	input phi1,phi2;
     input [2:0] active_interrupt;
-	output [65:0] controlSigs;
+	output [66:0] controlSigs;
 	output [6:0] newT;
 	reg [6:0] newT;
 
 	
-	reg [65:0] controlSigs;
+	reg [66:0] controlSigs;
 	
 	begin
-		controlSigs = 66'd0;
+		controlSigs = 67'd0;
     
     case (T)
     
@@ -96,7 +96,10 @@ task BRK;
       
       (`Ttwo) : begin
 		newT = `Tthree;
-		
+		if (active_interrupt != `NONE) begin
+            controlSigs[`nI_PC] = 1'b1;
+            controlSigs[`DEC_PC] = 1'b1;
+        end
         if (phi1) begin
           //SS,DBADD,SBADD,SUMS,#DAA,~DAA,ADDSB7,ADDSB06,#DSA,~DSA,SBDB,ADHPCH,PCHADH,PCLADL,ADLPCL
 					controlSigs[`S_S] = 1'b1;

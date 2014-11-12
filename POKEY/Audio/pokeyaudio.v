@@ -79,10 +79,10 @@ module pokeyaudio (init_L,clk179,clk64,clk16,AUDF1,AUDF2,AUDF3,AUDF4,
     distortChn chn4d(.chnIn(chn4base),.poly4(poly4out),.poly5(poly5out),.poly17_9(poly17_9out),
                      .distort(distort4),.chnOut_distort(chn4out));                 
    //need to add vol only mode
-   assign audio1 = vol1 | chn1out;
-   assign audio2 = vol2 | chn2out;
-   assign audio3 = vol3 | chn3out;
-   assign audio4 = vol4 | chn4out;
+   assign audio1 = ~(volOnly1 | chn1out);
+   assign audio2 = ~(volOnly2 | chn2out);
+   assign audio3 = ~(volOnly3 | chn3out);
+   assign audio4 = ~(volOnly4 | chn4out);
     
 endmodule
 

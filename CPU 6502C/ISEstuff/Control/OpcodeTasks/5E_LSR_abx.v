@@ -2,15 +2,15 @@ task LSR_abx;
 
 	input [6:0] T;
 	input phi1,phi2,carry;
-	output [65:0] controlSigs;
+	output [66:0] controlSigs;
 	output [6:0] newT;
 	reg [6:0] newT;
 
 	
-	reg [65:0] controlSigs;
+	reg [66:0] controlSigs;
 	
 	begin
-		controlSigs = 66'd0;
+		controlSigs = 67'd0;
 		case (T)
  			`Tzero:begin
             controlSigs[`nRW] = 1'b1;
@@ -69,7 +69,7 @@ task LSR_abx;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
-                    controlSigs[`FLAG_ALU] = 1'b1;
+
 				end
 			end 
 			

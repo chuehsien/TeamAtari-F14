@@ -2,15 +2,15 @@ task TYA;
 
 	input [6:0] T;
 	input phi1,phi2;
-	output [65:0] controlSigs;
+	output [66:0] controlSigs;
 	output [6:0] newT;
 	reg [6:0] newT;
 
 	
-	reg [65:0] controlSigs;
+	reg [66:0] controlSigs;
 	
 	begin
-		controlSigs = 66'd0;
+		controlSigs = 67'd0;
 		case (T)
 
 			
@@ -31,7 +31,8 @@ task TYA;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
 					controlSigs[`ADL_PCL] = 1'b1;
-          controlSigs[`STORE_DB] = 1'b1;
+                    controlSigs[`STORE_DB] = 1'b1;
+         
           
                     
 				end
@@ -45,7 +46,8 @@ task TYA;
 					controlSigs[`SB_DB] = 1'b1;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
-          controlSigs[`FLAG_DB] = 1'b1;
+                    controlSigs[`FLAG_DB] = 1'b1;
+          
 				end
 			
 			end
@@ -78,6 +80,7 @@ task TYA;
 					controlSigs[`PCH_ADH] = 1'b1;
 					controlSigs[`nI_PC] = 1'b1;
 					controlSigs[`PCL_ADL] = 1'b1;
+
 				end
 			
 			end

@@ -1,15 +1,19 @@
 `include "peripherals.v"
 `include "pokeyaudio.v"
-module pokey_top(USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_DIP_SW4,GPIO_DIP_SW5,GPIO_DIP_SW6,GPIO_DIP_SW7,GPIO_DIP_SW8,GPIO_SW_S,
+module pokey_top(CLK_27MHZ_FPGA,USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_DIP_SW4,
+                GPIO_DIP_SW5,GPIO_DIP_SW6,GPIO_DIP_SW7,GPIO_DIP_SW8,GPIO_SW_S,
+                HDR2_2_SM_8_N,HDR2_4_SM_8_P,GPIO_LED_7,
                HDR1_2,HDR1_4,HDR1_6,HDR1_8,HDR1_10,
                GPIO_LED_0,GPIO_LED_1);
-    input USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_DIP_SW4,GPIO_DIP_SW5,GPIO_DIP_SW6,GPIO_DIP_SW7,GPIO_DIP_SW8,GPIO_SW_S;
-    output HDR1_2,HDR1_4,HDR1_6,HDR1_8,HDR1_10,GPIO_LED_0,GPIO_LED_1;
+    input CLK_27MHZ_FPGA,USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_DIP_SW4,            
+                GPIO_DIP_SW5,GPIO_DIP_SW6,GPIO_DIP_SW7,GPIO_DIP_SW8,GPIO_SW_S;
+                
+    output HDR1_2,HDR1_4,HDR1_6,HDR1_8,HDR1_10,GPIO_LED_0,GPIO_LED_1,GPIO_LED_7,HDR2_2_SM_8_N,HDR2_4_SM_8_P;
 
     (* clock_signal = "yes" *) wire clk179,clk64,clk16,clk2;
     clockDivider #(28) out179(USER_CLK,clk179);
-    clockDivider #(1562) out64(USER_CLK,clk64);
-    clockDivider #(6250) out16(USER_CLK,clk16);
+    clockDivider #(1688) out64(CLK_27MHZ_FPGA,clk64);
+    clockDivider #(4) out16(clk64,clk16);
     clockDivider #(2) out2(USER_CLK,clk2);
  
     wire init_L;
@@ -17,7 +21,7 @@ module pokey_top(USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_
     wire [7:0] AUDC1,AUDC2,AUDC3,AUDC4,AUDCTL;
 
     assign init_L = ~GPIO_SW_C;
-    assign AUDF1 = 8'h213; //to create 300Hz tone
+    assign AUDF1 = 8'd213; //to create 300Hz tone
     assign AUDF2 = 8'd32; //to create 2kHz
     assign AUDF3 = 8'd11; // to create 6khz
     assign AUDF4 = 8'd5; //to create 12khz
@@ -32,7 +36,7 @@ module pokey_top(USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_
     
     assign AUDCTL = 8'd0;
     
-    assign vol = {GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_DIP_SW4};
+    assign vol = ~{GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_DIP_SW4};
     assign distort = {GPIO_DIP_SW6,GPIO_DIP_SW7,GPIO_DIP_SW8};
     assign volO = GPIO_DIP_SW5;
 
@@ -44,7 +48,7 @@ module pokey_top(USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_
                     AUDC1,AUDC2,AUDC3,AUDC4,AUDCTL,
                     audio1,audio2,audio3,audio4,vol1,vol2,vol3,vol4);
                     
-    reg [1:0] sel = 1'b0;
+    reg [1:0] sel = 2'b0;
     wire nextChn;
     DeBounce selDB(clk179, init_L, GPIO_SW_S, nextChn);
     assign {GPIO_LED_0,GPIO_LED_1} = sel;
@@ -52,7 +56,11 @@ module pokey_top(USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_
     always @ (posedge nextChn) begin
         sel <= sel + 1;
     end
+    assign GPIO_LED_7 = 1'b1;
+    assign HDR2_2_SM_8_N = 1'b0;
+    //assign HDR2_4_SM_8_P = 1'b1;
     
+    assign HDR2_4_SM_8_P = clk64;
     assign HDR1_2 = (sel==2'd0) ? audio1 :
                     ((sel==2'd1) ? audio2 :
                     ((sel==2'd2) ? audio3 :
@@ -64,7 +72,7 @@ module pokey_top(USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_
     
 //=======================ILA/ICON stuff=======================//
     
-    
+    /*
     wire chipClk_b0,chipClk;
     clockone2048 test11(USER_CLK,chipClk_b0);
     clockone256  test12(chipClk_b0,chipClk);
@@ -96,7 +104,7 @@ module pokey_top(USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPIO_DIP_SW3,GPIO_
     .TRIG13(8'd0),
     .TRIG14(8'd0),
     .TRIG15(8'd0));
-    
+    */
 endmodule
 
 module clockGen(HALT,phi0_in,

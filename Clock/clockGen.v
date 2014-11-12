@@ -11,8 +11,8 @@ module clockGen179(RST,clk27,phi0,fphi0,locked);
    //produces 57.6MHz
     clockDiv try0(.CLKIN1_IN(clk27), .RST_IN(RST), .CLK0_OUT(clk576_phi0),.CLK2X_OUT(clk1052_fphi0), .LOCKED_OUT(locked));
 
-    clockoneX #(.width(div)) phi0make(clk576_phi0,clk576_phi0_b);
-    clockoneX #(.width(div)) fphi0make(clk1052_fphi0,clk1052_fphi0_b); 
+    clockoneX #(.width(div+1)) phi0make(clk576_phi0,clk576_phi0_b);
+    clockoneX #(.width(div+1)) fphi0make(clk1052_fphi0,clk1052_fphi0_b); 
 /*
     clockone32 phi0make(clk576_phi0,clk576_phi0_b);
     clockone32 fphi0make(clk1052_fphi0,clk1052_fphi0_b);
@@ -188,11 +188,11 @@ module clockoneX(inClk,outClk);
 endmodule
 
 
-module clockDivider(inClk,outClk);
+module clockDivider(inClk,out);
     parameter DIVIDE = 500;
     
 function integer log2;
-    input [50:0] value;
+    input [31:0] value;
     for (log2=0; value>0; log2=log2+1)
     value = value>>1;
 endfunction
@@ -200,10 +200,11 @@ endfunction
     parameter width = log2(DIVIDE);
         
     input inClk;
-    output outClk;
+    (* clock_signal = "yes" *)output out;
 
     
-    reg [width-1:0] counter = 0;
+    reg [width:0] counter = 0;
+
     always @ (posedge inClk) begin
         counter <= counter + 1;
         if (counter == DIVIDE>>1) counter <= 0;
@@ -215,10 +216,10 @@ endfunction
 
     reg outClk = 1'b0;
     
-    always @ (posedge inClk) begin
+    always @ (negedge inClk) begin
             if (en) outClk <= ~outClk;
             else outClk <= outClk;
     end
 
-    
+    BUFG c(out,outClk);
 endmodule

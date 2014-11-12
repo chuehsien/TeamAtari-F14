@@ -197,16 +197,14 @@ module memoryMap(addr_RAM,addr_BIOS,addr_CART,
   // Block RAM
   // Read clock is inverted Fphi0, write clock is phi2
   
-  memEmptyRAM blockRAM (.clka(clk),
+  memRAM blockRAM (.clka(clk),
                              .wea(write_RAM),
                              .addra(CPU_addr_b[13:0]),
                              .dina(data_in_b),
-                             .clkb(Fclk),
-                             .addrb(CPU_addr_b[13:0]),
-                             .doutb(data_RAM_out_b));
+                             .douta(data_RAM_out_b));
 
   //memory256x256 mem(.clock(Fclk), .we(write_RAM), .address(CPU_addr), .dataIn(data_in), .dataOut(data_RAM_out));
-  memBios bios(.clka(Fclk),.addra(CPU_addr_b[11:0]),.douta(data_BIOS_out_b));
+  memBios bios(.clka(clk),.addra(CPU_addr_b[10:0]),.douta(data_BIOS_out_b));
 
     
   triStateData tsd(.DB(CPU_data), .DB_out(data_out), .writeEn(CPU_writeEn), .DB_in(data_in));
@@ -227,35 +225,35 @@ module memoryMap(addr_RAM,addr_BIOS,addr_CART,
     if (write_reg) begin
       case (CPU_addr)
     // CPU writes to POKEY registers
-        16'hD200: AUDF1 <= data_in;
+        16'hE800: AUDF1 <= data_in;
                
         //16'hD200: POT0 	Potentiometer (Paddle) 0 	Read 	$D200 	53760 	PADDL0 	$0270 	624
-        16'hD201: AUDC1 	 <= data_in;
+        16'hE801: AUDC1 	 <= data_in;
         //16'hD201: POT1 	Potentiometer (Paddle) 1 	Read 	$D201 	53761 	PADDL1 	$0271 	625
-        16'hD202: AUDF2 	 <= data_in;
+        16'hE802: AUDF2 	 <= data_in;
         //16'hD202: POT2 	Potentiometer (Paddle) 2 	Read 	$D202 	53762 	PADDL2 	$0272 	626
-        16'hD203: AUDC2 	 <= data_in;
+        16'hE803: AUDC2 	 <= data_in;
         //16'hD203: POT3 	Potentiometer (Paddle) 3 	Read 	$D203 	53763 	PADDL3 	$0273 	627
-        16'hD204: AUDF3 	 <= data_in;
+        16'hE804: AUDF3 	 <= data_in;
         //16'hD204: POT4 	Potentiometer (Paddle) 4 	Read 	$D204 	53764 	PADDL4 	$0274 	628
-        16'hD205: AUDC3 	 <= data_in;
+        16'hE805: AUDC3 	 <= data_in;
         //16'hD205: POT5 	Potentiometer (Paddle) 5 	Read 	$D205 	53765 	PADDL5 	$0275 	629
-        16'hD206: AUDF4 	 <= data_in;
+        16'hE806: AUDF4 	 <= data_in;
         //16'hD206: POT6 	Potentiometer (Paddle) 6 	Read 	$D206 	53766 	PADDL6 	$0276 	630
-        16'hD207: AUDC4 	 <= data_in;
+        16'hE807: AUDC4 	 <= data_in;
         //16'hD207: POT7 	Potentiometer (Paddle) 7 	Read 	$D207 	53767 	PADDL7 	$0277 	631
-        16'hD208: AUDCTL 	 <= data_in;
+        16'hE808: AUDCTL 	 <= data_in;
         //16'hD208: ALLPOT 	Read 8 Line POT Port State 	Read 	$D208 	53768 			
-        16'hD209: STIMER 	 <= data_in;
+        16'hE809: STIMER 	 <= data_in;
         //16'hD209: KBCODE 	Keyboard Code 	Read 	$D209 	53769 	CH 	$02FC 	764
-        16'hD20A: SKREST 	 <= data_in;
+        16'hE80A: SKREST 	 <= data_in;
         //16'hD20A: RANDOM 	Random Number Generator 	Read 	$D20A 	53770 			
-        16'hD20B: POTGO 	 <= data_in;
-        16'hD20D: SEROUT 	 <= data_in;
+        16'hE80B: POTGO 	 <= data_in;
+        16'hE80D: SEROUT 	 <= data_in;
         //16'hD20D: SERIN 	Serial Port Data Input 	Read 	$D20D 	53773 			
-        16'hD20E: IRQEN 	 <= data_in;
+        16'hE80E: IRQEN 	 <= data_in;
         //16'hD20E: IRQST 	IRQ Status 	Read 	$D20E 	53774 			
-        16'hD20F: SKCTL 	 <= data_in;
+        16'hE80F: SKCTL 	 <= data_in;
         //16'hD20F: SKSTAT 	Serial Port Status 	Read 	$D20F 	53775 			
                   
       
@@ -381,20 +379,20 @@ module memoryMap(addr_RAM,addr_BIOS,addr_CART,
   
   // Output from registers to CPU
   //CPU doesnt need to write to these pokey read registers, so just connect straight to bus.
-  assign data_reg_out = (CPU_addr == 16'hD200) ? POT0_BUS : 
-                        (CPU_addr == 16'hD201) ? POT1_BUS :
-                        (CPU_addr == 16'hD202) ? POT2_BUS :
-                        (CPU_addr == 16'hD203) ? POT3_BUS :
-                        (CPU_addr == 16'hD204) ? POT4_BUS :
-                        (CPU_addr == 16'hD205) ? POT5_BUS :
-                        (CPU_addr == 16'hD206) ? POT6_BUS :
-                        (CPU_addr == 16'hD207) ? POT7_BUS :
-                        (CPU_addr == 16'hD208) ? ALLPOT_BUS :
-                        (CPU_addr == 16'hD209) ? KBCODE_BUS :
-                        (CPU_addr == 16'hD20A) ? RANDOM_BUS :
-                        (CPU_addr == 16'hD20D) ? SERIN_BUS :
-                        (CPU_addr == 16'hD20E) ? IRQST_BUS :
-                        (CPU_addr == 16'hD20F) ? SKSTAT_BUS :
+  assign data_reg_out = (CPU_addr == 16'hE800) ? POT0_BUS : 
+                        (CPU_addr == 16'hE801) ? POT1_BUS :
+                        (CPU_addr == 16'hE802) ? POT2_BUS :
+                        (CPU_addr == 16'hE803) ? POT3_BUS :
+                        (CPU_addr == 16'hE804) ? POT4_BUS :
+                        (CPU_addr == 16'hE805) ? POT5_BUS :
+                        (CPU_addr == 16'hE806) ? POT6_BUS :
+                        (CPU_addr == 16'hE807) ? POT7_BUS :
+                        (CPU_addr == 16'hE808) ? ALLPOT_BUS :
+                        (CPU_addr == 16'hE809) ? KBCODE_BUS :
+                        (CPU_addr == 16'hE80A) ? RANDOM_BUS :
+                        (CPU_addr == 16'hE80D) ? SERIN_BUS :
+                        (CPU_addr == 16'hE80E) ? IRQST_BUS :
+                        (CPU_addr == 16'hE80F) ? SKSTAT_BUS :
                         
                         
                         
@@ -411,7 +409,8 @@ module memoryMap(addr_RAM,addr_BIOS,addr_CART,
                         (CPU_addr == 16'hD40C) ? PENH :
                         (CPU_addr == 16'hD40D) ? PENV :
                         (CPU_addr == 16'hD40E) ? NMIEN :
-                        (CPU_addr == 16'hD40F) ? NMIRES_NMIST : 
+                        //(CPU_addr == 16'hD40F) ? NMIRES_NMIST : 
+                        (CPU_addr == 16'hD40F) ? 8'h40 : 
                         (CPU_addr == 16'hD000) ? HPOSP0_M0PF : 
                         (CPU_addr == 16'hD001) ? HPOSP1_M1PF : 
                         (CPU_addr == 16'hD002) ? HPOSP2_M2PF : 
@@ -468,14 +467,16 @@ module addrCheck(addr, addr_RAM,addr_BIOS,addr_CART);
   output addr_BIOS;
   output addr_CART;
   
-//  assign addr_RAM = (addr[15:12] == 4'hD) ? 1'b0 : 1'b1;
-
-  assign addr_RAM = ({1'b0,addr} < {1'b0,16'h4000}) ? 1'b1 : 1'b0; //ensure unsigned comparison 
-  //rom runs from F800 to FFFF
-  assign addr_BIOS = (addr[15:11] == 5'b11111) ? 1'b1 : 1'b0;
+   assign addr_RAM = ({1'b0,16'h4000} > {1'b0,addr}) ? 1'b1 : 1'b0; //ensure unsigned comparison 
+ 
+ //bios runs from F800 to FFFF
+  assign addr_BIOS = ({1'b0,addr} > {1'b0,16'hF7FF}) ? 1'b1 : 1'b0;
   
   //cart runs from 4000 to BFFF
-  assign addr_CART = (({1'b0,16'h3FFF} < {1'b0,addr}) & ( {1'b0,addr} < {1'b0,16'hC000})) ? 1'b1 : 1'b0;
+  assign addr_CART = (({1'b0,addr} > {1'b0,16'h3FFF}) & ( {1'b0,16'hC000} > {1'b0,addr})) ? 1'b1 : 1'b0;
+  
+  
+  
   
 endmodule
 
