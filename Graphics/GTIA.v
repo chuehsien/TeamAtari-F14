@@ -15,7 +15,7 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
             COLPM2_PAL_bus, CONSPK_CONSOL_bus,
             COL, CSYNC, phi2, HALT, L,
             dBuf_data, dBuf_addr, dBuf_writeEn,
-            vblank, hblank);
+            vblank, hblank, x, y);
 
       // Control inputs
       input [4:0] address;
@@ -88,12 +88,15 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
       // Other outputs
       output reg vblank = 1'b0;
       output reg hblank = 1'b0;
+      output [8:0] x;
+      output [7:0] y;
       
       reg [1:0] clkdiv = 2'd0;
       reg [8:0] x = 9'd0; // 320 pixels
       reg [7:0] y = 8'd0; // 192 pixels
       reg [7:0] colorData = 8'd0;
       reg incrXY = 1'b0;
+      reg incrXY_nextcycle = 1'b0;
       
       wire [23:0] RGB;
       wire [1:0] mode;
@@ -134,13 +137,22 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
       
         if (rst) begin
           incrXY <= 1'b0;
+          incrXY_nextcycle <= 1'b0;
           dBuf_writeEn <= 1'b0;
           colorData <= 8'd0;
         end
         
         else begin
         
-          if (DLISTend)
+          if (DLISTend) begin
+            incrXY <= 1'b0;
+            incrXY_nextcycle <= 1'b0;
+          end
+            
+          if (incrXY_nextcycle) begin
+            incrXY <= 1'b1;
+          end
+          else
             incrXY <= 1'b0;
         
           if (mode == `mode_normal) begin
@@ -164,12 +176,12 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
                   colorData <= COLPF3;
               endcase
               dBuf_writeEn <= 1'b1;
-              incrXY <= 1'b1;
+              incrXY_nextcycle <= 1'b1;
             end
             else begin
               colorData <= 8'd0;
               dBuf_writeEn <= 1'b0;
-              incrXY <= 1'b0;
+              incrXY_nextcycle <= 1'b0;
             end
           end
           
@@ -216,7 +228,7 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
                   end
                   
                   else begin
-                    // Transition from end of 40 blocks to start of next line of blocks
+                    // Transition from end of 20/40 blocks to start of next line of blocks
                     if ((x == (width-1))&&((y % 8) == 8'd7)) begin
                       x <= 9'd0;
                       y <= y + 8'd1;
@@ -326,14 +338,14 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
                 `two:
                   begin
                     // Transition from end of screen to start
-                    if ((x == (width-1))&&(y == (height-1))) begin // * TODO: Set parameters here
+                    if ((x == (width-1))&&(y == (height-1))) begin
                       x <= 9'd0;
                       y <= 8'd0;
                     end
                     else begin
                       
                       // Transition from end of mode line to next mode line
-                      if ((x == (width-1))&&((y % 2) == 1)) begin
+                      if ((x == (width-1))&&((y % 2) == 1)) begin 
                         x <= 9'd0;
                         y <= y + 8'd1;
                       end
@@ -343,7 +355,7 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
                         // Transition from lower pixel to next upper pixel
                         if ((y % 2) == 1) begin
                           x <= x + 9'd1;
-                          y <= y + 8'd1;
+                          y <= y - 8'd1;
                         end
                         
                         // Transition from upper pixel to lower pixel

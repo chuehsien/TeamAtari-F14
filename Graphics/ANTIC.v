@@ -123,6 +123,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, DMACTL, CHACTL, HSCROL, VSCRO
       wire ANTIC_writeDLI;
       wire ANTIC_clearDLI;
       wire ANTIC_writeNMI;
+      wire charSingleColor;
       
       // * Temp:
       assign printDLIST = {DLISTH_bus, DLISTL_bus};
@@ -146,7 +147,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, DMACTL, CHACTL, HSCROL, VSCRO
                        .blankCount(blankCount), .loadDLIST(loadDLIST), .ANTIC_writeDLIST(ANTIC_writeDLIST), .numLines(numLines),
                        .width(width), .height(height), .ANTIC_writeDLI(ANTIC_writeDLI), .ANTIC_clearDLI(ANTIC_clearDLI),
                        .ANTIC_writeNMI(ANTIC_writeNMI),
-                       .idle(idle), .loadMSRstate(loadMSRstate), .DLISTend(DLISTend));
+                       .idle(idle), .loadMSRstate(loadMSRstate), .DLISTend(DLISTend), .charSingleColor(charSingleColor));
       
       // Update DLISTPTR (JUMP instruction)
       assign DLISTL_bus = loadDLIST ? newDLISTptr[7:0] : (incrDLIST ? DLISTL : 8'hzz);
@@ -306,7 +307,10 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, DMACTL, CHACTL, HSCROL, VSCRO
                         nextState <= `FSMload1;
                         DMA <= `DMA_on;
                         charLoaded <= 1'b0;
-                        addressIn <= {CHBASE, 8'h00} + (MSRdata*8) + charByte;
+                        if (charSingleColor)
+                          addressIn <= {CHBASE, 8'h00} + (MSRdata[5:0]*8) + charByte;
+                        else
+                          addressIn <= {CHBASE, 8'h00} + (MSRdata*8) + charByte;
                         loadAddr <= 1'b1;
                       end
                       else begin

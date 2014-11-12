@@ -6,7 +6,7 @@
 `include "memoryMap.v"
 `include "DVI.v"
 
-module display(USER_CLK, GPIO_SW_C, IIC_SDA_VIDEO, IIC_SCL_VIDEO,
+module display(USER_CLK, GPIO_SW_C, IIC_SDA_VIDEO, IIC_SCL_VIDEO, 
                DVI_D11, DVI_D10, DVI_D9, DVI_D8, DVI_D7, DVI_D6, DVI_D5,
                DVI_D4, DVI_D3, DVI_D2, DVI_D1, DVI_D0, DVI_XCLK_P, DVI_XCLK_N,
                DVI_V, DVI_H, DVI_DE, DVI_RESET_B);
@@ -126,6 +126,8 @@ module display(USER_CLK, GPIO_SW_C, IIC_SDA_VIDEO, IIC_SCL_VIDEO,
   wire [15:0] MSR;
   wire [1:0] loadMSRstate;
   wire DLISTend;
+  wire [8:0] x;
+  wire [7:0] y;
 
   // Module instantiation
   ANTIC antic(.Fphi0(Fphi0), .LP_L(), .RW(), .rst(rst), .vblank(vblank), .hblank(hblank), .DMACTL(DMACTL), .CHACTL(CHACTL),
@@ -155,7 +157,7 @@ module display(USER_CLK, GPIO_SW_C, IIC_SDA_VIDEO, IIC_SCL_VIDEO,
             .CONSPK_CONSOL_bus(CONSPK_CONSOL_bus),
             .COL(), .CSYNC(), .phi2(phi2), .HALT(), .L(),
             .dBuf_data(dBuf_data), .dBuf_addr(dBuf_addr), .dBuf_writeEn(dBuf_writeEn),
-            .vblank(vblank), .hblank(hblank));
+            .vblank(vblank), .hblank(hblank), .x(x), .y(y));
                
   memoryMap map(.Fclk(~Fphi0), .clk(phi2), .rst(rst), .CPU_writeEn(1'b0), .ANTIC_writeEn(ANTIC_writeEn), .GTIA_writeEn(5'd0),
                 .CPU_addr(address), .VCOUNT_in(VCOUNT), .PENH_in(PENH), .PENV_in(PENV), .CPU_data(DB), 
@@ -183,6 +185,7 @@ module display(USER_CLK, GPIO_SW_C, IIC_SDA_VIDEO, IIC_SCL_VIDEO,
   
 
   // Chipscope (temporary)
+  // dBuf
   
   wire [35:0] CONTROL0;
   
@@ -193,16 +196,18 @@ module display(USER_CLK, GPIO_SW_C, IIC_SDA_VIDEO, IIC_SCL_VIDEO,
   chipscope_ila ila (
     .CONTROL(CONTROL0), // INOUT BUS [35:0]
     .CLK(clk_DVI), // IN
-    .TRIG0({1'b0, ANTIC_writeEn}), // IN BUS [3:0]
+    .TRIG0(AN), // IN BUS [3:0]
     .TRIG1(IR), // IN BUS [7:0]
     .TRIG2(currState), // IN BUS [1:0]
     .TRIG3(mode), // IN BUS [3:0]
     .TRIG4(dlist), // IN BUS [15:0]
-    .TRIG5(COLPF0), // IN BUS [7:0]
-    .TRIG6(NMIRES_NMIST_bus), // IN BUS [7:0]
-    .TRIG7(NMIRES_NMIST), // IN BUS [7:0]
-    .TRIG8(idle), // IN BUS [0:0]
-    .TRIG9(IR_rdy) // IN BUS [0:0]
+    .TRIG5(dBuf_addr), // IN BUS [15:0]
+    .TRIG6(dBuf_data), // IN BUS [31:0]
+    .TRIG7(dBuf_writeEn), // IN BUS [0:0]
+    .TRIG8(x), // IN BUS [8:0]
+    .TRIG9(y), // IN BUS [7:0]
+    .TRIG10(Fphi0), // IN BUS [0:0]
+    .TRIG11(IR_rdy) // IN BUS [0:0]
   );
   
   // End Chipscope
