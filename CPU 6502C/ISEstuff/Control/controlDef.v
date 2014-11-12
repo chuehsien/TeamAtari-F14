@@ -73,6 +73,7 @@
 
 
 `define nRW         7'd65
+`define DEC_PC      7'd66
 
 `define emptyControl 65'd0
 /*

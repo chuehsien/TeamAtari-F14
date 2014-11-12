@@ -248,23 +248,56 @@ endmodule
 
 
 /* -------------------- */
-
+/*
 
 // latched on phi1, driven onto data pins in phi2(if write is done).
-module dataOutReg(haltAll,phi2, en, dataIn,
+module dataOutReg(haltAll,phi2,en,PC_lo,jsrHi,jsrLo,dataIn,
                 dataOut);
                 
     input haltAll,phi2,en;
+    input [7:0] PC_lo;
+    input jsrHi, jsrLo;
     input [7:0] dataIn;
-    output [7:0] dataOut;
+    output reg [7:0] dataOut;
 
     wire nHaltAll;
     not make(nHaltAll,haltAll);
-    FlipFlop8 dor(phi2,dataIn,nHaltAll&en,dataOut);
     
- 
+    reg [7:0] dataIn_b;
+    always @ (dataIn or PC_lo or jsrHi or jsrLo) begin
+        if (jsrHi) begin
+            dataIn_b = dataIn + (PC_lo == 8'hff);
+        end
+        else if (jsrLo) begin
+            dataIn_b = dataIn + 8'd1;
+        end
+     
+     else dataIn_b = dataIn;
+    
+        dataIn_b = dataIn;
+    end
+    
+    always @ (posedge phi2) begin
+        if (nHaltAll & en) dataOut <= dataIn_b;
+        else dataOut <= dataOut;
+    
+    end
     
 endmodule
+*/
+
+module dataOutReg(haltAll,phi2, en, dataIn,
+                    dataOut);
+    input haltAll,phi2,en;
+    input [7:0] dataIn;
+    output [7:0] dataOut;
+    
+    wire nHaltAll;
+    not make(nHaltAll,haltAll);
+    
+    FlipFlop8 dor(phi2,dataIn,nHaltAll&en,dataOut);
+endmodule
+
 
 module inputDataLatch(haltAll,data,rstAll, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
                         DB,ADL,ADH);
@@ -311,7 +344,7 @@ module PcSelectReg(PCL_PCL, ADL_PCL, inFromPCL, ADL,
     
     
 endmodule
-
+/*
 module increment(inc, inAdd,
                 carry,outAdd);
                 
@@ -328,7 +361,59 @@ module increment(inc, inAdd,
     assign outAdd = result[7:0];
     
 endmodule
+*/
+module decOrAddADH(inc,dec,inCarry,inAdd,outAdd);
+    input inc,dec,inCarry;
+    input [7:0] inAdd;
+    output reg [7:0] outAdd;
+    
+    reg carry;
+    always @ (*) begin
+        if (inc & dec) begin
+            {carry,outAdd} = {1'b0,inAdd} + {8'd0,inCarry};
+        end
+        else if (inc & ~dec) begin
+           {carry,outAdd} = {1'b0,inAdd} + {8'd0,inCarry};
+        end
+        
+        else if (~inc & dec) begin
+           {carry,outAdd} = {1'b0,inAdd} - {8'd0,inCarry};
+        end
+        else begin
+            outAdd = inAdd;
+        end
+    end
+    
+endmodule
 
+
+module decOrAddADL(inc,dec,inAdd,carry,outAdd);
+    input inc,dec;
+    input [7:0] inAdd;
+    output reg carry;
+    output reg [7:0] outAdd;
+    
+    reg nborrow;
+    always @ (*) begin
+        if (inc & dec) begin
+            {carry,outAdd} = {1'b0,inAdd} + 9'd2;
+        end
+        
+        else if (inc & ~dec) begin
+            {carry,outAdd} = {1'b0,inAdd} + 9'd1;
+        end
+        else if (~inc & dec) begin
+           {nborrow,outAdd} = {1'b1,inAdd} - 9'd1;
+           if (nborrow == 1) carry = 0; //no rollover
+           else carry = 1; //rollover occured.
+        end
+        else begin
+            carry = 1'b0;
+            outAdd = inAdd;
+        end
+    end
+    
+endmodule
 module PC(haltAll,rstAll, phi2, PCL_DB, PCL_ADL,inFromIncre,
             DB, ADL,
             PCout);

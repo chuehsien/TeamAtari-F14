@@ -2,15 +2,15 @@ task SBC_izy;
 
 	input [6:0] T;
 	input phi1,phi2,carry,statusC,decMode;
-	output [65:0] controlSigs;
+	output [66:0] controlSigs;
 	output [6:0] newT;
 	reg [6:0] newT;
 
 	
-	reg [65:0] controlSigs;
+	reg [66:0] controlSigs;
 	
 	begin
-		controlSigs = 66'd0;
+		controlSigs = 67'd0;
 		case (T)
 			`TzeroNoCrossPg:begin
 			newT = `Tone;

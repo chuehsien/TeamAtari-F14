@@ -5,7 +5,7 @@ module randomLogic2(updateOthers,T,OP,prevOP,phi1,phi2,activeInt,dir,carry,statu
     input [7:0] OP,prevOP;
     input [2:0] activeInt;
     input phi1,phi2,dir,carry,statusC,decMode;
-    output reg [65:0] control = 65'd0;
+    output reg [66:0] control = 67'd0;
     wire updateAC,updateX,updateY,updateStoredDB,updateOthers,updateDBZ;
     
      assign updateAC = phi1 & (T==`Ttwo) & (prevOP == `ADC_abs || prevOP == `ADC_abx || prevOP == `ADC_aby || prevOP == `ADC_imm || 

@@ -58,7 +58,7 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             trireg [7:0]  DB, ADL, ADH, SB;
 `endif            
             //control sigs
-            wire [65:0] controlSigs;
+            wire [79:0] controlSigs;
             wire rstAll;
             
             wire [2:0] adhDrivers,sbDrivers,dbDrivers;
@@ -143,16 +143,15 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             sigLatchWclk l30(~phi1,fastClk,controlSigs[`DL_ADL],DL_ADL);
             sigLatchWclk l31(~phi1,fastClk,controlSigs[`DL_ADH],DL_ADH);
 
-            //latch signals for SR. because DB gets hazards on phi1 ticks.
-            //however, need to make sure that DB is only latched for phi1 ticks. (differentiate from latching for phi2 ticks)
+          
             wire [7:0] DBforSR;
           
             
-            sigLatchWclk8 db4sr1(~phi1,fastClk,DB,DBforSR); //latch during phi2, to prepare for phi1 tick
+            sigLatchWclk8 db4sr1(~phi1,fastClk,DB,DBforSR); 
             sigLatchWclk db4sr2(~phi1,fastClk,DBZ,DBZ_latch);
             
             wire [7:0] opcode,OPforSR;
-            sigLatchWclk op4sr1(~phi1,fastClk,opcode[0],OPforSR[0]); //latch during phi2, to prepare for phi1 tick
+            sigLatchWclk op4sr1(~phi1,fastClk,opcode[0],OPforSR[0]); 
             sigLatchWclk op4sr2(~phi1,fastClk,opcode[1],OPforSR[1]);
             sigLatchWclk op4sr3(~phi1,fastClk,opcode[2],OPforSR[2]);
             sigLatchWclk op4sr4(~phi1,fastClk,opcode[3],OPforSR[3]);
@@ -205,6 +204,22 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             sigLatchWclk l55(1'b1,fastClk,controlSigs[`SB_DB],SB_DB);
             sigLatchWclk l56(1'b1,fastClk,controlSigs[`SB_ADH],SB_ADH);
 
+            wire nI_PC,DEC_PC;
+            sigLatchWclk l57(phi1,fastClk,controlSigs[`nI_PC],nI_PC);
+            sigLatchWclk l58(phi1,fastClk,controlSigs[`DEC_PC],DEC_PC);
+            
+            
+            /*
+            wire [7:0] OPforDOR;
+            sigLatchWclk op4dor1(phi1,fastClk,opcode[0],OPforDOR[0]);
+            sigLatchWclk op4dor2(phi1,fastClk,opcode[1],OPforDOR[1]);
+            sigLatchWclk op4dor3(phi1,fastClk,opcode[2],OPforDOR[2]);
+            sigLatchWclk op4dor4(phi1,fastClk,opcode[3],OPforDOR[3]);
+            sigLatchWclk op4dor5(phi1,fastClk,opcode[4],OPforDOR[4]);
+            sigLatchWclk op4dor6(phi1,fastClk,opcode[5],OPforDOR[5]);
+            sigLatchWclk op4dor7(phi1,fastClk,opcode[6],OPforDOR[6]);
+            sigLatchWclk op4dor8(phi1,fastClk,opcode[7],OPforDOR[7]);
+            */
             //datapath modules
             wire [7:0] DB_b0,ADL_b0,ADH_b0;
            // triState idl_b0[7:0](DB,DB_b0,controlSigs[`DL_DB]);
@@ -218,7 +233,7 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             wire PCLC;
             PcSelectReg lo_1(controlSigs[`PCL_PCL], controlSigs[`ADL_PCL], inFromPC_lo, ADL, 
                         outToIncre_lo);
-            increment   lo_2(~controlSigs[`nI_PC],outToIncre_lo,PCLC,outToPCL);
+            decOrAddADL lo_2(~nI_PC,DEC_PC,outToIncre_lo,PCLC,outToPCL);
             wire [7:0] DB_b1,ADL_b1;
             //triState PClo_b0[7:0](DB,DB_b1,controlSigs[`PCL_DB]);
             //triState PClo_b1[7:0](ADL,ADL_b1,controlSigs[`PCL_ADL]);
@@ -227,8 +242,8 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             
             wire [7:0] inFromPC_hi, outToIncre_hi, outToPCH;
             PcSelectReg hi_1(controlSigs[`PCH_PCH], controlSigs[`ADH_PCH], inFromPC_hi, ADH, 
-                        outToIncre_hi);           
-            increment   hi_2(PCLC,outToIncre_hi, ,outToPCH);
+                        outToIncre_hi);    
+            decOrAddADH hi_2(~nI_PC,DEC_PC,PCLC,outToIncre_hi,outToPCH);                      
             wire [7:0] DB_b2,ADH_b2;
             //triState PChi_b0[7:0](DB,DB_b2,controlSigs[`PCH_DB]);
             //triState PChi_b1[7:0](ADH,ADH_b2,controlSigs[`PCH_ADH]);
@@ -370,13 +385,40 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
                         .status(SR_contents));
                         
                         
-                        
-           //no need for ALUforSR, since aluhold doesnt change over phi1 ticks.
-                    
+            /*            
+            wire [7:0] PCLforDOR;
+            sigLatchWclk pcl4dor1(phi1,fastClk,inFromPC_lo[0],PCLforDOR[0]);
+            sigLatchWclk pcl4dor2(phi1,fastClk,inFromPC_lo[1],PCLforDOR[1]);
+            sigLatchWclk pcl4dor3(phi1,fastClk,inFromPC_lo[2],PCLforDOR[2]);
+            sigLatchWclk pcl4dor4(phi1,fastClk,inFromPC_lo[3],PCLforDOR[3]);
+            sigLatchWclk pcl4dor5(phi1,fastClk,inFromPC_lo[4],PCLforDOR[4]);
+            sigLatchWclk pcl4dor6(phi1,fastClk,inFromPC_lo[5],PCLforDOR[5]);
+            sigLatchWclk pcl4dor7(phi1,fastClk,inFromPC_lo[6],PCLforDOR[6]);
+            sigLatchWclk pcl4dor8(phi1,fastClk,inFromPC_lo[7],PCLforDOR[7]);
+            
+            wire [6:0] currT;  
+            wire [6:0] TforDOR;
+            sigLatchWclk t4dor1(phi1,fastClk,currT[0],TforDOR[0]);
+            sigLatchWclk t4dor2(phi1,fastClk,currT[1],TforDOR[1]);
+            sigLatchWclk t4dor3(phi1,fastClk,currT[2],TforDOR[2]);
+            sigLatchWclk t4dor4(phi1,fastClk,currT[3],TforDOR[3]);
+            sigLatchWclk t4dor5(phi1,fastClk,currT[4],TforDOR[4]);
+            sigLatchWclk t4dor6(phi1,fastClk,currT[5],TforDOR[5]);
+            sigLatchWclk t4dor7(phi1,fastClk,currT[6],TforDOR[6]);
+
+            
+                  
+            
+            wire jsrHi,jsrLo;
+            assign jsrHi = (OPforDOR == `JSR_abs) & (TforDOR == `Tfour);
+            assign jsrLo = (OPforDOR == `JSR_abs) & (TforDOR == `Tfive);
+            */
+            wire [6:0] currT;  
             wire [7:0] extDB_b0;
             triState8 dor_b(extDB,extDB_b0,(~haltAll) & (controlSigs[`nRW]));
-            dataOutReg          dor(haltAll,phi2,nRW, DB, extDB_b0);
-            
+            //dataOutReg          dor(haltAll,phi2,nRW,PCLforDOR,jsrHi,jsrLo, DB, extDB_b0);
+            dataOutReg            dor(haltAll,phi2,nRW, DB,extDB_b0);
+                    
             //moving on to left side...
             wire [7:0] predecodeOut, opcodeToIR;
             wire interrupt;
@@ -398,7 +440,7 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
 `endif    
 */
             wire [7:0] prevOpcode;
-            wire [6:0] currT;
+            
             wire en;
             instructionRegister ir_reg(haltAll,rstAll,currT,phi1,phi2, opcodeToIR, opcode, prevOpcode);
             

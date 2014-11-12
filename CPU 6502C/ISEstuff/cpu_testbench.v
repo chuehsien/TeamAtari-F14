@@ -94,11 +94,12 @@ module CPUtest(CLK_27MHZ_FPGA,
    wire phi0_in,fphi0;
    clockGen179 #(.div(`DIV)) makeclock(GPIO_SW_S,CLK_27MHZ_FPGA,phi0_in,fphi0,locked);
    
-    (* clock_signal = "yes" *) wire clk64,clk16;
+    (* clock_signal = "yes" *) wire clk64,clk16,clk15,clk60;
 
     clockDivider #(422) out64(CLK_27MHZ_FPGA,clk64);
     clockDivider #(1688) out16(CLK_27MHZ_FPGA,clk16);
-    
+    clockDivider #(1800) out15(CLK_27MHZ_FPGA,clk15);
+    clockDivider #(450000) out60(CLK_27MHZ_FPGA,clk60);
      /*-------------------------------------------------------------*/
     // mem stuff
     
@@ -117,7 +118,7 @@ module CPUtest(CLK_27MHZ_FPGA,
     assign memAdd = {extABH,extABL};
    // assign memAdd = 16'h9882;
 	
-/*
+
     triState8 busDriver(extDB,memOut_b,RW);
   
     memTestFull2 mem( 
@@ -127,15 +128,15 @@ module CPUtest(CLK_27MHZ_FPGA,
       .dina(extDB), // input [7 : 0] dina
       .douta(memOut_b) // output [7 : 0] douta
     );
-*/
+
 
    
     wire addr_RAM,addr_BIOS,addr_CART;
     
-    
     wire [7:0] data_CART;
+    wire [7:0] data_CART2;
     
-    assign data_CART = {HDR1_34,HDR1_36,HDR1_38,HDR1_40,HDR1_42,HDR1_44,HDR1_46,HDR1_48};
+    assign data_CART2 = {HDR1_34,HDR1_36,HDR1_38,HDR1_40,HDR1_42,HDR1_44,HDR1_46,HDR1_48};
     assign {HDR1_28,HDR1_26,HDR1_24,HDR1_22,HDR1_20,HDR1_18,HDR1_16,HDR1_14,HDR1_12,HDR1_10,HDR1_8,HDR1_6,HDR1_4,HDR1_2} = memAdd[13:0];
    
     assign HDR1_30 = ((16'h4000 <= {1'b0,memAdd}) & ({1'b0,memAdd} < 16'h8000)) ? 1'b0 : 1'b1;
@@ -155,9 +156,9 @@ module CPUtest(CLK_27MHZ_FPGA,
                     .vol1(vol1),.vol2(vol2),.vol3(vol3),.vol4(vol4));
                     
     wire [15:0] cartROMadd;
-    assign cartROMadd = {HDR1_32,HDR1_30,memAdd[13:0]};
-    //memDefender mem(.clka(memReadClock),.addra(cartROMadd),.douta(data_CART));
-    
+    assign cartROMadd = (memAdd - 16'h4000);
+    //memDefender memD(.clka(memReadClock),.addra(cartROMadd[14:0]),.douta(data_CART));
+    /*
     memoryMap   integrateMem(.addr_RAM(addr_RAM),.addr_BIOS(addr_BIOS),.addr_CART(addr_CART),
                 .Fclk(memReadClock), .clk(memReadClock), .CPU_writeEn(~RW), .CPU_addr(memAdd), 
                  .data_CART_out(data_CART),
@@ -165,7 +166,7 @@ module CPUtest(CLK_27MHZ_FPGA,
                  .AUDF1(AUDF1), .AUDC1(AUDC1), .AUDF2(AUDF2), .AUDC2(AUDC2), 
                  .AUDF3(AUDF3), .AUDC3(AUDC3), .AUDF4(AUDF4), .AUDC4(AUDC4), .AUDCTL(AUDCTL)
                 );
-
+*/
     /*-------------------------------------------------------------*/
     // cpu stuff
 
@@ -179,9 +180,10 @@ module CPUtest(CLK_27MHZ_FPGA,
     assign IRQ_L = 1'b1;
     wire nRES_L,nNMI_L;
     assign RES_L = ~nRES_L;
-    assign NMI_L = ~nNMI_L;
+    assign NMI_L = ~GPIO_SW_N;
+    //assign NMI_L = ~clk60; //VBI every 1/60seconds
     DeBounce #(.N(8)) resB(fphi0,1'b1,GPIO_SW_W,nRES_L);
-    DeBounce #(.N(8)) nmiB(fphi0,1'b1,GPIO_SW_N,nNMI_L);
+   // DeBounce #(.N(8)) nmiB(fphi0,1'b1,GPIO_SW_N,nNMI_L);
     DeBounce #(.N(8)) haltiB(fphi0,1'b1,GPIO_SW_E,HALT);
     
    // not invAgain[3:0]({RDY,IRQ_L,NMI_L,RES_L},{nRDY,nIRQ_L,nNMI_L,nRES_L});
@@ -286,12 +288,12 @@ module CPUtest(CLK_27MHZ_FPGA,
     SB_b,
     {7'd0,phi1_out},
     {RW,activeInt,RDY,IRQ_L,NMI_L,RES_L},
-    data_CART,
+    Accum,
     Xreg,
-    {cartROMadd[15:8]},
+    8'd0,
     OP,
     Yreg,
-    {5'd0,addr_RAM,addr_BIOS,addr_CART});
+    SRcontents);
     
     // extra ila for use...
     chipscope_ila ila1(

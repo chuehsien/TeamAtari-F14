@@ -97,13 +97,14 @@ module interruptLatch(haltAll,phi1,NMI_L,IRQ_Lfiltered,RES_L,outNMI_L,outIRQ_L,o
     reg outNMI_L,outIRQ_L,outRES_L = 1'b1;
 
     always @ (posedge phi1) begin
-        if (RES_L) begin 
+        if (~RES_L) begin 
+            outIRQ_L <= 1'b1;
+            outNMI_L <= 1'b1;
+        end
+
+        else begin
             outIRQ_L <= IRQ_Lfiltered;  
             outNMI_L <= NMI_L;
-        end
-        else begin
-            outIRQ_L <= outIRQ_L;  
-            outNMI_L <= outNMI_L;
         end
         
         outRES_L <= RES_L;
@@ -144,7 +145,7 @@ module PLAinterruptControl(haltAll,phi1, nmiPending,resPending,irqPending,intHan
         activeInt,nmi,irq,res);
         
     input haltAll,phi1, nmiPending,resPending,irqPending,intHandled;
-    output [2:0] activeInt;
+    output reg [2:0] activeInt = 3'd0;
     output nmi,irq,res;
     
     //internal
@@ -152,7 +153,7 @@ module PLAinterruptControl(haltAll,phi1, nmiPending,resPending,irqPending,intHan
     reg res_latch = 1'b0; 
     reg irq_latch = 1'b0; 
 
-    always @ (posedge phi1) begin
+    always @ (negedge phi1) begin
        if (haltAll) begin
             nmi_latch <= nmi_latch;    
             irq_latch <= irq_latch;
@@ -173,42 +174,17 @@ module PLAinterruptControl(haltAll,phi1, nmiPending,resPending,irqPending,intHan
     assign nmi = intg | nmi_latch;
     assign irq = ~intg & irq_latch;
     assign res = res_latch;
-    
-    wire [2:0] activeIntNext;
-    assign activeIntNext = res ? `RST_i : 
-                            ((activeInt!=`NONE) ? activeInt :
-                            (nmi ? `NMI_i :
-                            (irq ? `IRQ_i : `NONE)));
 
-   FDRE #(
-      .INIT(1'b0) // Initial value of register (1'b0 or 1'b1)
-   ) FDRE_inst0(
-      .Q(activeInt[0]),      // 1-bit Data output
-      .C(phi1),      // 1-bit Clock input
-      .CE(~haltAll),    // 1-bit Clock enable input
-      .R(intHandled),  // 1-bit Asynchronous clear input
-      .D(activeIntNext[0])       // 1-bit Data input
-   );
+    always @ (posedge phi1) begin
+        if (res) activeInt <= `RST_i;
+        else if (intHandled) activeInt <= `NONE;
+        else if (activeInt!=`NONE) activeInt <= activeInt;
+        else if (nmi) activeInt <= `NMI_i;
+        else if (irq) activeInt <= `IRQ_i;
+        else activeInt <= `NONE;
+    end
 
-   FDRE #(
-      .INIT(1'b0) // Initial value of register (1'b0 or 1'b1)
-   ) FDRE_inst1(
-      .Q(activeInt[1]),      // 1-bit Data output
-      .C(phi1),      // 1-bit Clock input
-      .CE(~haltAll),    // 1-bit Clock enable input
-      .R(intHandled),  // 1-bit Asynchronous clear input
-      .D(activeIntNext[1])       // 1-bit Data input
-   );
-   
-   FDRE #(
-      .INIT(1'b0) // Initial value of register (1'b0 or 1'b1)
-   ) FDRE_inst2(
-      .Q(activeInt[2]),      // 1-bit Data output
-      .C(phi1),      // 1-bit Clock input
-      .CE(~haltAll),    // 1-bit Clock enable input
-      .R(intHandled),  // 1-bit Asynchronous clear input
-      .D(activeIntNext[2])       // 1-bit Data input
-   );
+
 endmodule
 
 //nRW - reading, ~nRW - writing
@@ -254,7 +230,7 @@ module logicControl(updateOthers,currT,opcode,prevOpcode,phi1,phi2,activeInt,alu
         input aluRel,tempCarry,dir,carry;
         input [7:0] statusReg;
         output [6:0] nextT;
-        output [65:0] nextControlSigs;        
+        output [66:0] nextControlSigs;        
         
         
         wire relOpcode; //opcode which do rel jumps. (branch)
