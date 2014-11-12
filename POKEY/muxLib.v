@@ -11,6 +11,17 @@ module demux (A, sel, Y);
             2'b01: Y = {~A, ~A, A, ~A};
             2'b10: Y = {~A, A, ~A, ~A};
             2'b11: Y = {A, ~A, ~A, ~A};
+				
+				/*2'b00: Y = {A, A, A, A};
+            2'b01: Y = {A, A, A, A};
+            2'b10: Y = {A, A, A, A};
+            2'b11: Y = {A, A, A, A};*/
+				
+				/*2'b00: Y = {~A, ~A, ~A, ~A};
+            2'b01: Y = {~A, ~A, ~A, ~A};
+            2'b10: Y = {~A, ~A, ~A, ~A};
+            2'b11: Y = {~A, ~A, ~A, ~A};*/
+				
             default: Y = {~A, ~A, ~A, ~A};
         endcase
     end

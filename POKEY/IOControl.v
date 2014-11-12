@@ -7,7 +7,7 @@
 
 `include "muxLib.v"
 
-module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_out, pot_rel_0, pot_rel_1, compare_latch, keycode_latch, key_depr);
+module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_out, pot_rel_0, pot_rel_1, compare_latch, keycode_latch, key_depr, bin_ctr_pot, POT0, POT1);
     // key debounce needs FSM?
     // key matrix formed by K0-K5, kr1 reads whether value high or not.
     //parameter NUM_LINES = 228;
@@ -24,6 +24,9 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
 	 output [3:0] compare_latch; 
 	 output [3:0] keycode_latch;
 	 output key_depr;
+	 output [7:0] bin_ctr_pot;
+	 output [7:0] POT0, POT1;
+	 
 
     
     
@@ -40,7 +43,7 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
     /* Potentiometer latches */
     reg [7:0] bin_ctr_pot;
     integer ctr_pot = 0; 
-    reg [7:0] POT0, POT1, POT2, POT3, POT4, POT5, POT6, POT7;
+    reg [7:0] POT0, POT1;
     reg [7:0] pot_scan_reg;
     reg [7:0] ALLPOT, POTGO;
     reg pot_rel_0_reg, pot_rel_1_reg;
@@ -76,12 +79,12 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
         bin_ctr_pot = 8'd0;  
         POT0 <= 8'd0;
         POT1 <= 8'd0;
-        POT2 <= 8'd0;
-        POT3 <= 8'd0;
-        POT4 <= 8'd0;
-        POT5 <= 8'd0;
-        POT6 <= 8'd0;
-        POT7 <= 8'd0;
+//        POT2 <= 8'd0;
+//        POT3 <= 8'd0;
+//        POT4 <= 8'd0;
+//        POT5 <= 8'd0;
+//        POT6 <= 8'd0;
+//        POT7 <= 8'd0;
 		  pot_rel_0_reg <= 1'd0; //turn off transistor0
 		  pot_rel_1_reg <= 1'd0; //turn off transistor1
 		  
@@ -152,12 +155,12 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
             bin_ctr_pot <= 8'd0;
             POT0 <= 8'd0;
             POT1 <= 8'd0;
-            POT2 <= 8'd0;
-            POT3 <= 8'd0;
-            POT4 <= 8'd0;
-            POT5 <= 8'd0;
-            POT6 <= 8'd0;
-            POT7 <= 8'd0;
+//            POT2 <= 8'd0;
+//            POT3 <= 8'd0;
+//            POT4 <= 8'd0;
+//            POT5 <= 8'd0;
+//            POT6 <= 8'd0;
+//            POT7 <= 8'd0;
             pot_scan_reg <= 8'd0; //clear the "lines"
             ctr_pot = 0; //reset the pot counter
 				pot_rel_0_reg <= 1'd0; //turn off transistor0
@@ -168,12 +171,12 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
          
             if ((pot_scan[0] == 1) && (POT0 == 8'd0)) POT0 <= bin_ctr_pot;
             if ((pot_scan[1] == 1) && (POT1 == 8'd0)) POT1 <= bin_ctr_pot;
-            if ((pot_scan[2] == 1) && (POT2 == 8'd0)) POT2 <= bin_ctr_pot;
-            if ((pot_scan[3] == 1) && (POT3 == 8'd0)) POT3 <= bin_ctr_pot;
-            if ((pot_scan[4] == 1) && (POT4 == 8'd0)) POT4 <= bin_ctr_pot;
-            if ((pot_scan[5] == 1) && (POT5 == 8'd0)) POT5 <= bin_ctr_pot;
-            if ((pot_scan[6] == 1) && (POT6 == 8'd0)) POT6 <= bin_ctr_pot;
-            if ((pot_scan[7] == 1) && (POT7 == 8'd0)) POT7 <= bin_ctr_pot;
+//            if ((pot_scan[2] == 1) && (POT2 == 8'd0)) POT2 <= bin_ctr_pot;
+//            if ((pot_scan[3] == 1) && (POT3 == 8'd0)) POT3 <= bin_ctr_pot;
+//            if ((pot_scan[4] == 1) && (POT4 == 8'd0)) POT4 <= bin_ctr_pot;
+//            if ((pot_scan[5] == 1) && (POT5 == 8'd0)) POT5 <= bin_ctr_pot;
+//            if ((pot_scan[6] == 1) && (POT6 == 8'd0)) POT6 <= bin_ctr_pot;
+//            if ((pot_scan[7] == 1) && (POT7 == 8'd0)) POT7 <= bin_ctr_pot;
             
             ctr_pot = ctr_pot + 1; //NB: ctr supposed to increment once per line
             bin_ctr_pot <= bin_ctr_pot + 1;
