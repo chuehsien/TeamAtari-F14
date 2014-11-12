@@ -131,8 +131,14 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
                 key_depr <= 1'b0; //clear the status that key had been earlier pressed
             end
             else if (key_depr == 1'b1) begin //key had been depressed earlier, but now not pressed anymore and was only pressed for one cycle: it's debouncing
-                key_depr <= 1'b0;            
+                key_depr <= 1'b0;     
+					 //keycode_latch <= 4'd0; //clear the keycode_latch
+                //compare_latch <= 4'd0; //clear the compare_latch					 
             end
+				else if (key_depr == 1'b0) begin
+					eycode_latch <= 4'd0; //clear the keycode_latch
+					compare_latch <= 4'd0; //clear the compare_latch		
+				end
             //else begin
                 //continue; //no key earlier depressed, just continue
             //end
@@ -150,7 +156,7 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
         pot_scan_reg <= pot_scan; //may need to put this value in ALLPOT also
 	
         
-        if (addr_bus != 4'h0) begin //we need to start over again
+        if (addr_bus == 4'h0) begin //we need to start over again
 				POTGO <= 8'h00;
             bin_ctr_pot <= 8'd0;
             POT0 <= 8'd0;
