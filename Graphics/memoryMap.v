@@ -82,8 +82,8 @@ module memoryMap(Fclk, clk, rst, CPU_writeEn, ANTIC_writeEn, GTIA_writeEn, CPU_a
   // ANTIC hardware registers
   reg [7:0] DMACTL = 8'h22;       // | $D400 | Write      |                   |
   reg [7:0] CHACTL;       // | $D401 | Write      |                   |
-  reg [7:0] DLISTL = 8'h03;       // | $D402 | Write/Read | ANTIC_writeEn 1/2 |
-  reg [7:0] DLISTH = 8'hA0;       // | $D403 | Write/Read | ANTIC_writeEn 2   |
+  reg [7:0] DLISTL = 8'h00;       // | $D402 | Write/Read | ANTIC_writeEn 1/2 |
+  reg [7:0] DLISTH = 8'h20;       // | $D403 | Write/Read | ANTIC_writeEn 2   |
   reg [7:0] HSCROL;       // | $D404 | Write      |                   |
   reg [7:0] VSCROL;       // | $D405 | Write      |                   |
   reg [7:0] PMBASE;       // | $D407 | Write      |                   |
@@ -118,9 +118,9 @@ module memoryMap(Fclk, clk, rst, CPU_writeEn, ANTIC_writeEn, GTIA_writeEn, CPU_a
   reg [7:0] COLPM1_TRIG3; // | $D013 | Write/Read | GTIA_writeEn 20 |
   reg [7:0] COLPM2_PAL;   // | $D014 | Write/Read | GTIA_writeEn 21 |
   reg [7:0] COLPM3;       // | $D015 | Write      |                 |
-  reg [7:0] COLPF0 = 8'h5a;       // | $D016 | Write      |                 |   // Pre-initialized for testing, initialize via CPU writes in the future
-  reg [7:0] COLPF1 = 8'h38;       // | $D017 | Write      |                 |
-  reg [7:0] COLPF2 = 8'h7e;       // | $D018 | Write      |                 |
+  reg [7:0] COLPF0 = 8'h00;       // | $D016 | Write      |                 |   // Pre-initialized for testing, initialize via CPU writes in the future
+  reg [7:0] COLPF1 = 8'h0e;       // | $D017 | Write      |                 |
+  reg [7:0] COLPF2 = 8'h00;       // | $D018 | Write      |                 |
   reg [7:0] COLPF3 = 8'h00;       // | $D019 | Write      |                 |
   reg [7:0] COLBK = 8'h00;        // | $D01A | Write      |                 |
   reg [7:0] PRIOR = 8'h00;        // | $D01B | Write      |                 |
@@ -139,12 +139,37 @@ module memoryMap(Fclk, clk, rst, CPU_writeEn, ANTIC_writeEn, GTIA_writeEn, CPU_a
   
   wire [15:0] CPU_addr_b;
   wire [7:0] data_RAM_out_b, data_in_b;
+  
   buf memB0[7:0] (data_RAM_out, data_RAM_out_b);
   buf memB1[15:0] (CPU_addr_b, CPU_addr);
   buf memB2[7:0] (data_in_b, data_in);
   
+  // 3 Sets of ROM for 3 different screen tests
+  
+  blk_rom_defender_load load (
+    .clka(Fclk), // input clka
+    .addra(CPU_addr_b), // input [15 : 0] addra
+    .douta(data_RAM_out_b) // output [7 : 0] douta
+  );
+  
+  /*
+  blk_rom_defender_menu menu (
+    .clka(Fclk), // input clka
+    .addra(CPU_addr_b), // input [15 : 0] addra
+    .douta(data_RAM_out2) // output [7 : 0] douta
+  );
+  
+  blk_rom_defender_play play (
+    .clka(Fclk), // input clka
+    .addra(CPU_addr_b), // input [15 : 0] addra
+    .douta(data_RAM_out3) // output [7 : 0] douta
+  );
+  */
+  
+  
   // Block RAM
   // Read clock is inverted Fphi0, write clock is phi2
+  
   /*
   blk_mem_gen_v7_2 blockRAM (.clka(clk),
                              .wea(write_RAM),
@@ -152,14 +177,26 @@ module memoryMap(Fclk, clk, rst, CPU_writeEn, ANTIC_writeEn, GTIA_writeEn, CPU_a
                              .dina(data_in_b),
                              .clkb(Fclk),
                              .addrb(CPU_addr_b),
-                             .doutb(data_RAM_out_b));*/
-                             
-  blk_mem_gen_v7_2_rom blockROM (.clka(Fclk), // input clka
-                                 .addra(CPU_addr_b), // input [15 : 0] addra
-                                 .douta(data_RAM_out_b) // output [7 : 0] douta
-  );
+                             .doutb(data_RAM_out_b));
+  */
   
   //memory256x256 mem(.clock(Fclk), .we(write_RAM), .address(CPU_addr), .dataIn(data_in), .dataOut(data_RAM_out));
+  /*
+  blk_mem_rom_loadscreen blockROM (.clka(Fclk),             // input clka
+                                   .addra(CPU_addr_b),      // input [15 : 0] addra
+                                   .douta(data_RAM_out_b)); // output [7 : 0] douta
+  */
+  /*
+  blk_mem_rom_pacman_menu blockROM (.clka(Fclk),             // input clka
+                                    .addra(CPU_addr_b),      // input [15 : 0] addra
+                                    .douta(data_RAM_out_b)); // output [7 : 0] douta
+  */
+  
+  /*
+  blk_mem_rom_play blockROM (.clka(Fclk),             // input clka
+                             .addra(CPU_addr_b),      // input [15 : 0] addra
+                             .douta(data_RAM_out_b)); // output [7 : 0] douta
+  */
   
   triStateData tsd(.DB(CPU_data), .DB_out(data_out), .writeEn(CPU_writeEn), .DB_in(data_in));
   
@@ -168,17 +205,18 @@ module memoryMap(Fclk, clk, rst, CPU_writeEn, ANTIC_writeEn, GTIA_writeEn, CPU_a
   addrCheck ac(.addr(CPU_addr), .addr_RAM(addr_RAM));
   
   writeMux wm(.addr_RAM(addr_RAM), .writeEn(CPU_writeEn), .write_RAM(write_RAM), .write_reg(write_reg));
-
+  
 
   always @(posedge Fclk or posedge rst) begin
     
     if (rst) begin
-      DLISTL <= 8'h03;
-      DLISTH <= 8'hA0;
+      DLISTL <= 8'h00;
+      DLISTH <= 8'h20;
     end
     
     else begin
     
+      // Temporary to simulate interrupt color changes
       if (NMIRES_NMIST[7]) begin
         DMACTL <= 8'h02;
         if (tempCount == 16'hFFFF) begin
