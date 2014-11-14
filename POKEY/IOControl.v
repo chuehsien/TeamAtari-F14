@@ -132,17 +132,23 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
             end
             else if (key_depr == 1'b1) begin //key had been depressed earlier, but now not pressed anymore and was only pressed for one cycle: it's debouncing
                 key_depr <= 1'b0;     
-					 //keycode_latch <= 4'd0; //clear the keycode_latch
+				//keycode_latch <= 4'd0; //clear the keycode_latch
                 //compare_latch <= 4'd0; //clear the compare_latch					 
             end
-				else if (key_depr == 1'b0) begin
-					eycode_latch <= 4'd0; //clear the keycode_latch
-					compare_latch <= 4'd0; //clear the compare_latch		
-				end
+			else if (key_depr == 1'b0) begin
+				keycode_latch <= 4'd0; //clear the keycode_latch
+				compare_latch <= 4'd0; //clear the compare_latch		
+			end
             //else begin
                 //continue; //no key earlier depressed, just continue
             //end
         end
+	    //trying this
+	    else begin
+			keycode_latch <= 4'd0; //clear the keycode_latch
+			compare_latch <= 4'd0; //clear the compare_latch		
+	    end
+	    //end trial
             
             
         /*Actual Scanning Process*/
