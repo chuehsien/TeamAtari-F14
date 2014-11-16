@@ -2,9 +2,9 @@
 // last updated: 10/13/2014 1800H
 // Adapted from Team Dragonforce
 
-`include "DVI_IIC.v"
-`include "DVI_ODDR.v"
-`include "DVI_syncgen.v"
+`include "Graphics/DVI_IIC.v"
+`include "Graphics/DVI_ODDR.v"
+`include "Graphics/DVI_syncgen.v"
 
 `define init 1'b0
 `define idle 1'b1

@@ -1,5 +1,5 @@
 module randomLogic2(updateOthers,T,OP,prevOP,phi1,phi2,activeInt,dir,carry,statusC,decMode,control);
-    `include "Control/controlMods.v"
+    `include "CPU/Control/controlMods.v"
     output updateOthers;
     input [6:0] T;
     input [7:0] OP,prevOP;
@@ -72,7 +72,7 @@ module randomLogicPredict(T,nextT,currOP,nextOP,phi1,phi2,activeInt,latchedAVR,l
     input [2:0] activeInt;
     input latchedAVR,latchedACR,aluholdAVR,aluholdACR,statusC,statusD;
     output reg [65:0] control;
-    `include "Control/controlMods.v"
+    `include "CPU/Control/controlMods.v"
     
     wire updateAC,updateX,updateY,updateStoredDB,updateOthers,updateDBZ;
     

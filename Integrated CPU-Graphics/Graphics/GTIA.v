@@ -1,8 +1,8 @@
 // top module for the GTIA processor.
 // last updated: 10/21/2014 2330H
 
-`include "GTIA_modeDef.v"
-`include "colorTable.v"
+`include "Graphics/GTIA_modeDef.v"
+`include "Graphics/colorTable.v"
 
 module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTend, numLines,
             width, height,

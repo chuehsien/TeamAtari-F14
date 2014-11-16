@@ -15,7 +15,7 @@ module DVI_ODDR(data, offset, border, clock, hs, vs, DVI_XCLK_P, DVI_XCLK_N, DVI
   output DVI_H;
   output [11:0] DVI_D;
 
-  `include "DVI_parameters.v"
+  `include "Graphics/DVI_parameters.v"
   
   reg [7:0] red, green, blue;
   
