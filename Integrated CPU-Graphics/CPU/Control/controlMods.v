@@ -2,8 +2,8 @@
 `include "Control/controlDef.v"
 `include "Control/TDef.v"
  */
-`include "Control/opcodeDef.v"
-`include "Control/opcodeTasks.v"
+`include "CPU/Control/opcodeDef.v"
+`include "CPU/Control/opcodeTasks.v"
 task getControls;
                 
     input phi1,phi2,dir,carry,statusC,decMode;

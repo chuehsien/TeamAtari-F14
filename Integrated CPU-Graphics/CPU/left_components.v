@@ -1,6 +1,6 @@
 // this module contains all contains that are driven by clocks and the left side of the block diagram
-`include "Control/Tcontrol.v"
-`include "Control/Logiccontrol2.v"
+`include "CPU/Control/Tcontrol.v"
+`include "CPU/Control/Logiccontrol2.v"
 
 module clockGen(HALT,phi0_in,fclk,
                 haltAll,RDY,phi1_out,phi2_out,phi1_extout,phi2_extout);

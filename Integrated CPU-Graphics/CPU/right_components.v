@@ -344,24 +344,8 @@ module PcSelectReg(PCL_PCL, ADL_PCL, inFromPCL, ADL,
     
     
 endmodule
-/*
-module increment(inc, inAdd,
-                carry,outAdd);
-                
-    input inc;
-    input [7:0] inAdd;
-    output carry;
-    output [7:0] outAdd;
-    
-    //internal    
-    wire [8:0] result;
-    
-    assign result = inAdd + inc;
-    assign carry = result[8];
-    assign outAdd = result[7:0];
-    
-endmodule
-*/
+
+
 module decOrAddADH(inc,dec,inCarry,inAdd,outAdd);
     input inc,dec,inCarry;
     input [7:0] inAdd;
@@ -369,14 +353,11 @@ module decOrAddADH(inc,dec,inCarry,inAdd,outAdd);
     
     reg carry;
     always @ (*) begin
-        if (inc & dec) begin
-            {carry,outAdd} = {1'b0,inAdd} + {8'd0,inCarry};
-        end
-        else if (inc & ~dec) begin
+        if (inc) begin
            {carry,outAdd} = {1'b0,inAdd} + {8'd0,inCarry};
         end
         
-        else if (~inc & dec) begin
+        else if (dec) begin
            {carry,outAdd} = {1'b0,inAdd} - {8'd0,inCarry};
         end
         else begin
@@ -395,14 +376,10 @@ module decOrAddADL(inc,dec,inAdd,carry,outAdd);
     
     reg nborrow;
     always @ (*) begin
-        if (inc & dec) begin
-            {carry,outAdd} = {1'b0,inAdd} + 9'd2;
-        end
-        
-        else if (inc & ~dec) begin
+        if (inc) begin
             {carry,outAdd} = {1'b0,inAdd} + 9'd1;
         end
-        else if (~inc & dec) begin
+        else if (dec) begin
            {nborrow,outAdd} = {1'b1,inAdd} - 9'd1;
            if (nborrow == 1) carry = 0; //no rollover
            else carry = 1; //rollover occured.
@@ -414,6 +391,8 @@ module decOrAddADL(inc,dec,inAdd,carry,outAdd);
     end
     
 endmodule
+
+
 module PC(haltAll,rstAll, phi2, PCL_DB, PCL_ADL,inFromIncre,
             DB, ADL,
             PCout);

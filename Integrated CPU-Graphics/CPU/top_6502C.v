@@ -3,38 +3,39 @@
 `define syn
 
 
-`include "Control/controlDef.v"
-`include "Control/opcodeDef.v"
-`include "Control/FSMstateDef.v"
-`include "Control/TDef.v"
+`include "CPU/Control/controlDef.v"
+`include "CPU/Control/opcodeDef.v"
+`include "CPU/Control/FSMstateDef.v"
+`include "CPU/Control/TDef.v"
 
-`include "left_components.v"
-`include "right_components.v"
-`include "peripherals.v" 
+`include "CPU/left_components.v"
+`include "CPU/right_components.v"
+`include "CPU/peripherals.v" 
 
-`include "Control/plaFSM.v"
+`include "CPU/Control/plaFSM.v"
 
-module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,opcodeToIR,second_first_int,nmiPending,resPending,irqPending,currState,accumVal,outToPCL,outToPCH,A,B,idlContents,rstAll,ALUhold_out,activeInt,currT,DB,SB,ADH,ADL,
+module top_6502C(haltAll,DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,opcodeToIR,second_first_int,nmiPending,resPending,irqPending,currState,accumVal,outToPCL,outToPCH,A,B,idlContents,rstAll,ALUhold_out,activeInt,currT,DB,SB,ADH,ADL,
                 HALT, IRQ_L, NMI_L, RES_L, SO, phi0_in,fastClk,extDB,	
                 RDY,phi1_out, SYNC, extABL, extABH, phi2_out, RW,
                 Accum,Xreg,Yreg);
-            output [7:0] DBforSR,extAB_b1,SR_contents;
-            output [7:0] holdAB;
-            output [7:0] SRflags;
-            output [7:0] opcode,opcodeToIR,prevOpcode;
-            output [7:0] second_first_int;
-            output nmiPending,resPending,irqPending;
-            output [1:0] currState;
-            output [7:0] accumVal;
-            output [7:0] outToPCL,outToPCH,A,B;
-            output [7:0] idlContents;
-            output rstAll;
-            output [7:0] ALUhold_out;
+            output haltAll;//
+            output [7:0] DBforSR,extAB_b1,SR_contents;//
+            output [7:0] holdAB;//
+            output [7:0] SRflags;//
+            output [7:0] opcode,opcodeToIR,prevOpcode;//
+            output [7:0] second_first_int;//
+            output nmiPending,resPending,irqPending;//
+            output [1:0] currState;//
+            output [7:0] accumVal;//
+            output [7:0] outToPCL,outToPCH,A,B;//
+            output [7:0] idlContents;//
+            output rstAll;//
+            output [7:0] ALUhold_out;//
             //output phi1;
             //output [2:0] dbDrivers,sbDrivers,adlDrivers,adhDrivers;
-            output [2:0] activeInt;
-            output [6:0] currT;          
-            output [7:0] DB,SB,ADH,ADL;
+            output [2:0] activeInt;//
+            output [6:0] currT;        //
+            output [7:0] DB,SB,ADH,ADL; //
             
 			input HALT, IRQ_L, NMI_L, RES_L, SO, phi0_in,fastClk;
 			inout [7:0] extDB;
@@ -208,18 +209,12 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             sigLatchWclk l57(phi1,fastClk,controlSigs[`nI_PC],nI_PC);
             sigLatchWclk l58(phi1,fastClk,controlSigs[`DEC_PC],DEC_PC);
             
+            wire ADL_PCL,ADH_PCH,PCL_PCL,PCH_PCH;
+            sigLatchWclk l59(phi1,fastClk,controlSigs[`ADL_PCL],ADL_PCL);
+            sigLatchWclk l60(phi1,fastClk,controlSigs[`ADH_PCH],ADH_PCH);
+            sigLatchWclk l61(phi1,fastClk,controlSigs[`PCL_PCL],PCL_PCL);
+            sigLatchWclk l62(phi1,fastClk,controlSigs[`PCH_PCH],PCH_PCH);
             
-            /*
-            wire [7:0] OPforDOR;
-            sigLatchWclk op4dor1(phi1,fastClk,opcode[0],OPforDOR[0]);
-            sigLatchWclk op4dor2(phi1,fastClk,opcode[1],OPforDOR[1]);
-            sigLatchWclk op4dor3(phi1,fastClk,opcode[2],OPforDOR[2]);
-            sigLatchWclk op4dor4(phi1,fastClk,opcode[3],OPforDOR[3]);
-            sigLatchWclk op4dor5(phi1,fastClk,opcode[4],OPforDOR[4]);
-            sigLatchWclk op4dor6(phi1,fastClk,opcode[5],OPforDOR[5]);
-            sigLatchWclk op4dor7(phi1,fastClk,opcode[6],OPforDOR[6]);
-            sigLatchWclk op4dor8(phi1,fastClk,opcode[7],OPforDOR[7]);
-            */
             //datapath modules
             wire [7:0] DB_b0,ADL_b0,ADH_b0;
            // triState idl_b0[7:0](DB,DB_b0,controlSigs[`DL_DB]);
@@ -231,7 +226,7 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
                         
             wire [7:0] inFromPC_lo, outToIncre_lo, outToPCL;
             wire PCLC;
-            PcSelectReg lo_1(controlSigs[`PCL_PCL], controlSigs[`ADL_PCL], inFromPC_lo, ADL, 
+            PcSelectReg lo_1(PCL_PCL, ADL_PCL, inFromPC_lo, ADL, 
                         outToIncre_lo);
             decOrAddADL lo_2(~nI_PC,DEC_PC,outToIncre_lo,PCLC,outToPCL);
             wire [7:0] DB_b1,ADL_b1;
@@ -241,7 +236,7 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             
             
             wire [7:0] inFromPC_hi, outToIncre_hi, outToPCH;
-            PcSelectReg hi_1(controlSigs[`PCH_PCH], controlSigs[`ADH_PCH], inFromPC_hi, ADH, 
+            PcSelectReg hi_1(PCH_PCH, ADH_PCH, inFromPC_hi, ADH, 
                         outToIncre_hi);    
             decOrAddADH hi_2(~nI_PC,DEC_PC,PCLC,outToIncre_hi,outToPCH);                      
             wire [7:0] DB_b2,ADH_b2;

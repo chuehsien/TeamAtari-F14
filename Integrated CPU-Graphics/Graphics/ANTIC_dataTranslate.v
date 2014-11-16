@@ -6,7 +6,7 @@
       extra AN bits are sent out due to slow instruction load
  */
 
-`include "GTIA_modeDef.v"
+`include "Graphics/GTIA_modeDef.v"
 
 `define jumpStart       3'b000
 `define jumpLoadByte1   3'b001
@@ -28,7 +28,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                      charLoaded, MSRdata_reverse, AN, loadIR, loadDLISTL, loadDLISTH, 
                      loadPtr, loadMSRL, loadMSRH, incrMSR, loadMSRdata,
                      mode, numBytes, charMode, loadChar, blankCount, loadDLIST, 
-                     ANTIC_writeDLIST, numLines, width, height, ANTIC_writeDLI, ANTIC_clearDLI,
+                     ANTIC_writeDLIST, numLines, width, height, ANTIC_writeDLI, ANTIC_writeVBI,
                      ANTIC_writeNMI,
                      idle, loadMSRstate, DLISTend, charSingleColor);
   
@@ -64,7 +64,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
   output reg [8:0] width = 9'd320;
   output reg [7:0] height = 8'd192;
   output reg ANTIC_writeDLI = 1'b0;
-  output reg ANTIC_clearDLI = 1'b0;
+  output reg ANTIC_writeVBI = 1'b0;
   output reg ANTIC_writeNMI = 1'b0;
   output idle; //
   output [1:0] loadMSRstate; //
@@ -89,8 +89,10 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
   reg waitvblank = 1'b0;
   reg [2:0] numPixel = 3'd0;
   reg DLI = 1'b0;
+  reg VBI = 1'b0;
   reg clearDLI = 1'b0;
   reg DLI_hold = 1'b0;
+  reg VBI_hold = 1'b0;
   reg numRepeat = 3'd0;
   reg [13:0] vblankcount = 14'd0;
   
@@ -104,6 +106,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
   always @ (posedge Fphi0 or posedge rst) begin
   
     if (rst) begin
+      mode <= 4'd0;
       AN <= `noTransmission;
       holdMode <= 1'b0;
       newBlank <= 1'b1;
@@ -137,11 +140,13 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
       width <= 9'd320;
       height <= 8'd192;
       ANTIC_writeDLI <= 1'b0;
-      ANTIC_clearDLI <= 1'b0;
+      ANTIC_writeVBI <= 1'b0;
       ANTIC_writeNMI <= 1'b0;
       DLI <= 1'b0;
+      VBI <= 1'b0;
       clearDLI <= 1'b0;
       DLI_hold <= 1'b0;
+      VBI_hold <= 1'b0;
       charSingleColor <= 1'b0;
       numRepeat <= 3'd0;
       vblankcount <= 14'd0;
@@ -151,19 +156,20 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
     
       // Will be overwritten if bits are sent on this clock cycle
       AN <= `noTransmission;
-      ANTIC_clearDLI <= 1'b0;
       ANTIC_writeDLI <= 1'b0;
       
       if (DLI_hold) begin
         ANTIC_writeDLI <= 1'b1;
         DLI_hold <= 1'b0;
-        clearDLI <= 1'b1;
       end
-      else if (clearDLI) begin
-        ANTIC_clearDLI <= 1'b1;
+      else if (VBI_hold) begin
+        ANTIC_writeVBI <= 1'b1;
+        DLI_hold <= 1'b0;
+      end
+      else begin
         ANTIC_writeDLI <= 1'b0;
+        ANTIC_writeVBI <= 1'b0;
         ANTIC_writeNMI <= 1'b0;
-        clearDLI <= 1'b0;
       end
 
       if (idle) begin
@@ -173,6 +179,12 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
         if (DLI) begin
           DLI <= 1'b0;
           DLI_hold <= 1'b1;
+          ANTIC_writeNMI <= 1'b1;
+        end
+        
+        else if (VBI) begin
+          VBI <= 1'b0;
+          VBI_hold <= 1'b1;
           ANTIC_writeNMI <= 1'b1;
         end
         
@@ -195,560 +207,558 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
       
       else begin
 
-        //if (DLIST_DMA_en) begin
-
-          // Mode 0: Blank Lines
-          //  - Used to create 1-8 blank lines on the display in background color
-          if (mode == 4'h0) begin
-            loadIR <= 1'b1;
-            idle <= 1'b1;
-          end
-          /*
-          if (mode == 4'h0) begin
-            charMode <= 2'd0;
-            width <= 9'd320;
-            height <= 8'd192;
-            numLines <= `one;
-            
-            // Start of blank lines instruction:
-            // Place number of blank lines in 'blankCount'
-            // (Number of blank mode lines * 8 TV scan lines per mode line * 320 pixels per TV scan line)
-            if (newBlank == 1'b1) begin
-              blankCount <= (((IR[6:4]+1)*8)*320);
-              AN <= `modeNorm_bgColor;  // Send first blank pixel
-              newBlank <= 1'b0;
-              loadIR <= 1'b0;
-            end
-            
-            else if (newBlank == 1'b0) begin
-              
-              // Normal operation, send blank pixel to GTIA and decrement blankCount
-              AN <= `modeNorm_bgColor;
-              blankCount <= blankCount - 3'd1;
-              
-              // One last blank line to display, trigger next IR load
-              if (blankCount == 15'd2) begin
-                newBlank <= 1'b1;
-                loadIR <= 1'b1;
-                idle <= 1'b1;
-              end
-            end
-          end
-          */
+        // Mode 0: Blank Lines
+        //  - Used to create 1-8 blank lines on the display in background color
+        if (mode == 4'h0) begin
+          loadIR <= 1'b1;
+          idle <= 1'b1;
+        end
+        /*
+        if (mode == 4'h0) begin
+          charMode <= 2'd0;
+          width <= 9'd320;
+          height <= 8'd192;
+          numLines <= `one;
           
-          // Mode 1: Jump
-          //  - Used to reload the display counter
-          //  - Next 2 bytes specify the address to be loaded
-          else if (mode == 4'h1) begin
-                
-            case (jumpState)
-              
-              `jumpStart:
-                begin
-                  jumpState <= `jumpLoadByte1;
-                  loadIR <= 1'b1;
-                  jumpType <= IR[6];
-                end
-              
-              `jumpLoadByte1:
-                begin
-                  loadIR <= 1'b0;
-                  if (IR_rdy) begin
-                    jumpState <= `jumpLoadByte2;
-                    loadDLISTL <= 1'b1;
-                    loadIR <= 1'b1;
-                    loadPtr <= 1'b1;  // Block ANTIC FSM from incr dlistptr
-                  end
-                end
-              
-              `jumpLoadByte2:
-                begin
-                  loadIR <= 1'b0;
-                  loadDLISTL <= 1'b0;
-                  if (IR_rdy) begin
-                    jumpState <= `jumpExecute;
-                    loadDLISTH <= 1'b1;
-                    ANTIC_writeDLIST <= 1'b1;
-                  end
-                end
-               
-              `jumpExecute:
-                begin
-                  jumpState <= `jumpEnd;
-                  loadPtr <= 1'b0;
-                  loadDLISTH <= 1'b0;
-                  loadDLIST <= 1'b1;
-                  ANTIC_writeDLIST <= 1'b0;
-                  
-                  // Jump to address & wait for vertical blank (used to end the Display List)
-                  if (jumpType == 1'b1) begin
-                    waitvblank <= 1'b1;
-                    DLISTend <= 1'b1;
-                  end
-                end
-                
-              `jumpEnd:
-                begin
-                  jumpState <= `jumpStart;
-                  loadDLIST <= 1'b0;
-                  DLISTend <= 1'b0;
-                  loadIR <= 1'b1; // Trigger jump to new pointer location
-                  idle <= 1'b1; // Idle until next vertical blank
-                end
-            endcase
-            
+          // Start of blank lines instruction:
+          // Place number of blank lines in 'blankCount'
+          // (Number of blank mode lines * 8 TV scan lines per mode line * 320 pixels per TV scan line)
+          if (newBlank == 1'b1) begin
+            blankCount <= (((IR[6:4]+1)*8)*320);
+            AN <= `modeNorm_bgColor;  // Send first blank pixel
+            newBlank <= 1'b0;
+            loadIR <= 1'b0;
           end
+          
+          else if (newBlank == 1'b0) begin
             
+            // Normal operation, send blank pixel to GTIA and decrement blankCount
+            AN <= `modeNorm_bgColor;
+            blankCount <= blankCount - 3'd1;
+            
+            // One last blank line to display, trigger next IR load
+            if (blankCount == 15'd2) begin
+              newBlank <= 1'b1;
+              loadIR <= 1'b1;
+              idle <= 1'b1;
+            end
+          end
+        end
+        */
+        
+        // Mode 1: Jump
+        //  - Used to reload the display counter
+        //  - Next 2 bytes specify the address to be loaded
+        else if (mode == 4'h1) begin
+              
+          case (jumpState)
+            
+            `jumpStart:
+              begin
+                jumpState <= `jumpLoadByte1;
+                loadIR <= 1'b1;
+                jumpType <= IR[6];
+              end
+            
+            `jumpLoadByte1:
+              begin
+                loadIR <= 1'b0;
+                if (IR_rdy) begin
+                  jumpState <= `jumpLoadByte2;
+                  loadDLISTL <= 1'b1;
+                  loadIR <= 1'b1;
+                  loadPtr <= 1'b1;  // Block ANTIC FSM from incr dlistptr
+                end
+              end
+            
+            `jumpLoadByte2:
+              begin
+                loadIR <= 1'b0;
+                loadDLISTL <= 1'b0;
+                if (IR_rdy) begin
+                  jumpState <= `jumpExecute;
+                  loadDLISTH <= 1'b1;
+                  ANTIC_writeDLIST <= 1'b1;
+                end
+              end
+             
+            `jumpExecute:
+              begin
+                jumpState <= `jumpEnd;
+                loadPtr <= 1'b0;
+                loadDLISTH <= 1'b0;
+                loadDLIST <= 1'b1;
+                ANTIC_writeDLIST <= 1'b0;
+                
+                // Jump to address & wait for vertical blank period (used to end the Display List)
+                if (jumpType == 1'b1) begin
+                  VBI <= 1'b1; // Send vertical blank interrupt
+                  waitvblank <= 1'b1;
+                  DLISTend <= 1'b1;
+                end
+              end
+              
+            `jumpEnd:
+              begin
+                jumpState <= `jumpStart;
+                loadDLIST <= 1'b0;
+                DLISTend <= 1'b0;
+                loadIR <= 1'b1; // Trigger jump to new pointer location
+                idle <= 1'b1; // Idle until next vertical blank
+              end
+          endcase
+          
+        end
+          
+        else begin
+          
+          if ((((~holdMode)&IR[6])|(loadMSRbit))&(~loadMSRdone)) begin
+          
+            case (loadMSRstate)
+              
+              `loadMSR1:
+                begin
+                  loadMSRstate <= `loadMSR2;
+                  loadMSRbit <= IR[6];
+                  holdMode <= 1'b1;
+                  loadMSRdone <= 1'b0;
+                  loadIR <= 1'b1;
+                end
+              
+              `loadMSR2:
+                begin
+                  loadIR <= 1'b0;
+                  if (IR_rdy) begin
+                    loadMSRstate <= `loadMSR3;
+                    loadMSRL <= 1'b1;
+                    loadIR <= 1'b1;
+                  end
+                end
+                
+              `loadMSR3:
+                begin
+                  loadMSRL <= 1'b0;
+                  loadIR <= 1'b0;
+                  if (IR_rdy) begin
+                    loadMSRstate <= `loadMSR4;  
+                    loadMSRH <= 1'b1;
+                  end
+                end
+                
+              `loadMSR4:
+                begin
+                  loadMSRstate <= `loadMSR1;
+                  loadMSRH <= 1'b0;
+                  loadMSRdone <= 1'b1;
+                  loadMSRbit <= 1'b0;
+                end
+                
+            endcase
+          end
+          
+          // * TODO: Add routine for HS modifier bit = IR[4]
+          // * TODO: Add routine for VS modifier bit = IR[5]
+          
           else begin
             
-            if ((((~holdMode)&IR[6])|(loadMSRbit))&(~loadMSRdone)) begin
+            case (mode)
             
-              case (loadMSRstate)
+              /* Mode 2: Character, 32/40/48 bytes per mode line, 8 TV scan lines per mode line, 1.5 color
+               *
+               *  - Default, normal-sized text mode
+               *  - ANTIC displays 40 of these 8x8 sized characters on each mode line (in normal mode)
+               *  - 24 of such mode lines in total (8 TV scan lines per mode line, 8*24 = 192 total lines)
+               *  - Memory Scan Register (MSR) points to the current byte of character data
+               *  - For a 128-char set, charByte[6:0] indexes to a character at [CHBASE], charByte[7] is for color / special info
+               *  - Each character code is fetch from memory and placed in a rotating shift register for display
+               *  - Each character from the set (located at [CHBASE]) is a 8-byte bitmap (* is a 1, - is a 0)
+               *      A: 0 -------- 0x00
+               *         1 ---**--- 0x18
+               *         2 --****-- 0x3C
+               *         3 -**--**- 0x66
+               *         4 -**--**- 0x66
+               *         5 -******- 0x7E
+               *         6 -**--**- 0x66
+               *         7 -------- 0x00
+               */
+              4'h2:
+                begin
                 
-                `loadMSR1:
-                  begin
-                    loadMSRstate <= `loadMSR2;
-                    loadMSRbit <= IR[6];
-                    holdMode <= 1'b1;
-                    loadMSRdone <= 1'b0;
-                    loadIR <= 1'b1;
-                  end
-                
-                `loadMSR2:
-                  begin
-                    loadIR <= 1'b0;
-                    if (IR_rdy) begin
-                      loadMSRstate <= `loadMSR3;
-                      loadMSRL <= 1'b1;
-                      loadIR <= 1'b1;
-                    end
+                  // Set the byte-width of the mode line
+                  if (~loadedNumBytes) begin
+                    loadedNumBytes <= 1'b1;
+                    if (playfieldWidth == `narrowPlayfield)
+                      numBytes <= 7'd32;
+                    else if (playfieldWidth == `standardPlayfield)
+                      numBytes <= 7'd40;
+                    else if (playfieldWidth == `widePlayfield)
+                      numBytes <= 7'd48;
+                    else
+                      numBytes <= 7'd0;
+                    loadMSRdata <= 1'b1;
+                    incrMSR <= 1'b1;
+                    width <= 9'd320;
+                    height <= 8'd192;
                   end
                   
-                `loadMSR3:
-                  begin
-                    loadMSRL <= 1'b0;
-                    loadIR <= 1'b0;
-                    if (IR_rdy) begin
-                      loadMSRstate <= `loadMSR4;  
-                      loadMSRH <= 1'b1;
-                    end
-                  end
-                  
-                `loadMSR4:
-                  begin
-                    loadMSRstate <= `loadMSR1;
-                    loadMSRH <= 1'b0;
-                    loadMSRdone <= 1'b1;
-                    loadMSRbit <= 1'b0;
-                  end
-                  
-              endcase
-            end
-            
-            // * TODO: Add routine for HS modifier bit = IR[4]
-            // * TODO: Add routine for VS modifier bit = IR[5]
-            
-            else begin
-              
-              case (mode)
-              
-                /* Mode 2: Character, 32/40/48 bytes per mode line, 8 TV scan lines per mode line, 1.5 color
-                 *
-                 *  - Default, normal-sized text mode
-                 *  - ANTIC displays 40 of these 8x8 sized characters on each mode line (in normal mode)
-                 *  - 24 of such mode lines in total (8 TV scan lines per mode line, 8*24 = 192 total lines)
-                 *  - Memory Scan Register (MSR) points to the current byte of character data
-                 *  - For a 128-char set, charByte[6:0] indexes to a character at [CHBASE], charByte[7] is for color / special info
-                 *  - Each character code is fetch from memory and placed in a rotating shift register for display
-                 *  - Each character from the set (located at [CHBASE]) is a 8-byte bitmap (* is a 1, - is a 0)
-                 *      A: 0 -------- 0x00
-                 *         1 ---**--- 0x18
-                 *         2 --****-- 0x3C
-                 *         3 -**--**- 0x66
-                 *         4 -**--**- 0x66
-                 *         5 -******- 0x7E
-                 *         6 -**--**- 0x66
-                 *         7 -------- 0x00
-                 */
-                4'h2:
-                  begin
-                  
-                    // Set the byte-width of the mode line
-                    if (~loadedNumBytes) begin
-                      loadedNumBytes <= 1'b1;
-                      if (playfieldWidth == `narrowPlayfield)
-                        numBytes <= 7'd32;
-                      else if (playfieldWidth == `standardPlayfield)
-                        numBytes <= 7'd40;
-                      else if (playfieldWidth == `widePlayfield)
-                        numBytes <= 7'd48;
-                      else
-                        numBytes <= 7'd0;
-                      loadMSRdata <= 1'b1;
-                      incrMSR <= 1'b1;
-                      width <= 9'd320;
-                      height <= 8'd192;
+                  else begin
+                    loadMSRdata <= 1'b0;
+                    incrMSR <= 1'b0;
+                    if (MSRdata_rdy) begin
+                      // Informs GTIA that display is sent in 8x8 char blocks
+                      charMode <= 2'd1;
+                      loadChar <= 1'b1;
                     end
                     
-                    else begin
-                      loadMSRdata <= 1'b0;
-                      incrMSR <= 1'b0;
-                      if (MSRdata_rdy) begin
-                        // Informs GTIA that display is sent in 8x8 char blocks
-                        charMode <= 2'd1;
-                        loadChar <= 1'b1;
-                      end
-                      
-                      else if (charLoaded|charLoadHold) begin
-                      
-                        if (charLoaded) begin
-                          loadChar <= 1'b0;
-                          charLoadHold <= 1'b1;
-                        end
-                      
-                        // Repeat for the number of bytes in the mode line
-                        if (numBytes != 7'd0) begin
-                          if (charBit == 7'd64) begin
-                            numBytes <= numBytes - 7'd1;
-                            charBit <= 7'd0;
-                            if (numBytes != 7'd1) begin
-                              loadIR <= 1'b0;
-                              loadChar <= 1'b1;
-                              charLoadHold <= 1'b0;
-                              loadMSRdata <= 1'b1;
-                              incrMSR <= 1'b1;
-                            end
-                          end
-                          
-                          else begin
-                            if (charData[charBit] == 1'b1)
-                              AN <= `modeNorm_playfield1; // Text foreground color
-                            else
-                              AN <= `modeNorm_playfield2; // Text background color
-                            charBit <= charBit + 7'd1;
-                          end
-                        end
-                        
-                        // Mode line complete
-                        else begin
-                          loadIR <= 1'b1;
-                          charLoadHold <= 1'b0;
-                          loadMSRdone <= 1'b0;
-                          holdMode <= 1'b0;
-                          loadedNumBytes <= 1'b0;
-                          idle <= 1'b1;
-                        end
-                      end
-                      
-                    end
-
-                  end
-                
-                // Mode 3: Character, 32/40/48 bytes per mode line, 10 TV scan lines per mode line, 1.5 color
-                4'h3:
-                  begin
-                  
-                  end
-                  
-                // Mode 4: Character, 32/40/48 bytes per mode line, 8 TV scan lines per mode line, 5 color      
-                4'h4:
-                  begin
-                  
-                  end
-                
-                // Mode 5: Character, 32/40/48 bytes per mode line, 16 TV scan lines per mode line, 5 color
-                4'h5:
-                  begin
-                  
-                  end
-                
-                // Mode 6: Character, 16/20/24 bytes per mode line, 8 TV scan lines per mode line, 5 color      
-                4'h6:
-                  begin
-                  
-                  end
-                  
-                // Mode 7: Character, 16/20/24 bytes per mode line, 16 TV scan lines per mode line, 5 color  
-                4'h7:
-                  begin
-                                
-                    // Set the byte-width of the mode line
-                    if (~loadedNumBytes) begin
-                      loadedNumBytes <= 1'b1;
-                      if (playfieldWidth == `narrowPlayfield)
-                        numBytes <= 7'd16;
-                      else if (playfieldWidth == `standardPlayfield)
-                        numBytes <= 7'd20;
-                      else if (playfieldWidth == `widePlayfield)
-                        numBytes <= 7'd24;
-                      else
-                        numBytes <= 7'd0;
-                      loadMSRdata <= 1'b1;
-                      incrMSR <= 1'b1;
-                      width <= 9'd160;
-                      height <= 8'd192;
-                    end
+                    else if (charLoaded|charLoadHold) begin
                     
-                    else begin
-                      loadMSRdata <= 1'b0;
-                      incrMSR <= 1'b0;
-                      if (MSRdata_rdy) begin
-                        // Informs GTIA that display is sent in 8x8 char blocks
-                        charMode <= 2'd1;
-                        charSingleColor <= 1'b1;
-                        loadChar <= 1'b1;
+                      if (charLoaded) begin
+                        loadChar <= 1'b0;
+                        charLoadHold <= 1'b1;
                       end
-                      
-                      else if (charLoaded|charLoadHold) begin
-                      
-                        if (charLoaded) begin
-                          loadChar <= 1'b0;
-                          charLoadHold <= 1'b1;
-                        end
-                      
-                        // Repeat for the number of bytes in the mode line
-                        if (numBytes != 7'd0) begin
-                          if (charBit == 7'd64) begin
-                            numBytes <= numBytes - 7'd1;
-                            charBit <= 7'd0;
-                            if (numBytes != 7'd1) begin
-                              loadIR <= 1'b0;
-                              loadChar <= 1'b1;
-                              charLoadHold <= 1'b0;
-                              loadMSRdata <= 1'b1;
-                              incrMSR <= 1'b1;
-                            end
-                          end
-                          
-                          else begin
-                            if (charData[charBit] == 1'b1) begin
-                              case (colorSel)
-                                2'd0: AN <= `modeNorm_playfield0;
-                                2'd1: AN <= `modeNorm_playfield1;
-                                2'd2: AN <= `modeNorm_playfield2;
-                                2'd3: AN <= `modeNorm_playfield3;
-                              endcase
-                            end
-                            else
-                              AN <= `modeNorm_bgColor;
-                            charBit <= charBit + 7'd1;  
-                          end
-                        end
-                        
-                        // Mode line complete
-                        else begin
-                          loadIR <= 1'b1;
-                          charLoadHold <= 1'b0;
-                          loadMSRdone <= 1'b0;
-                          holdMode <= 1'b0;
-                          loadedNumBytes <= 1'b0;
-                          charSingleColor <= 1'b0;
-                          idle <= 1'b1;
-                        end
-                      end
-                    end
-                  end
-                
-                
-                
-                
-                
-                
-                // Mode 8: Map, 8/10/12 bytes per mode line, 8 TV scan lines per mode line, 4 color
-                4'h8:
-                  begin
-                  
-                  end
-                
-                // Mode 9: Map, 8/10/12 bytes per mode line, 4 TV scan lines per mode line, 2 color
-                4'h9:
-                  begin
-                  
-                  end
-                
-                // Mode 10: Map, 16/20/24 bytes per mode line, 4 TV scan lines per mode line, 4 color
-                4'hA:
-                  begin
-                  
-                  end
-                
-                // Mode 11: Map, 16/20/24 bytes per mode line, 2 TV scan lines per mode line, 2 color
-                4'hB:
-                  begin
-                  
-                  end
-                
-                // Mode 12: Map, 16/20/24 bytes per mode line, 1 TV scan lines per mode line, 2 color
-                4'hC:
-                  begin
-                  
-                  end
-              
-                // Mode 13: Map, 32/40/48 bytes per mode line, 2 TV scan lines per mode line, 4 color
-                4'hD:
-                  begin
-                    loadIR <= 1'b0;
-                  
-                    // Set the byte-width of the mode line
-                    if (~loadedNumBytes) begin
-                      loadedNumBytes <= 1'b1;
-                      if (playfieldWidth == `narrowPlayfield)
-                        numBytes <= 7'd32;
-                      else if (playfieldWidth == `standardPlayfield)
-                        numBytes <= 7'd40;
-                      else if (playfieldWidth == `widePlayfield)
-                        numBytes <= 7'd48;
-                      else
-                        numBytes <= 7'd0;
-                      loadMSRdata <= 1'b1;
-                      incrMSR <= 1'b1;
-                      numPixel <= 3'd0;
-                      numRepeat <= 3'd1;
-                      width <= 9'd160;
-                      height <= 8'd192;
-                      numLines <= `two;
-                    end
                     
-                    else begin
-                      charMode <= 2'd0;
-                      loadChar <= 1'b0;
-                      loadMSRdata <= 1'b0;
-                      incrMSR <= 1'b0;
-
                       // Repeat for the number of bytes in the mode line
                       if (numBytes != 7'd0) begin
+                        if (charBit == 7'd64) begin
+                          numBytes <= numBytes - 7'd1;
+                          charBit <= 7'd0;
+                          if (numBytes != 7'd1) begin
+                            loadIR <= 1'b0;
+                            loadChar <= 1'b1;
+                            charLoadHold <= 1'b0;
+                            loadMSRdata <= 1'b1;
+                            incrMSR <= 1'b1;
+                          end
+                        end
                         
-                        // Display next 4 pixels from 1 MSR data byte
-                        if (MSRdata_rdy|MSRdata_rdy_hold) begin
-                          if (MSRdata_rdy)
-                            MSRdata_rdy_hold <= 1'b1;
-                          
-                          if (numPixel != 3'd4) begin
-                      
-                            case (colorSel4)
-                              2'd0: AN <= `modeNorm_bgColor;
-                              2'd1: AN <= `modeNorm_playfield0;
-                              2'd2: AN <= `modeNorm_playfield1;
-                              2'd3: AN <= `modeNorm_playfield2;
-                            endcase
-                            
-                            if (numRepeat != 3'd0)
-                              numRepeat <= numRepeat - 3'd1;
-                            else begin
-                              numRepeat <= 3'd1;
-                              numPixel <= numPixel + 3'd1;
-                            end
-                          end
-                          
-                                                
-                          // Load next MSR data byte
-                          else begin
-                            MSRdata_rdy_hold <= 1'b0;
-                            numBytes <= numBytes - 7'd1;
-                            numPixel <= 3'd0;
-                            if (numBytes != 7'd1) begin
-                              loadMSRdata <= 1'b1;
-                              incrMSR <= 1'b1;
-                            end
-                          end
-                          
+                        else begin
+                          if (charData[charBit] == 1'b1)
+                            AN <= `modeNorm_playfield1; // Text foreground color
+                          else
+                            AN <= `modeNorm_playfield2; // Text background color
+                          charBit <= charBit + 7'd1;
                         end
                       end
-                        
+                      
                       // Mode line complete
                       else begin
                         loadIR <= 1'b1;
+                        charLoadHold <= 1'b0;
                         loadMSRdone <= 1'b0;
                         holdMode <= 1'b0;
                         loadedNumBytes <= 1'b0;
                         idle <= 1'b1;
                       end
                     end
+                    
                   end
+
+                end
+              
+              // Mode 3: Character, 32/40/48 bytes per mode line, 10 TV scan lines per mode line, 1.5 color
+              4'h3:
+                begin
                 
-                // Mode 14: Map, 32/40/48 bytes per mode line, 1 TV scan lines per mode line, 4 color
-                4'hE:
-                  begin
-                    loadIR <= 1'b0;
+                end
+                
+              // Mode 4: Character, 32/40/48 bytes per mode line, 8 TV scan lines per mode line, 5 color      
+              4'h4:
+                begin
+                
+                end
+              
+              // Mode 5: Character, 32/40/48 bytes per mode line, 16 TV scan lines per mode line, 5 color
+              4'h5:
+                begin
+                
+                end
+              
+              // Mode 6: Character, 16/20/24 bytes per mode line, 8 TV scan lines per mode line, 5 color      
+              4'h6:
+                begin
+                
+                end
+                
+              // Mode 7: Character, 16/20/24 bytes per mode line, 16 TV scan lines per mode line, 5 color  
+              4'h7:
+                begin
+                              
+                  // Set the byte-width of the mode line
+                  if (~loadedNumBytes) begin
+                    loadedNumBytes <= 1'b1;
+                    if (playfieldWidth == `narrowPlayfield)
+                      numBytes <= 7'd16;
+                    else if (playfieldWidth == `standardPlayfield)
+                      numBytes <= 7'd20;
+                    else if (playfieldWidth == `widePlayfield)
+                      numBytes <= 7'd24;
+                    else
+                      numBytes <= 7'd0;
+                    loadMSRdata <= 1'b1;
+                    incrMSR <= 1'b1;
+                    width <= 9'd160;
+                    height <= 8'd192;
+                  end
                   
-                    // Set the byte-width of the mode line
-                    if (~loadedNumBytes) begin
-                      loadedNumBytes <= 1'b1;
-                      if (playfieldWidth == `narrowPlayfield)
-                        numBytes <= 7'd32;
-                      else if (playfieldWidth == `standardPlayfield)
-                        numBytes <= 7'd40;
-                      else if (playfieldWidth == `widePlayfield)
-                        numBytes <= 7'd48;
-                      else
-                        numBytes <= 7'd0;
-                      loadMSRdata <= 1'b1;
-                      incrMSR <= 1'b1;
-                      width <= 9'd160;
-                      height <= 8'd192;
-                      numLines <= `one;
+                  else begin
+                    loadMSRdata <= 1'b0;
+                    incrMSR <= 1'b0;
+                    if (MSRdata_rdy) begin
+                      // Informs GTIA that display is sent in 8x8 char blocks
+                      charMode <= 2'd1;
+                      charSingleColor <= 1'b1;
+                      loadChar <= 1'b1;
                     end
                     
-                    else begin
-                      charMode <= 2'd0;
-                      loadChar <= 1'b0;
-                      loadMSRdata <= 1'b0;
-                      incrMSR <= 1'b0;
-
+                    else if (charLoaded|charLoadHold) begin
+                    
+                      if (charLoaded) begin
+                        loadChar <= 1'b0;
+                        charLoadHold <= 1'b1;
+                      end
+                    
                       // Repeat for the number of bytes in the mode line
                       if (numBytes != 7'd0) begin
+                        if (charBit == 7'd64) begin
+                          numBytes <= numBytes - 7'd1;
+                          charBit <= 7'd0;
+                          if (numBytes != 7'd1) begin
+                            loadIR <= 1'b0;
+                            loadChar <= 1'b1;
+                            charLoadHold <= 1'b0;
+                            loadMSRdata <= 1'b1;
+                            incrMSR <= 1'b1;
+                          end
+                        end
                         
-                        // Display next 4 pixels from 1 MSR data byte
-                        if (MSRdata_rdy|MSRdata_rdy_hold) begin
-                          if (MSRdata_rdy)
-                            MSRdata_rdy_hold <= 1'b1;
-                          
-                          if (numPixel != 3'd4) begin
-                      
-                            case (colorSel4)
-                              2'd0: AN <= `modeNorm_bgColor;
-                              2'd1: AN <= `modeNorm_playfield0;
-                              2'd2: AN <= `modeNorm_playfield1;
-                              2'd3: AN <= `modeNorm_playfield2;
+                        else begin
+                          if (charData[charBit] == 1'b1) begin
+                            case (colorSel)
+                              2'd0: AN <= `modeNorm_playfield0;
+                              2'd1: AN <= `modeNorm_playfield1;
+                              2'd2: AN <= `modeNorm_playfield2;
+                              2'd3: AN <= `modeNorm_playfield3;
                             endcase
+                          end
+                          else
+                            AN <= `modeNorm_bgColor;
+                          charBit <= charBit + 7'd1;  
+                        end
+                      end
+                      
+                      // Mode line complete
+                      else begin
+                        loadIR <= 1'b1;
+                        charLoadHold <= 1'b0;
+                        loadMSRdone <= 1'b0;
+                        holdMode <= 1'b0;
+                        loadedNumBytes <= 1'b0;
+                        charSingleColor <= 1'b0;
+                        idle <= 1'b1;
+                      end
+                    end
+                  end
+                end
+              
+              
+              
+              
+              
+              
+              // Mode 8: Map, 8/10/12 bytes per mode line, 8 TV scan lines per mode line, 4 color
+              4'h8:
+                begin
+                
+                end
+              
+              // Mode 9: Map, 8/10/12 bytes per mode line, 4 TV scan lines per mode line, 2 color
+              4'h9:
+                begin
+                
+                end
+              
+              // Mode 10: Map, 16/20/24 bytes per mode line, 4 TV scan lines per mode line, 4 color
+              4'hA:
+                begin
+                
+                end
+              
+              // Mode 11: Map, 16/20/24 bytes per mode line, 2 TV scan lines per mode line, 2 color
+              4'hB:
+                begin
+                
+                end
+              
+              // Mode 12: Map, 16/20/24 bytes per mode line, 1 TV scan lines per mode line, 2 color
+              4'hC:
+                begin
+                
+                end
+            
+              // Mode 13: Map, 32/40/48 bytes per mode line, 2 TV scan lines per mode line, 4 color
+              4'hD:
+                begin
+                  loadIR <= 1'b0;
+                
+                  // Set the byte-width of the mode line
+                  if (~loadedNumBytes) begin
+                    loadedNumBytes <= 1'b1;
+                    if (playfieldWidth == `narrowPlayfield)
+                      numBytes <= 7'd32;
+                    else if (playfieldWidth == `standardPlayfield)
+                      numBytes <= 7'd40;
+                    else if (playfieldWidth == `widePlayfield)
+                      numBytes <= 7'd48;
+                    else
+                      numBytes <= 7'd0;
+                    loadMSRdata <= 1'b1;
+                    incrMSR <= 1'b1;
+                    numPixel <= 3'd0;
+                    numRepeat <= 3'd1;
+                    width <= 9'd160;
+                    height <= 8'd192;
+                    numLines <= `two;
+                  end
+                  
+                  else begin
+                    charMode <= 2'd0;
+                    loadChar <= 1'b0;
+                    loadMSRdata <= 1'b0;
+                    incrMSR <= 1'b0;
+
+                    // Repeat for the number of bytes in the mode line
+                    if (numBytes != 7'd0) begin
+                      
+                      // Display next 4 pixels from 1 MSR data byte
+                      if (MSRdata_rdy|MSRdata_rdy_hold) begin
+                        if (MSRdata_rdy)
+                          MSRdata_rdy_hold <= 1'b1;
+                        
+                        if (numPixel != 3'd4) begin
+                    
+                          case (colorSel4)
+                            2'd0: AN <= `modeNorm_bgColor;
+                            2'd1: AN <= `modeNorm_playfield0;
+                            2'd2: AN <= `modeNorm_playfield1;
+                            2'd3: AN <= `modeNorm_playfield2;
+                          endcase
+                          
+                          if (numRepeat != 3'd0)
+                            numRepeat <= numRepeat - 3'd1;
+                          else begin
+                            numRepeat <= 3'd1;
                             numPixel <= numPixel + 3'd1;
                           end
-                          
-                                                
-                          // Load next MSR data byte
-                          else begin
-                            MSRdata_rdy_hold <= 1'b0;
-                            numBytes <= numBytes - 7'd1;
-                            numPixel <= 3'd0;
-                            if (numBytes != 7'd1) begin
-                              loadMSRdata <= 1'b1;
-                              incrMSR <= 1'b1;
-                            end
-                          end
-                          
                         end
-                      end
                         
-                      // Mode line complete
-                      else begin
-                        loadIR <= 1'b1;
-                        loadMSRdone <= 1'b0;
-                        holdMode <= 1'b0;
-                        loadedNumBytes <= 1'b0;
-                        idle <= 1'b1;
+                                              
+                        // Load next MSR data byte
+                        else begin
+                          MSRdata_rdy_hold <= 1'b0;
+                          numBytes <= numBytes - 7'd1;
+                          numPixel <= 3'd0;
+                          if (numBytes != 7'd1) begin
+                            loadMSRdata <= 1'b1;
+                            incrMSR <= 1'b1;
+                          end
+                        end
+                        
                       end
                     end
+                      
+                    // Mode line complete
+                    else begin
+                      loadIR <= 1'b1;
+                      loadMSRdone <= 1'b0;
+                      holdMode <= 1'b0;
+                      loadedNumBytes <= 1'b0;
+                      idle <= 1'b1;
+                    end
                   end
+                end
+              
+              // Mode 14: Map, 32/40/48 bytes per mode line, 1 TV scan lines per mode line, 4 color
+              4'hE:
+                begin
+                  loadIR <= 1'b0;
                 
-                // Mode 15: Map, 32/40/48 bytes per mode line, 1 TV scan lines per mode line, 1.5 color
-                4'hF:
-                  begin
+                  // Set the byte-width of the mode line
+                  if (~loadedNumBytes) begin
+                    loadedNumBytes <= 1'b1;
+                    if (playfieldWidth == `narrowPlayfield)
+                      numBytes <= 7'd32;
+                    else if (playfieldWidth == `standardPlayfield)
+                      numBytes <= 7'd40;
+                    else if (playfieldWidth == `widePlayfield)
+                      numBytes <= 7'd48;
+                    else
+                      numBytes <= 7'd0;
+                    loadMSRdata <= 1'b1;
+                    incrMSR <= 1'b1;
+                    width <= 9'd160;
+                    height <= 8'd192;
+                    numLines <= `one;
+                  end
                   
+                  else begin
+                    charMode <= 2'd0;
+                    loadChar <= 1'b0;
+                    loadMSRdata <= 1'b0;
+                    incrMSR <= 1'b0;
+
+                    // Repeat for the number of bytes in the mode line
+                    if (numBytes != 7'd0) begin
+                      
+                      // Display next 4 pixels from 1 MSR data byte
+                      if (MSRdata_rdy|MSRdata_rdy_hold) begin
+                        if (MSRdata_rdy)
+                          MSRdata_rdy_hold <= 1'b1;
+                        
+                        if (numPixel != 3'd4) begin
+                    
+                          case (colorSel4)
+                            2'd0: AN <= `modeNorm_bgColor;
+                            2'd1: AN <= `modeNorm_playfield0;
+                            2'd2: AN <= `modeNorm_playfield1;
+                            2'd3: AN <= `modeNorm_playfield2;
+                          endcase
+                          numPixel <= numPixel + 3'd1;
+                        end
+                        
+                                              
+                        // Load next MSR data byte
+                        else begin
+                          MSRdata_rdy_hold <= 1'b0;
+                          numBytes <= numBytes - 7'd1;
+                          numPixel <= 3'd0;
+                          if (numBytes != 7'd1) begin
+                            loadMSRdata <= 1'b1;
+                            incrMSR <= 1'b1;
+                          end
+                        end
+                        
+                      end
+                    end
+                      
+                    // Mode line complete
+                    else begin
+                      loadIR <= 1'b1;
+                      loadMSRdone <= 1'b0;
+                      holdMode <= 1'b0;
+                      loadedNumBytes <= 1'b0;
+                      idle <= 1'b1;
+                    end
                   end
+                end
+              
+              // Mode 15: Map, 32/40/48 bytes per mode line, 1 TV scan lines per mode line, 1.5 color
+              4'hF:
+                begin
                 
-              endcase
-            end
-          //end
+                end
+              
+            endcase
+          end
         end
       end
       
