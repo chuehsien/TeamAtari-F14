@@ -24,6 +24,31 @@ module clockGen179(RST,clk27,phi0,fphi0,locked);
  
 endmodule
 
+module clockGen179_single(RST,clk27,phi0,locked);
+    parameter div = 6;
+    input RST,clk27;
+    (* clock_signal = "yes" *)output phi0;
+    output locked;
+
+    wire clk576_phi0,clk1052_fphi0,clk576_phi1;
+    wire clk576_phi0_b,clk1052_fphi0_b,clk576_phi1_b;
+
+
+   //produces 57.6MHz
+    clockDiv try0(.CLKIN1_IN(clk27), .RST_IN(RST), .CLK0_OUT(clk576_phi0),.CLK2X_OUT(), .LOCKED_OUT(locked));
+
+    clockoneX #(.width(div+1)) phi0make(clk576_phi0,clk576_phi0_b);
+
+/*
+    clockone32 phi0make(clk576_phi0,clk576_phi0_b);
+    clockone32 fphi0make(clk1052_fphi0,clk1052_fphi0_b);
+    clockone32 phi1make(clk576_phi1,clk576_phi1_b); 
+*/
+
+    BUFG phi0out(phi0,clk576_phi0_b);
+ 
+endmodule
+
 
 module hackishClock(RST,clkin,clkout_A,clkout_B);
     input RST,clkin;
@@ -188,19 +213,69 @@ module clockoneX(inClk,outClk);
 endmodule
 
 
+/*
+module clockDividerN(N,inClk,out);
+    input [80:0] N;
+    input inClk;
+    output out;
+
+    
+    reg [80:0] counterA,counterB = 0;
+    wire en;
+    wire [80:0] sum;
+    
+    assign en = (sum == N);
+    
+    reg rstNow = 1'b0;
+    always @ (posedge inClk) begin
+        if (en) rstNow <= 1;
+        else rstNow <= 0;
+    end
+    
+    always @ (posedge inClk) begin
+        if (rstNow) counterA <= 0;
+        else counterA <= counterA + 1;
+    end
+    
+    always @ (negedge inClk) begin
+        if (rstNow) counterB <= 0;
+        else counterB <= counterB + 1;
+    end
+    
+
+    
+    
+    assign sum = counterA + counterB;
+
+    
+    reg outClk = 1'b0;
+    always @ (posedge en) begin
+        outClk <= ~outClk;
+    end
+
+
+    BUFG c(out,outClk);
+endmodule
+*/
+
+
+
+
+
 module clockDivider(inClk,out);
     parameter DIVIDE = 500;
     
-    function integer log2;
-      input [31:0] value;
-      for (log2=0; value>0; log2=log2+1)
-      value = value>>1;
-    endfunction
+function integer log2;
+    input [80:0] value;
+    for (log2=0; value>0; log2=log2+1)
+    value = value>>1;
+endfunction
     
     parameter width = log2(DIVIDE);
         
     input inClk;
     output out;
+
     
     reg [width:0] counter = 0;
 
@@ -208,6 +283,7 @@ module clockDivider(inClk,out);
         counter <= counter + 1;
         if (counter == DIVIDE>>1) counter <= 0;
     end
+    
 
     wire en;
     assign en = (counter == 0);
@@ -220,5 +296,5 @@ module clockDivider(inClk,out);
     end
 
     BUFG c(out,outClk);
-    
 endmodule
+

@@ -1,20 +1,22 @@
-module pokeyaudio (init_L,clk179,clk64,clk16,AUDF1,AUDF2,AUDF3,AUDF4,
+module pokeyaudio (mainClock,chn4base8bit,init_L,clk179,clk64,clk16,AUDF1,AUDF2,AUDF3,AUDF4,
                     AUDC1,AUDC2,AUDC3,AUDC4,AUDCTL,
-                    audio1,audio2,audio3,audio4,vol1,vol2,vol3,vol4);
-                   
+                    audio1,audio2,audio3,audio4,vol1,vol2,vol3,vol4,RANDOM);
+    output mainClock,chn4base8bit;
     input init_L, clk179,clk64,clk16;
     input [7:0] AUDF1,AUDF2,AUDF3,AUDF4,
                     AUDC1,AUDC2,AUDC3,AUDC4,AUDCTL;
     output audio1,audio2,audio3,audio4;
     output [3:0] vol1,vol2,vol3,vol4;
+    output [7:0] RANDOM;
+
     wire mainClock;
-    assign mainClock = AUDCTL[0] ? clk16 : clk64;
+    assign mainClock = (AUDCTL[0]) ? clk16 : clk64;
     
     //generate poly channels
     wire poly4out,poly5out,poly17_9out;
     poly4bit poly4(.clk(mainClock),.init_L(init_L),.out(poly4out));
     poly5bit poly5(.clk(mainClock),.init_L(init_L),.out(poly5out));
-    poly17or9bit poly17_9(.clk(mainClock),.sel9(AUDCTL[7]),.init_L(init_L),.out(poly17_9out),.randNum()); 
+    poly17or9bit poly17_9(.clk(mainClock),.sel9(AUDCTL[7]),.init_L(init_L),.out(poly17_9out),.randNum(RANDOM)); 
 
     wire [2:0] distort1,distort2,distort3,distort4;
     wire volOnly1,volOnly2,volOnly3,volOnly4;
@@ -28,10 +30,10 @@ module pokeyaudio (init_L,clk179,clk64,clk16,AUDF1,AUDF2,AUDF3,AUDF4,
     assign volOnly2 = AUDC2[4];
     assign volOnly3 = AUDC3[4];
     assign volOnly4 = AUDC4[4];
-    assign vol1     = AUDC1[3:0];
-    assign vol2     = AUDC2[3:0];
-    assign vol3     = AUDC3[3:0];
-    assign vol4     = AUDC4[3:0];
+    assign vol1     = (AUDF1 == 8'd0) ? 4'b1111 : ~AUDC1[3:0];
+    assign vol2     = (AUDF2 == 8'd0) ? 4'b1111 : ~AUDC2[3:0];
+    assign vol3     = (AUDF3 == 8'd0) ? 4'b1111 : ~AUDC3[3:0];
+    assign vol4     = (AUDF4 == 8'd0) ? 4'b1111 : ~AUDC4[3:0];
     
     //move all channels to correct frequency first!
     wire chn1baseA,chn1baseB,chn1base,chn2base,chn3base,chn4base;
@@ -143,19 +145,43 @@ module divideByN(N,in,out);
 
     input [7:0] N;
     input in;
-    output out;
+    (* clock_signal = "yes" *)output out;
     
+    reg [8:0] counter = 0;
+
+    always @ (posedge in) begin
+        counter <= counter + 1;
+        if (counter == N>>1) counter <= 0;
+    end
+    
+    wire en;
+    assign en = (counter == 0);
+
+    reg outClk = 1'b0;
+    
+    always @ (negedge in) begin
+            if (en) outClk <= ~outClk;
+            else outClk <= outClk;
+    end
+
+    BUFG c(out,outClk);
+    
+    
+    
+    
+    
+/*
     reg [8:0] counter = 0;
     
     wire allow,allow_b;
-    
+    wire outDiv;
     BUFGCTRL #(
        .INIT_OUT(0),           // Initial value of BUFGCTRL output ($VALUES;)
        .PRESELECT_I0("TRUE"), // BUFGCTRL output uses I0 input ($VALUES;)
        .PRESELECT_I1("FALSE")  // BUFGCTRL output uses I1 input ($VALUES;)
     )
     BUFGCTRL_inst (
-       .O(out),             // 1-bit output: Clock output
+       .O(outDiv),             // 1-bit output: Clock output
        .CE0(1'b1),         // 1-bit input: Clock enable input for I0
        .CE1(1'b0),         // 1-bit input: Clock enable input for I1
        .I0(in),           // 1-bit input: Primary clock
@@ -165,7 +191,7 @@ module divideByN(N,in,out);
        .S0(allow),           // 1-bit input: Clock select for I0
        .S1(~allow)            // 1-bit input: Clock select for I1
     );
-   
+   assign out = (N==0) ? in : outDiv;
     //BUFGCE clockBuf(.O(out),.I(in),.CE(allow_b));
     assign allow = (counter == 0) & (in);
    
@@ -173,26 +199,51 @@ module divideByN(N,in,out);
         if (counter == N-1) counter <= 0;
         else counter <= counter + 1;
     end
+    */
     
+    
+    
+  
 endmodule
 
 module divideByN16bit(N,in,out);
 
     input [15:0] N;
     input in;
-    output out;
+    (* clock_signal = "yes" *)output out;
     
+    reg [16:0] counter = 0;
+
+    always @ (posedge in) begin
+        counter <= counter + 1;
+        if (counter == N>>1) counter <= 0;
+    end
+    
+    wire en;
+    assign en = (counter == 0);
+
+    reg outClk = 1'b0;
+    
+    always @ (negedge in) begin
+            if (en) outClk <= ~outClk;
+            else outClk <= outClk;
+    end
+
+    BUFG c(out,outClk);
+    
+    
+    /*
     reg [16:0] counter = 0;
     
     wire allow,allow_b;
-    
+    wire outDiv;
     BUFGCTRL #(
        .INIT_OUT(0),           // Initial value of BUFGCTRL output ($VALUES;)
        .PRESELECT_I0("TRUE"), // BUFGCTRL output uses I0 input ($VALUES;)
        .PRESELECT_I1("FALSE")  // BUFGCTRL output uses I1 input ($VALUES;)
     )
     BUFGCTRL_inst (
-       .O(out),             // 1-bit output: Clock output
+       .O(outDiv),             // 1-bit output: Clock output
        .CE0(1'b1),         // 1-bit input: Clock enable input for I0
        .CE1(1'b0),         // 1-bit input: Clock enable input for I1
        .I0(in),           // 1-bit input: Primary clock
@@ -202,7 +253,7 @@ module divideByN16bit(N,in,out);
        .S0(allow),           // 1-bit input: Clock select for I0
        .S1(~allow)            // 1-bit input: Clock select for I1
     );
-   
+    assign out = (N==0) ? in : outDiv;
     //BUFGCE clockBuf(.O(out),.I(in),.CE(allow_b));
     assign allow = (counter == 0) & (in);
    
@@ -210,7 +261,7 @@ module divideByN16bit(N,in,out);
         if (counter == N-1) counter <= 0;
         else counter <= counter + 1;
     end
-    
+    */
 endmodule
 
 module highpass(orig,filter,out);

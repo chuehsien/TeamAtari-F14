@@ -27,7 +27,11 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
                  
                  HDR1_2, HDR1_4, HDR1_6, HDR1_8, HDR1_10, HDR1_12, HDR1_14, HDR1_16, 
                  HDR1_18, HDR1_20, HDR1_22, HDR1_24, HDR1_26, HDR1_28, HDR1_30, HDR1_32,
-                 HDR1_50,HDR1_52,HDR1_54,HDR1_56,HDR1_58,
+                 HDR1_50,HDR1_52,HDR1_54,HDR1_56,
+                 HDR2_34_SM_15_N, HDR2_36_SM_15_P, HDR2_38_SM_6_N, HDR2_40_SM_6_P,
+                 HDR2_42_SM_14_N, HDR2_44_SM_14_P, HDR2_46_SM_12_N, HDR2_48_SM_12_P,
+                 HDR2_50_SM_5_N, HDR2_52_SM_5_P, HDR2_54_SM_13_N,HDR2_56_SM_13_P,
+                 HDR2_58_SM_4_N, HDR2_60_SM_4_P, HDR2_62_SM_9_N, HDR2_64_SM_9_P,
                  
                  DVI_D11, DVI_D10, DVI_D9, DVI_D8, DVI_D7, DVI_D6, DVI_D5,
                  DVI_D4, DVI_D3, DVI_D2, DVI_D1, DVI_D0, DVI_XCLK_P, DVI_XCLK_N,
@@ -42,8 +46,13 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
   inout  IIC_SDA_VIDEO, IIC_SCL_VIDEO;
     
 	output HDR1_2, HDR1_4, HDR1_6, HDR1_8, HDR1_10, HDR1_12, HDR1_14, HDR1_16, 
-         HDR1_18, HDR1_20, HDR1_22, HDR1_24, HDR1_26, HDR1_28, HDR1_30, HDR1_32,
-	       HDR1_50,HDR1_52,HDR1_54,HDR1_56,HDR1_58;
+           HDR1_18, HDR1_20, HDR1_22, HDR1_24, HDR1_26, HDR1_28, HDR1_30, HDR1_32,
+	       HDR1_50,HDR1_52,HDR1_54,HDR1_56,
+           HDR2_34_SM_15_N, HDR2_36_SM_15_P, HDR2_38_SM_6_N, HDR2_40_SM_6_P,
+           HDR2_42_SM_14_N, HDR2_44_SM_14_P, HDR2_46_SM_12_N, HDR2_48_SM_12_P,
+           HDR2_50_SM_5_N, HDR2_52_SM_5_P, HDR2_54_SM_13_N,HDR2_56_SM_13_P,
+           HDR2_58_SM_4_N, HDR2_60_SM_4_P, HDR2_62_SM_9_N, HDR2_64_SM_9_P;
+           
   output DVI_D11, DVI_D10, DVI_D9, DVI_D8, DVI_D7, DVI_D6,
          DVI_D5, DVI_D4, DVI_D3, DVI_D2, DVI_D1, DVI_D0,
          DVI_XCLK_P, DVI_XCLK_N, DVI_V, DVI_H, DVI_DE, DVI_RESET_B;
@@ -295,15 +304,24 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
     wire [7:0] AUDF1,AUDC1,AUDF2,AUDC2,AUDF3,AUDC3,AUDF4,AUDC4,AUDCTL;
     wire audio1,audio2,audio3,audio4;
     wire [3:0] vol1,vol2,vol3,vol4;
-    assign HDR1_50 = audio3;
-    assign {HDR1_52,HDR1_54,HDR1_56,HDR1_58} = vol3;
+    wire [7:0] POT0_BUS, POT1_BUS, POT2_BUS, POT3_BUS, POT4_BUS, POT5_BUS, POT6_BUS, POT7_BUS, ALLPOT_BUS, KBCODE_BUS, RANDOM_BUS;
     
+    assign HDR1_50 = audio1;
+    assign HDR1_52 = audio2;
+    assign HDR1_54 = audio3;
+    assign HDR1_56 = audio4;
+    
+    assign {HDR2_34_SM_15_N, HDR2_36_SM_15_P, HDR2_38_SM_6_N, HDR2_40_SM_6_P} = vol1;
+    assign {HDR2_48_SM_12_P,HDR2_46_SM_12_N,HDR2_44_SM_14_P,HDR2_42_SM_14_N} = vol2;
+    assign {HDR2_50_SM_5_N, HDR2_52_SM_5_P, HDR2_54_SM_13_N,HDR2_56_SM_13_P} = vol3;
+    assign {HDR2_64_SM_9_P,HDR2_62_SM_9_N,HDR2_60_SM_4_P,HDR2_58_SM_4_N} = vol4;
+
 
     pokeyaudio pokey(.init_L(RES_L),.clk179(fphi0),.clk64(clk64),.clk16(clk16),
                     .AUDF1(AUDF1),.AUDF2(AUDF2),.AUDF3(AUDF3),.AUDF4(AUDF4),
                     .AUDC1(AUDC1),.AUDC2(AUDC2),.AUDC3(AUDC3),.AUDC4(AUDC4),.AUDCTL(AUDCTL),
                     .audio1(audio1),.audio2(audio2),.audio3(audio3),.audio4(audio4),
-                    .vol1(vol1),.vol2(vol2),.vol3(vol3),.vol4(vol4));
+                    .vol1(vol1),.vol2(vol2),.vol3(vol3),.vol4(vol4),.RANDOM(RANDOM_BUS));
     
       
     wire [15:0] cartROMadd;
@@ -315,6 +333,10 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
                   .data_CART_out(data_CART), .CPU_data(extDB),
                   .AUDF1(AUDF1), .AUDC1(AUDC1), .AUDF2(AUDF2), .AUDC2(AUDC2), 
                   .AUDF3(AUDF3), .AUDC3(AUDC3), .AUDF4(AUDF4), .AUDC4(AUDC4), .AUDCTL(AUDCTL),
+                  .POT0_BUS(POT0_BUS), .POT1_BUS(POT1_BUS), .POT2_BUS(POT2_BUS), .POT3_BUS(POT3_BUS),
+                  .POT4_BUS(POT4_BUS), .POT5_BUS(POT5_BUS), .POT6_BUS(POT6_BUS), .POT7_BUS(POT7_BUS),
+                  .ALLPOT_BUS(ALLPOT_BUS), .KBCODE_BUS(KBCODE_BUS), .RANDOM_BUS(RANDOM_BUS),
+                  
                   .ANTIC_writeEn(ANTIC_writeEn), .GTIA_writeEn(5'd0),
                   .VCOUNT_in(VCOUNT), .PENH_in(PENH), .PENV_in(PENV), 
                   .NMIRES_NMIST_bus(NMIRES_NMIST_bus), .DLISTL_bus(DLISTL_bus), .DLISTH_bus(DLISTH_bus),
@@ -358,7 +380,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
     wire [7:0] Accum,Xreg,Yreg;
     wire [7:0] DBforSR,extAB_b1,SRflags,holdAB,SR_contents;
     wire haltAll;
-	top_6502C cpu(.haltAll(haltAll),.DBforSR(DBforSR),.prevOpcode(prevOpcode),.extAB_b1(extAB_b1),.SR_contents(SR_contents),.holdAB(holdAB),
+	top_6502C cpu(.DBforSR(DBforSR),.prevOpcode(prevOpcode),.extAB_b1(extAB_b1),.SR_contents(SR_contents),.holdAB(holdAB),
                 .SRflags(SRflags),.opcode(OP),.opcodeToIR(opcodeToIR),.second_first_int(second_first_int),.nmiPending(nmiPending),
                 .resPending(resPending),.irqPending(irqPending),.currState(currState),.accumVal(accumVal),
                 .outToPCL(outToPCL),.outToPCH(outToPCH),.A(A),.B(B),.idlContents(idlContents),.rstAll(rstAll),.ALUhold_out(ALUhold_out),
@@ -396,7 +418,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
     ADH,
     ADL,
     SB,
-    8'd0,//{7'd0,phi1_out},
+    {7'd0,phi1_out},
     {RW,activeInt,RDY,IRQ_L,NMI_L,RES_L},
     Accum,
     Xreg,
@@ -404,27 +426,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
     OP,
     Yreg,
     SRcontents);
-    
-    // extra ila for use...
-    chipscope_ila ila1(
-    CONTROL1,
-    chipClk_b,
-    memAdd[15:8],
-    memAdd[7:0],
-    memOut_b,
-    {1'b0,currT_b},
-    8'd0,
-    8'd0,
-    8'd0,
-    8'd0,
-    8'd0, //{7'd0,fastClk},
-    8'd0,
-    8'd0,
-    8'd0,
-    8'd0,
-    8'd0,
-    8'd0,
-    8'd0);
+
     
     chipscope_ila_graphics ila2 (
       .CONTROL(CONTROL2), // INOUT BUS [35:0]
@@ -447,6 +449,27 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
       .TRIG15(haltANTIC)
     );
 
+    // extra ila for use...
+    chipscope_ila ila1(
+    CONTROL1,
+    chipClk_b,
+    memAdd[15:8],
+    memAdd[7:0],
+    memOut_b,
+    {1'b0,currT_b},
+    8'd0,
+    8'd0,
+    8'd0,
+    8'd0,
+    {7'd0,fastClk},
+    8'd0,
+    8'd0,
+    8'd0,
+    8'd0,
+    8'd0,
+    8'd0,
+    8'd0);
+    
     chipscope_icon3 icon(
       .CONTROL0(CONTROL0),
       .CONTROL1(CONTROL1),
