@@ -39,16 +39,22 @@ module pokey_top(CLK_27MHZ_FPGA,USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPI
     assign init_L = ~GPIO_SW_C;
     assign AUDF1 = 8'h0; //to create 300Hz tone
     assign AUDF2 = 8'h0; //to create 2kHz
-    assign AUDF3 = 8'hff; // to create 250hz
+    assign AUDF3 = 8'h0; // to create 250hz
     assign AUDF4 = 8'hfe; //to create 252hz
     
 
+    DeBounce t(clk16,1'b1,GPIO_SW_S,voltick);
+
+    reg [3:0] vol = 4'hf; 
+    always @ (posedge voltick) begin
+        vol <= vol - 4'd1;
+    end
     
     
-    assign AUDC1 = {4'h0,GPIO_DIP_SW5,GPIO_DIP_SW6,GPIO_DIP_SW7,GPIO_DIP_SW8};
-    assign AUDC2 = {4'h0,GPIO_DIP_SW5,GPIO_DIP_SW6,GPIO_DIP_SW7,GPIO_DIP_SW8};
-    assign AUDC3 = {4'ha,GPIO_DIP_SW5,GPIO_DIP_SW6,GPIO_DIP_SW7,GPIO_DIP_SW8};
-    assign AUDC4 = {4'ha,GPIO_DIP_SW5,GPIO_DIP_SW6,GPIO_DIP_SW7,GPIO_DIP_SW8};
+    assign AUDC1 = {4'h0,vol};
+    assign AUDC2 = {4'h0,vol};
+    assign AUDC3 = {4'ha,vol};
+    assign AUDC4 = {4'ha,vol};
     
     assign AUDCTL = 8'd0;
     
@@ -68,9 +74,9 @@ module pokey_top(CLK_27MHZ_FPGA,USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPI
     assign HDR1_56 = audio4;
     
     assign {HDR2_34_SM_15_N, HDR2_36_SM_15_P, HDR2_38_SM_6_N, HDR2_40_SM_6_P} = vol1;
-    assign {HDR2_42_SM_14_N, HDR2_44_SM_14_P, HDR2_46_SM_12_N, HDR2_48_SM_12_P} = vol2;
+    assign {HDR2_48_SM_12_P,HDR2_46_SM_12_N,HDR2_44_SM_14_P,HDR2_42_SM_14_N} = vol2;
     assign {HDR2_50_SM_5_N, HDR2_52_SM_5_P, HDR2_54_SM_13_N,HDR2_56_SM_13_P} = vol3;
-    assign {HDR2_58_SM_4_N, HDR2_60_SM_4_P, HDR2_62_SM_9_N, HDR2_64_SM_9_P} = vol4;
+    assign {HDR2_64_SM_9_P,HDR2_62_SM_9_N,HDR2_60_SM_4_P,HDR2_58_SM_4_N} = vol4;
     
 //=======================ILA/ICON stuff=======================//
     
@@ -93,7 +99,7 @@ module pokey_top(CLK_27MHZ_FPGA,USER_CLK,GPIO_SW_C,GPIO_DIP_SW1,GPIO_DIP_SW2,GPI
     .TRIG0({7'd0,1'b0}),
     .TRIG1({7'd0,out1}),
     .TRIG2({7'd0,out2}),
-    .TRIG3({7'd0,audio3}),
+    .TRIG3({4'd0,vol}),
     .TRIG4({7'd0,audio4}),
     .TRIG5(8'd0),
     .TRIG6(8'd0),

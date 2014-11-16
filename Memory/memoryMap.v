@@ -21,8 +21,10 @@ module memoryMap(addr_RAM,addr_BIOS,addr_CART,
                  COLPF3, COLBK, PRIOR, VDELAY, GRACTL, HITCLR,
 
                  AUDF1, AUDC1, AUDF2, AUDC2, AUDF3, AUDC3, AUDF4, AUDC4, AUDCTL, STIMER, SKREST, POTGO, SEROUT, SERIN, IRQEN , SKCTL
+                ,dliNow
                 );
   
+  input dliNow;
   output addr_RAM,addr_BIOS,addr_CART;
   // Control signals
   input Fclk;
@@ -405,12 +407,13 @@ module memoryMap(addr_RAM,addr_BIOS,addr_CART,
                         (CPU_addr == 16'hD407) ? PMBASE :
                         (CPU_addr == 16'hD409) ? CHBASE :
                         (CPU_addr == 16'hD40A) ? WSYNC :
-                        (CPU_addr == 16'hD40B) ? VCOUNT :
+                        //(CPU_addr == 16'hD40B) ? VCOUNT :
+                        (CPU_addr == 16'hD40B) ? 8'd105 :
                         (CPU_addr == 16'hD40C) ? PENH :
                         (CPU_addr == 16'hD40D) ? PENV :
                         (CPU_addr == 16'hD40E) ? NMIEN :
                         //(CPU_addr == 16'hD40F) ? NMIRES_NMIST : 
-                        (CPU_addr == 16'hD40F) ? 8'h40 : 
+                        (CPU_addr == 16'hD40F) ? ((dliNow) ? 8'h80 : 8'h40)  :
                         (CPU_addr == 16'hD000) ? HPOSP0_M0PF : 
                         (CPU_addr == 16'hD001) ? HPOSP1_M1PF : 
                         (CPU_addr == 16'hD002) ? HPOSP2_M2PF : 
