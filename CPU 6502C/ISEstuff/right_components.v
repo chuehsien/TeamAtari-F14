@@ -298,7 +298,27 @@ module dataOutReg(haltAll,phi2, en, dataIn,
     FlipFlop8 dor(phi2,dataIn,nHaltAll&en,dataOut);
 endmodule
 
+module eDBlatch(phi2, haltAll, extDB, latchRdy,eDB_latch);
+    input phi2,haltAll;
+    input [7:0] extDB;
+    output reg latchRdy;
+    output reg [7:0] eDB_latch = 8'd0;
 
+    
+    always @ (posedge phi2) begin
+      if (haltAll & ~latchRdy) begin
+        eDB_latch <= extDB;
+        latchRdy <= 1'b1;
+      end
+      else if (~haltAll & latchRdy) begin
+        eDB_latch <= 8'ha5; //dummy value
+        latchRdy <= 1'b0;
+      end
+      else eDB_latch <= eDB_latch;
+    end
+            
+endmodule
+            
 module inputDataLatch(haltAll,data,rstAll, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
                         DB,ADL,ADH);
     output [7:0] data; 
