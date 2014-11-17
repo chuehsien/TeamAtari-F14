@@ -114,7 +114,7 @@ module POKEY_top(CLK_27MHZ_FPGA, HDR1_2, HDR1_4, HDR1_6, HDR1_8, HDR1_20, HDR1_2
 
 	
 	
-	POKEY pokey_mod(.o2(o2), .cs0_L(), .cs1(), .rw_ctrl(), .pot_scan(pot_scan), .kr1_L(kr1_L), .kr2_L(), .addr_bus(addr_bus), .sel(GPIO_SW_E), .key_scan_L(key_scan_L), .irq_L(), .audio_out(), .pot_rel_0(pot_rel_0), .pot_rel_1(pot_rel_1), .compare_latch(compare_latch), .keycode_latch(keycode_latch), .key_depr(key_depr), .bin_ctr_pot(bin_ctr_pot), .POT0(POT0), .POT1(POT1), .data_bus(out), .bclk());
+	POKEY pokey_mod(.o2(o2), .cs0_L(), .cs1(), .rw_ctrl(), .pot_scan(pot_scan), .kr1_L(kr1_L), .kr2_L(), .addr_bus(addr_bus), .sel(GPIO_SW_E), .POTGO(), .key_scan_L(key_scan_L), .irq_L(), .audio_out(), .pot_rel_0(pot_rel_0), .pot_rel_1(pot_rel_1), .compare_latch(compare_latch), .keycode_latch(keycode_latch), .key_depr(key_depr), .bin_ctr_pot(bin_ctr_pot), .POT0(POT0), .POT1(POT1), .ALLPOT(), .data_bus(out), .bclk());
 
 	/*
 	input o2; //phase 2 clock

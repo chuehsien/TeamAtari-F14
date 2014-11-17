@@ -298,7 +298,27 @@ module dataOutReg(haltAll,phi2, en, dataIn,
     FlipFlop8 dor(phi2,dataIn,nHaltAll&en,dataOut);
 endmodule
 
+module eDBlatch(phi2, haltAll, extDB, latchRdy,eDB_latch);
+    input phi2,haltAll;
+    input [7:0] extDB;
+    output reg latchRdy;
+    output reg [7:0] eDB_latch = 8'd0;
 
+    
+    always @ (posedge phi2) begin
+      if (haltAll & ~latchRdy) begin
+        eDB_latch <= extDB;
+        latchRdy <= 1'b1;
+      end
+      else if (~haltAll & latchRdy) begin
+        eDB_latch <= 8'ha5; //dummy value
+        latchRdy <= 1'b0;
+      end
+      else eDB_latch <= eDB_latch;
+    end
+            
+endmodule
+            
 module inputDataLatch(haltAll,data,rstAll, phi2, DL_DB, DL_ADL, DL_ADH,extDataBus,
                         DB,ADL,ADH);
     output [7:0] data; 
@@ -369,14 +389,11 @@ module decOrAddADH(inc,dec,inCarry,inAdd,outAdd);
     
     reg carry;
     always @ (*) begin
-        if (inc & dec) begin
-            {carry,outAdd} = {1'b0,inAdd} + {8'd0,inCarry};
-        end
-        else if (inc & ~dec) begin
+        if (inc) begin
            {carry,outAdd} = {1'b0,inAdd} + {8'd0,inCarry};
         end
         
-        else if (~inc & dec) begin
+        else if (dec) begin
            {carry,outAdd} = {1'b0,inAdd} - {8'd0,inCarry};
         end
         else begin
@@ -395,14 +412,10 @@ module decOrAddADL(inc,dec,inAdd,carry,outAdd);
     
     reg nborrow;
     always @ (*) begin
-        if (inc & dec) begin
-            {carry,outAdd} = {1'b0,inAdd} + 9'd2;
-        end
-        
-        else if (inc & ~dec) begin
+        if (inc) begin
             {carry,outAdd} = {1'b0,inAdd} + 9'd1;
         end
-        else if (~inc & dec) begin
+        else if (dec) begin
            {nborrow,outAdd} = {1'b1,inAdd} - 9'd1;
            if (nborrow == 1) carry = 0; //no rollover
            else carry = 1; //rollover occured.
@@ -975,3 +988,4 @@ module opendrainMosADH(rstAll,O_ADH0, O_ADH17,
 
     
 endmodule
+

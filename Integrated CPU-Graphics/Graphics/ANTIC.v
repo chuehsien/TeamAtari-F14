@@ -1,7 +1,7 @@
 // top module for the ANTIC processor.
 // last updated: 10/21/2014 2330H
 
-`include "ANTIC_dataTranslate.v"
+`include "Graphics/ANTIC_dataTranslate.v"
 
 `define FSMinit     2'b00
 `define FSMload1    2'b01
@@ -10,13 +10,14 @@
 `define DMA_off     1'b0
 `define DMA_on      1'b1
 
-module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, DMACTL, CHACTL, HSCROL, VSCROL, PMBASE, CHBASE, 
+module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, VSCROL, PMBASE, CHBASE, 
              WSYNC, NMIEN, DB, NMIRES_NMIST_bus, DLISTL_bus, DLISTH_bus, address, AN, 
-             halt_L, NMI_L, RDY_L, REF_L, RNMI_L, phi0, IR_out, loadIR, VCOUNT, PENH, PENV, 
+             halt, NMI_L, RDY, REF_L, RNMI_L, phi0, IR_out, loadIR, VCOUNT, PENH, PENV, 
              ANTIC_writeEn, charMode, numLines, width, height,
-             printDLIST, currState, data, MSR, loadMSR_both, loadDLIST_both,
+             printDLIST, currState, MSR, loadMSR_both, loadDLIST_both,
              IR_rdy, mode, numBytes, MSRdata, DLISTL, blankCount, addressIn, loadMSRdata, 
-             charData, newDLISTptr, loadDLIST, DLISTend, idle, loadMSRstate);
+             charData, newDLISTptr, loadDLIST, DLISTend, idle, loadMSRstate,
+             addressOut, haltANTIC, rdyANTIC);
 
       input Fphi0;
       input LP_L;
@@ -24,6 +25,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, DMACTL, CHACTL, HSCROL, VSCRO
       input rst;
       input vblank;
       input hblank;
+      input RDY;
       
       input [7:0] DMACTL;
       input [7:0] CHACTL;
@@ -41,9 +43,8 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, DMACTL, CHACTL, HSCROL, VSCRO
       
       output [15:0] address;
       output [3:0] AN;
-      output halt_L;
-      output NMI_L;
-      output RDY_L;
+      output halt;
+      output reg NMI_L = 1'b1;
       output REF_L;
       output RNMI_L;
       output phi0;
@@ -62,7 +63,6 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, DMACTL, CHACTL, HSCROL, VSCRO
       // Extras (remove later on)
       output [15:0] printDLIST;
       output [1:0] currState;
-      output [7:0] data;
       output [15:0] MSR;
       output [1:0] loadDLIST_both;
       output [1:0] loadMSR_both;
@@ -82,16 +82,21 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, DMACTL, CHACTL, HSCROL, VSCRO
       //temp
       output idle;
       output [1:0] loadMSRstate;
+      output [15:0] addressOut;
+      output haltANTIC;
+      output rdyANTIC;
       //endtemp
       
+      assign haltANTIC = halt;
+      assign rdyANTIC = RDY;
       
       // * TODO: Add initialization vectors
       reg DMA = `DMA_off;
       reg loadAddr = 1'b0;
       reg IR_rdy = 1'b0;
-      reg [7:0] IR;
+      reg [7:0] IR = 8'd0;
       reg [1:0] currState = `FSMinit;
-      reg [1:0] nextState;
+      reg [1:0] nextState = `FSMinit;
       reg [15:0] addressIn;
       reg [15:0] MSR;
       reg [7:0] MSRdata;
@@ -103,7 +108,13 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, DMACTL, CHACTL, HSCROL, VSCRO
       reg incrDLIST = 1'b0;
       reg loadMSRdata_hold = 1'b0;
       reg [15:0] newDLISTptr= 16'd0;
+      reg init = 1'b0;
+      reg [15:0] VBI_count = 16'd0;
+      reg ANTIC_initVBI = 1'b0;
+      reg VBI_hold = 1'b0;
+      reg VBI_hold2 = 1'b0;
       
+      wire [15:0] addressOut;
       wire [7:0] data;
       wire loadIR;
       wire loadDLISTL;
@@ -121,23 +132,23 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, DMACTL, CHACTL, HSCROL, VSCRO
       wire [7:0] MSRdata_reverse;
       wire DLIST_DMA_en = DMACTL[5];
       wire ANTIC_writeDLI;
-      wire ANTIC_clearDLI;
+      wire ANTIC_writeVBI;
       wire ANTIC_writeNMI;
       wire charSingleColor;
       
       // * Temp:
       assign printDLIST = {DLISTH_bus, DLISTL_bus};
-      assign halt_L = ~DMA;
+      assign halt = DMA;
       assign IR_out = IR;
       assign loadDLIST_both = {loadDLISTH, loadDLISTL};
       assign loadMSR_both = {loadMSRH, loadMSRL};
       // End Temp *
       
+      assign address = (DMA & RDY) ? addressOut : 16'hzzzz;
       assign colorSel = MSRdata[7:6];
 
       // Module instantiations
-      AddressBusReg addr(.load(loadAddr), .incr(incrDLIST), .addressIn(addressIn), .addressOut(address));
-      dataReg dreg(.clk(Fphi0), .DMA(DMA), .dataIn(DB), .data(data));
+      AddressBusRegANTIC addr(.clk(Fphi0), .load(loadAddr), .incr(incrDLIST), .addressIn(addressIn), .addressOut(addressOut));
       dataTranslate dt(.IR(IR), .IR_rdy(IR_rdy), .Fphi0(Fphi0), .rst(rst), .vblank(vblank), .DMACTL(DMACTL), .MSRdata_rdy(MSRdata_rdy), 
                        .charData(charData), .colorSel(colorSel), .charLoaded(charLoaded), .MSRdata_reverse(MSRdata_reverse),
                        .AN(AN), .loadIR(loadIR),
@@ -145,7 +156,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, DMACTL, CHACTL, HSCROL, VSCRO
                        .loadPtr(loadPtr), .loadMSRL(loadMSRL), .loadMSRH(loadMSRH), .incrMSR(incrMSR), .loadMSRdata(loadMSRdata),
                        .mode(mode), .numBytes(numBytes), .charMode(charMode), .loadChar(loadChar),
                        .blankCount(blankCount), .loadDLIST(loadDLIST), .ANTIC_writeDLIST(ANTIC_writeDLIST), .numLines(numLines),
-                       .width(width), .height(height), .ANTIC_writeDLI(ANTIC_writeDLI), .ANTIC_clearDLI(ANTIC_clearDLI),
+                       .width(width), .height(height), .ANTIC_writeDLI(ANTIC_writeDLI), .ANTIC_writeVBI(ANTIC_writeVBI),
                        .ANTIC_writeNMI(ANTIC_writeNMI),
                        .idle(idle), .loadMSRstate(loadMSRstate), .DLISTend(DLISTend), .charSingleColor(charSingleColor));
       
@@ -153,10 +164,10 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, DMACTL, CHACTL, HSCROL, VSCRO
       assign DLISTL_bus = loadDLIST ? newDLISTptr[7:0] : (incrDLIST ? DLISTL : 8'hzz);
       assign DLISTH_bus = loadDLIST ? newDLISTptr[15:8] : 8'hzz;
       
-      assign NMIRES_NMIST_bus = ANTIC_writeDLI ? 8'h80 : (ANTIC_clearDLI ? 8'h00 : 8'hzz);
+      assign NMIRES_NMIST_bus = ANTIC_writeDLI ? 8'h80 : ((ANTIC_writeVBI|ANTIC_initVBI) ? 8'h40 : 8'hzz);
       
       // Reverse character bits
-      assign data_reverse = {data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]};
+      assign data_reverse = {DB[0], DB[1], DB[2], DB[3], DB[4], DB[5], DB[6], DB[7]};
       assign MSRdata_reverse = {MSRdata[0], MSRdata[1], MSRdata[2], MSRdata[3],
                                 MSRdata[4], MSRdata[5], MSRdata[6], MSRdata[7]};
     
@@ -179,36 +190,91 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, DMACTL, CHACTL, HSCROL, VSCRO
           loadMSRdata_hold <= 1'b0;
           newDLISTptr <= 16'd0;
           IR <= 8'd0;
+          init <= 1'b0;
+          VBI_count <= 14'd0;
+          ANTIC_initVBI <= 1'b0;
+          NMI_L <= 1'b1;
+          VBI_hold <= 1'b0;
+          VBI_hold2 <= 1'b0;
+          nextState <= `FSMinit;
         end
-           
+        
+        // Wait for CPU initialization to complete
         else begin
         
-          // * TODO: Add vertical blank occurrence signal to dataTranslate module
-          
-          if (ANTIC_writeDLIST)
-            ANTIC_writeEn <= 3'd2;
-          else if (ANTIC_writeNMI)
-            ANTIC_writeEn <= 3'd6;
-          else
-            ANTIC_writeEn <= 3'd0;
-          
-          //if (DLIST_DMA_en) begin
-          
-            // Memory Scan Register changes
-            if (loadMSRL)
-              MSR[7:0] <= IR;
-            else if (loadMSRH)
-              MSR[15:8] <= IR;
-              
-            if (incrMSR)
-              MSR <= MSR + 16'd1;
+          if (~init) begin
+            if (DLIST_DMA_en) begin
+              init <= 1'b1;
+              ANTIC_writeEn <= 3'd0;
+              ANTIC_initVBI <= 1'b0;
+              NMI_L <= 1'b1;
+              VBI_hold <= 1'b0;
+            end
             
-            if (loadDLISTL)
-              newDLISTptr[7:0] <= IR;
-            else if (loadDLISTH)
-              newDLISTptr[15:8] <= IR;
+            // Initialization VBI
+            if (VBI_count == 16'd65535) begin
+              ANTIC_writeEn <= 3'd6;
+              ANTIC_initVBI <= 1'b1;
+              VBI_count <= 16'd0;
+              NMI_L <= 1'b1;
+              VBI_hold <= 1'b1;
+            end
+            else if (VBI_hold) begin
+              NMI_L <= 1'b0;
+              VBI_hold <= 1'b0;
+              VBI_hold2 <= 1'b1;
+            end
+            else if (VBI_hold2) begin
+              NMI_L <= 1'b0;
+              VBI_hold2 <= 1'b0;
+            end
+            else begin
+              ANTIC_writeEn <= 3'd0;
+              ANTIC_initVBI <= 1'b0;
+              VBI_count <= VBI_count + 16'd1;
+              NMI_L <= 1'b1;
+              VBI_hold <= 1'b0;
+            end
+              
+          end
+           
+          else begin
           
-            case (currState)
+            // * TODO: Add vertical blank occurrence signal to dataTranslate module
+            
+            if (~(DMA&(~RDY))) begin
+            
+              if (ANTIC_writeDLIST)
+                ANTIC_writeEn <= 3'd2;
+              else if (ANTIC_writeNMI) begin
+                ANTIC_writeEn <= 3'd6;
+                VBI_hold <= 1'b1;
+              end
+              else
+                ANTIC_writeEn <= 3'd0;
+              
+              if (VBI_hold) begin
+                NMI_L <= 1'b0;
+                VBI_hold <= 1'b0;
+              end
+              else
+                NMI_L <= 1'b1;
+              
+              // Memory Scan Register changes
+              if (loadMSRL)
+                MSR[7:0] <= IR;
+              else if (loadMSRH)
+                MSR[15:8] <= IR;
+                
+              if (incrMSR)
+                MSR <= MSR + 16'd1;
+              
+              if (loadDLISTL)
+                newDLISTptr[7:0] <= IR;
+              else if (loadDLISTH)
+                newDLISTptr[15:8] <= IR;
+            
+              case (currState)
                 `FSMinit:
                   begin
                     nextState <= `FSMload1;
@@ -221,7 +287,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, DMACTL, CHACTL, HSCROL, VSCRO
                 `FSMload1:
                   begin
                     nextState <= `FSMload2;
-                    DMA <= `DMA_off;
+                    //DMA <= `DMA_off;
                     IR_rdy <= 1'b0;
                     loadAddr <= 1'b0;
                     incrDLIST <= 1'b0;
@@ -234,17 +300,19 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, DMACTL, CHACTL, HSCROL, VSCRO
                   
                     // Continue loading instructions
                     if (loadIR) begin
-                      nextState <= `FSMload1;  
+                      nextState <= `FSMload1;
                       DMA <= `DMA_on;
                     end
                     // Pause loading instruction
-                    else
+                    else begin
                       nextState <= `FSMidle;
+                      DMA <= `DMA_off;
+                    end
                   
                     /* Output Logic */
 
                     if (loadMSRdata_hold) begin
-                      MSRdata <= data;
+                      MSRdata <= DB;
                       MSRdata_rdy <= 1'b1;
                       loadMSRdata_hold <= 1'b0;
                     end
@@ -271,7 +339,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, DMACTL, CHACTL, HSCROL, VSCRO
                         DLISTL <= DLISTL + 8'd1;
                         ANTIC_writeEn <= 3'd1;
                       end
-                      IR <= data;
+                      IR <= DB;
                       IR_rdy <= 1'b1;
                     end
                   end
@@ -325,50 +393,37 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, DMACTL, CHACTL, HSCROL, VSCRO
                       nextState <= `FSMidle;
                     end
                   end
-            endcase
-          //end
+              endcase
+            end
+          end
         end
       end
       
       always @ (negedge Fphi0 or posedge rst) begin
         if (rst)
           currState <= `FSMinit;
-        else //begin
-          //if (DLIST_DMA_en)
-            currState <= nextState;
-        //end
+        else
+          currState <= nextState;
       end
       
 endmodule
 
 
-module AddressBusReg(load, incr, addressIn, addressOut);
+module AddressBusRegANTIC(clk, load, incr, addressIn, addressOut);
 
+  input clk;
 	input load;
   input incr;
   input [15:0] addressIn;
 	output reg [15:0] addressOut;
 	
-  always @ (load or incr) begin
+  always @ (negedge clk) begin
 		if (load)
       addressOut <= addressIn;
-    else
+    else if (incr)
       addressOut <= addressOut + 16'd1;
-	end
+    else
+      addressOut <= addressOut;
+  end
 	
-endmodule
-
-
-module dataReg(clk, DMA, dataIn, data);
-
-	input clk;
-  input DMA;
-	input [7:0] dataIn;
-	output reg [7:0] data;
-  
-	always @(posedge clk) begin
-    if (DMA)
-      data <= dataIn;
-	end
-
 endmodule

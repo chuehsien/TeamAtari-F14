@@ -5,7 +5,7 @@
 
 
 module memoryMap(addr_RAM,addr_BIOS,addr_CART,
-                Fclk, clk, CPU_writeEn, ANTIC_writeEn, GTIA_writeEn, CPU_addr, 
+                Fclk, clk, rst, CPU_writeEn, ANTIC_writeEn, GTIA_writeEn, CPU_addr, 
 
                  VCOUNT_in, PENH_in, PENV_in,
                  POT0_BUS, POT1_BUS, POT2_BUS, POT3_BUS, POT4_BUS, POT5_BUS, POT6_BUS, POT7_BUS, ALLPOT_BUS, KBCODE_BUS, RANDOM_BUS, SERIN_BUS, IRQST_BUS, SKSTAT_BUS,
@@ -27,6 +27,7 @@ module memoryMap(addr_RAM,addr_BIOS,addr_CART,
   // Control signals
   input Fclk;
   input clk;
+  input rst;
   input CPU_writeEn;
   input [2:0] ANTIC_writeEn;
   input [4:0] GTIA_writeEn;
@@ -219,157 +220,205 @@ module memoryMap(addr_RAM,addr_BIOS,addr_CART,
   writeMux wm(.addr_RAM(addr_RAM), .writeEn(CPU_writeEn), .write_RAM(write_RAM), .write_reg(write_reg));
 
 
-  always @(posedge Fclk) begin
+  always @(posedge Fclk or posedge rst) begin
     // * TODO: De-conflict simultaneous assigns by CPU and ANTIC
   
-    if (write_reg) begin
-      case (CPU_addr)
-    // CPU writes to POKEY registers
-        16'hE800: AUDF1 <= data_in;
-               
-        //16'hD200: POT0 	Potentiometer (Paddle) 0 	Read 	$D200 	53760 	PADDL0 	$0270 	624
-        16'hE801: AUDC1 	 <= data_in;
-        //16'hD201: POT1 	Potentiometer (Paddle) 1 	Read 	$D201 	53761 	PADDL1 	$0271 	625
-        16'hE802: AUDF2 	 <= data_in;
-        //16'hD202: POT2 	Potentiometer (Paddle) 2 	Read 	$D202 	53762 	PADDL2 	$0272 	626
-        16'hE803: AUDC2 	 <= data_in;
-        //16'hD203: POT3 	Potentiometer (Paddle) 3 	Read 	$D203 	53763 	PADDL3 	$0273 	627
-        16'hE804: AUDF3 	 <= data_in;
-        //16'hD204: POT4 	Potentiometer (Paddle) 4 	Read 	$D204 	53764 	PADDL4 	$0274 	628
-        16'hE805: AUDC3 	 <= data_in;
-        //16'hD205: POT5 	Potentiometer (Paddle) 5 	Read 	$D205 	53765 	PADDL5 	$0275 	629
-        16'hE806: AUDF4 	 <= data_in;
-        //16'hD206: POT6 	Potentiometer (Paddle) 6 	Read 	$D206 	53766 	PADDL6 	$0276 	630
-        16'hE807: AUDC4 	 <= data_in;
-        //16'hD207: POT7 	Potentiometer (Paddle) 7 	Read 	$D207 	53767 	PADDL7 	$0277 	631
-        16'hE808: AUDCTL 	 <= data_in;
-        //16'hD208: ALLPOT 	Read 8 Line POT Port State 	Read 	$D208 	53768 			
-        16'hE809: STIMER 	 <= data_in;
-        //16'hD209: KBCODE 	Keyboard Code 	Read 	$D209 	53769 	CH 	$02FC 	764
-        16'hE80A: SKREST 	 <= data_in;
-        //16'hD20A: RANDOM 	Random Number Generator 	Read 	$D20A 	53770 			
-        16'hE80B: POTGO 	 <= data_in;
-        16'hE80D: SEROUT 	 <= data_in;
-        //16'hD20D: SERIN 	Serial Port Data Input 	Read 	$D20D 	53773 			
-        16'hE80E: IRQEN 	 <= data_in;
-        //16'hD20E: IRQST 	IRQ Status 	Read 	$D20E 	53774 			
-        16'hE80F: SKCTL 	 <= data_in;
-        //16'hD20F: SKSTAT 	Serial Port Status 	Read 	$D20F 	53775 			
-                  
+    if (rst) begin    
+      DMACTL <= 8'd0;
+      CHACTL <= 8'd0;
+      DLISTL <= 8'd0;
+      DLISTH <= 8'd0;
+      HSCROL <= 8'd0;
+      VSCROL <= 8'd0;
+      PMBASE <= 8'd0;
+      CHBASE <= 8'd0;
+      WSYNC <= 8'd0;
+      NMIEN <= 8'd0;
+      NMIRES_NMIST <= 8'd0;
+      HPOSP0_M0PF <= 8'd0;
+      HPOSP1_M1PF <= 8'd0;
+      HPOSP2_M2PF <= 8'd0;
+      HPOSP3_M3PF <= 8'd0;
+      HPOSM0_P0PF <= 8'd0;
+      HPOSM1_P1PF <= 8'd0;
+      HPOSM2_P2PF <= 8'd0;
+      HPOSM3_P3PF <= 8'd0;
+      SIZEP0_M0PL <= 8'd0;
+      SIZEP1_M1PL <= 8'd0;
+      SIZEP2_M2PL <= 8'd0;
+      SIZEP3_M3PL <= 8'd0;
+      SIZEM_P0PL <= 8'd0;
+      GRAFP0_P1PL <= 8'd0;
+      GRAFP1_P2PL <= 8'd0;
+      GRAFP2_P3PL <= 8'd0;
+      GRAFP3_TRIG0 <= 8'd0;
+      GRAFPM_TRIG1 <= 8'd0;
+      COLPM0_TRIG2 <= 8'd0;
+      COLPM1_TRIG3 <= 8'd0;
+      COLPM2_PAL <= 8'd0;
+      COLPM3 <= 8'd0;
+      COLPF0 <= 8'd0;
+      COLPF1 <= 8'd0;
+      COLPF2 <= 8'd0;
+      COLPF3 <= 8'd0;
+      COLBK <= 8'd0;
+      PRIOR <= 8'd0;
+      VDELAY <= 8'd0;
+      GRACTL <= 8'd0;
+      HITCLR <= 8'd0;
+      CONSPK_CONSOL <= 8'd0;
+    end
+    
+    else begin
+  
+      if (write_reg) begin
+        case (CPU_addr)
+      // CPU writes to POKEY registers
+          16'hE800: AUDF1 <= data_in;
+                 
+          //16'hD200: POT0 	Potentiometer (Paddle) 0 	Read 	$D200 	53760 	PADDL0 	$0270 	624
+          16'hE801: AUDC1 	 <= data_in;
+          //16'hD201: POT1 	Potentiometer (Paddle) 1 	Read 	$D201 	53761 	PADDL1 	$0271 	625
+          16'hE802: AUDF2 	 <= data_in;
+          //16'hD202: POT2 	Potentiometer (Paddle) 2 	Read 	$D202 	53762 	PADDL2 	$0272 	626
+          16'hE803: AUDC2 	 <= data_in;
+          //16'hD203: POT3 	Potentiometer (Paddle) 3 	Read 	$D203 	53763 	PADDL3 	$0273 	627
+          16'hE804: AUDF3 	 <= data_in;
+          //16'hD204: POT4 	Potentiometer (Paddle) 4 	Read 	$D204 	53764 	PADDL4 	$0274 	628
+          16'hE805: AUDC3 	 <= data_in;
+          //16'hD205: POT5 	Potentiometer (Paddle) 5 	Read 	$D205 	53765 	PADDL5 	$0275 	629
+          16'hE806: AUDF4 	 <= data_in;
+          //16'hD206: POT6 	Potentiometer (Paddle) 6 	Read 	$D206 	53766 	PADDL6 	$0276 	630
+          16'hE807: AUDC4 	 <= data_in;
+          //16'hD207: POT7 	Potentiometer (Paddle) 7 	Read 	$D207 	53767 	PADDL7 	$0277 	631
+          16'hE808: AUDCTL 	 <= data_in;
+          //16'hD208: ALLPOT 	Read 8 Line POT Port State 	Read 	$D208 	53768 			
+          16'hE809: STIMER 	 <= data_in;
+          //16'hD209: KBCODE 	Keyboard Code 	Read 	$D209 	53769 	CH 	$02FC 	764
+          16'hE80A: SKREST 	 <= data_in;
+          //16'hD20A: RANDOM 	Random Number Generator 	Read 	$D20A 	53770 			
+          16'hE80B: POTGO 	 <= data_in;
+          16'hE80D: SEROUT 	 <= data_in;
+          //16'hD20D: SERIN 	Serial Port Data Input 	Read 	$D20D 	53773 			
+          16'hE80E: IRQEN 	 <= data_in;
+          //16'hD20E: IRQST 	IRQ Status 	Read 	$D20E 	53774 			
+          16'hE80F: SKCTL 	 <= data_in;
+          //16'hD20F: SKSTAT 	Serial Port Status 	Read 	$D20F 	53775 			
+                    
+        
+        
+      // CPU writes to ANTIC registers
+          16'hD400: DMACTL <= data_in;
+          16'hD401: CHACTL <= data_in;
+          16'hD402: DLISTL <= data_in;
+          16'hD403: DLISTH <= data_in;
+          16'hD404: HSCROL <= data_in;
+          16'hD405: VSCROL <= data_in;
+          16'hD407: PMBASE <= data_in;
+          16'hD409: CHBASE <= data_in;
+          16'hD40A: WSYNC <= data_in;
+          16'hD40E: NMIEN <= data_in;
+          16'hD40F: NMIRES_NMIST <= data_in;
+          16'hD000: HPOSP0_M0PF <= data_in;
+          16'hD001: HPOSP1_M1PF <= data_in;
+          16'hD002: HPOSP2_M2PF <= data_in;
+          16'hD003: HPOSP3_M3PF <= data_in;
+          16'hD004: HPOSM0_P0PF <= data_in;
+          16'hD005: HPOSM1_P1PF <= data_in;
+          16'hD006: HPOSM2_P2PF <= data_in;
+          16'hD007: HPOSM3_P3PF <= data_in;
+          16'hD008: SIZEP0_M0PL <= data_in;
+          16'hD009: SIZEP1_M1PL <= data_in;
+          16'hD00A: SIZEP2_M2PL <= data_in;
+          16'hD00B: SIZEP3_M3PL <= data_in;
+          16'hD00C: SIZEM_P0PL <= data_in;
+          16'hD00D: GRAFP0_P1PL <= data_in;
+          16'hD00E: GRAFP1_P2PL <= data_in;
+          16'hD00F: GRAFP2_P3PL <= data_in;
+          16'hD010: GRAFP3_TRIG0 <= data_in;
+          16'hD011: GRAFPM_TRIG1 <= data_in;
+          16'hD012: COLPM0_TRIG2 <= data_in;
+          16'hD013: COLPM1_TRIG3 <= data_in;
+          16'hD014: COLPM2_PAL <= data_in;
+          16'hD015: COLPM3 <= data_in;
+          16'hD016: COLPF0 <= data_in;
+          16'hD017: COLPF1 <= data_in;
+          16'hD018: COLPF2 <= data_in;
+          16'hD019: COLPF3 <= data_in;
+          16'hD01A: COLBK <= data_in;
+          16'hD01B: PRIOR <= data_in;
+          16'hD01C: VDELAY <= data_in;
+          16'hD01D: GRACTL <= data_in;
+          16'hD01E: HITCLR <= data_in;
+          16'hD01F: CONSPK_CONSOL <= data_in;
+        endcase
+      end
       
+      if (ANTIC_writeEn != 3'd0) begin
+        case (ANTIC_writeEn)
+          3'd1: if (~((write_reg)&(CPU_addr != 16'hD402)))
+                  DLISTL <= DLISTL_bus;
+          3'd2: if (~((write_reg)&&((CPU_addr == 16'hD402)||(CPU_addr == 16'hD403)))) begin
+                  DLISTL <= DLISTL_bus;
+                  DLISTH <= DLISTH_bus;
+                end
+          3'd3: VCOUNT <= VCOUNT_in;
+          3'd4: PENH <= PENH_in;
+          3'd5: PENV <= PENV_in;
+          3'd6: if (~((write_reg)&(CPU_addr != 16'hD40F)))
+                  NMIRES_NMIST <= NMIRES_NMIST_bus;
+        endcase
+      end
       
-    // CPU writes to ANTIC registers
-        16'hD400: DMACTL <= data_in;
-        16'hD401: CHACTL <= data_in;
-        16'hD402: DLISTL <= data_in;
-        16'hD403: DLISTH <= data_in;
-        16'hD404: HSCROL <= data_in;
-        16'hD405: VSCROL <= data_in;
-        16'hD407: PMBASE <= data_in;
-        16'hD409: CHBASE <= data_in;
-        16'hD40A: WSYNC <= data_in;
-        16'hD40E: NMIEN <= data_in;
-        16'hD40F: NMIRES_NMIST <= data_in;
-        16'hD000: HPOSP0_M0PF <= data_in;
-        16'hD001: HPOSP1_M1PF <= data_in;
-        16'hD002: HPOSP2_M2PF <= data_in;
-        16'hD003: HPOSP3_M3PF <= data_in;
-        16'hD004: HPOSM0_P0PF <= data_in;
-        16'hD005: HPOSM1_P1PF <= data_in;
-        16'hD006: HPOSM2_P2PF <= data_in;
-        16'hD007: HPOSM3_P3PF <= data_in;
-        16'hD008: SIZEP0_M0PL <= data_in;
-        16'hD009: SIZEP1_M1PL <= data_in;
-        16'hD00A: SIZEP2_M2PL <= data_in;
-        16'hD00B: SIZEP3_M3PL <= data_in;
-        16'hD00C: SIZEM_P0PL <= data_in;
-        16'hD00D: GRAFP0_P1PL <= data_in;
-        16'hD00E: GRAFP1_P2PL <= data_in;
-        16'hD00F: GRAFP2_P3PL <= data_in;
-        16'hD010: GRAFP3_TRIG0 <= data_in;
-        16'hD011: GRAFPM_TRIG1 <= data_in;
-        16'hD012: COLPM0_TRIG2 <= data_in;
-        16'hD013: COLPM1_TRIG3 <= data_in;
-        16'hD014: COLPM2_PAL <= data_in;
-        16'hD015: COLPM3 <= data_in;
-        16'hD016: COLPF0 <= data_in;
-        16'hD017: COLPF1 <= data_in;
-        16'hD018: COLPF2 <= data_in;
-        16'hD019: COLPF3 <= data_in;
-        16'hD01A: COLBK <= data_in;
-        16'hD01B: PRIOR <= data_in;
-        16'hD01C: VDELAY <= data_in;
-        16'hD01D: GRACTL <= data_in;
-        16'hD01E: HITCLR <= data_in;
-        16'hD01F: CONSPK_CONSOL <= data_in;
-      endcase
+      if (GTIA_writeEn != 3'd0) begin
+        case (GTIA_writeEn)
+          5'd1:  if (~((write_reg)&(CPU_addr != 16'hD000)))
+                   HPOSP0_M0PF <= HPOSP0_M0PF_bus;
+          5'd2:  if (~((write_reg)&(CPU_addr != 16'hD001)))
+                   HPOSP1_M1PF <= HPOSP1_M1PF_bus;
+          5'd3:  if (~((write_reg)&(CPU_addr != 16'hD002)))
+                   HPOSP2_M2PF <= HPOSP2_M2PF_bus;
+          5'd4:  if (~((write_reg)&(CPU_addr != 16'hD003)))
+                   HPOSP3_M3PF <= HPOSP3_M3PF_bus;
+          5'd5:  if (~((write_reg)&(CPU_addr != 16'hD004)))
+                   HPOSM0_P0PF <= HPOSM0_P0PF_bus;
+          5'd6:  if (~((write_reg)&(CPU_addr != 16'hD005)))
+                   HPOSM1_P1PF <= HPOSM1_P1PF_bus;
+          5'd7:  if (~((write_reg)&(CPU_addr != 16'hD006)))
+                   HPOSM2_P2PF <= HPOSM2_P2PF_bus;
+          5'd8:  if (~((write_reg)&(CPU_addr != 16'hD007)))
+                   HPOSM3_P3PF <= HPOSM3_P3PF_bus;
+          5'd9:  if (~((write_reg)&(CPU_addr != 16'hD008)))
+                   SIZEP0_M0PL <= SIZEP0_M0PL_bus;
+          5'd10: if (~((write_reg)&(CPU_addr != 16'hD009)))
+                   SIZEP1_M1PL <= SIZEP1_M1PL_bus;
+          5'd11: if (~((write_reg)&(CPU_addr != 16'hD00A)))
+                   SIZEP2_M2PL <= SIZEP2_M2PL_bus;
+          5'd12: if (~((write_reg)&(CPU_addr != 16'hD00B)))
+                   SIZEP3_M3PL <= SIZEP3_M3PL_bus;
+          5'd13: if (~((write_reg)&(CPU_addr != 16'hD00C)))
+                   SIZEM_P0PL <= SIZEM_P0PL_bus;
+          5'd14: if (~((write_reg)&(CPU_addr != 16'hD00D)))
+                   GRAFP0_P1PL <= GRAFP0_P1PL_bus;
+          5'd15: if (~((write_reg)&(CPU_addr != 16'hD00E)))
+                   GRAFP1_P2PL <= GRAFP1_P2PL_bus;
+          5'd16: if (~((write_reg)&(CPU_addr != 16'hD00F)))
+                   GRAFP2_P3PL <= GRAFP2_P3PL_bus;
+          5'd17: if (~((write_reg)&(CPU_addr != 16'hD010)))
+                   GRAFP3_TRIG0 <= GRAFP3_TRIG0_bus;
+          5'd18: if (~((write_reg)&(CPU_addr != 16'hD011)))
+                   GRAFPM_TRIG1 <= GRAFPM_TRIG1_bus;
+          5'd19: if (~((write_reg)&(CPU_addr != 16'hD012)))
+                   COLPM0_TRIG2 <= COLPM0_TRIG2_bus;
+          5'd20: if (~((write_reg)&(CPU_addr != 16'hD013)))
+                   COLPM1_TRIG3 <= COLPM1_TRIG3_bus;
+          5'd21: if (~((write_reg)&(CPU_addr != 16'hD014)))
+                   COLPM2_PAL <= COLPM2_PAL_bus;
+          5'd22: if (~((write_reg)&(CPU_addr != 16'hD01F)))
+                   CONSPK_CONSOL <= CONSPK_CONSOL_bus;
+        endcase
+      end
     end
-    
-    if (ANTIC_writeEn != 3'd0) begin
-      case (ANTIC_writeEn)
-        3'd1: if (~((write_reg)&(CPU_addr != 16'hD402)))
-                DLISTL <= DLISTL_bus;
-        3'd2: if (~((write_reg)&&((CPU_addr == 16'hD402)||(CPU_addr == 16'hD403)))) begin
-                DLISTL <= DLISTL_bus;
-                DLISTH <= DLISTH_bus;
-              end
-        3'd3: VCOUNT <= VCOUNT_in;
-        3'd4: PENH <= PENH_in;
-        3'd5: PENV <= PENV_in;
-        3'd6: if (~((write_reg)&(CPU_addr != 16'hD40F)))
-                NMIRES_NMIST <= NMIRES_NMIST_bus;
-      endcase
-    end
-    
-    if (GTIA_writeEn != 3'd0) begin
-      case (GTIA_writeEn)
-        5'd1:  if (~((write_reg)&(CPU_addr != 16'hD000)))
-                 HPOSP0_M0PF <= HPOSP0_M0PF_bus;
-        5'd2:  if (~((write_reg)&(CPU_addr != 16'hD001)))
-                 HPOSP1_M1PF <= HPOSP1_M1PF_bus;
-        5'd3:  if (~((write_reg)&(CPU_addr != 16'hD002)))
-                 HPOSP2_M2PF <= HPOSP2_M2PF_bus;
-        5'd4:  if (~((write_reg)&(CPU_addr != 16'hD003)))
-                 HPOSP3_M3PF <= HPOSP3_M3PF_bus;
-        5'd5:  if (~((write_reg)&(CPU_addr != 16'hD004)))
-                 HPOSM0_P0PF <= HPOSM0_P0PF_bus;
-        5'd6:  if (~((write_reg)&(CPU_addr != 16'hD005)))
-                 HPOSM1_P1PF <= HPOSM1_P1PF_bus;
-        5'd7:  if (~((write_reg)&(CPU_addr != 16'hD006)))
-                 HPOSM2_P2PF <= HPOSM2_P2PF_bus;
-        5'd8:  if (~((write_reg)&(CPU_addr != 16'hD007)))
-                 HPOSM3_P3PF <= HPOSM3_P3PF_bus;
-        5'd9:  if (~((write_reg)&(CPU_addr != 16'hD008)))
-                 SIZEP0_M0PL <= SIZEP0_M0PL_bus;
-        5'd10: if (~((write_reg)&(CPU_addr != 16'hD009)))
-                 SIZEP1_M1PL <= SIZEP1_M1PL_bus;
-        5'd11: if (~((write_reg)&(CPU_addr != 16'hD00A)))
-                 SIZEP2_M2PL <= SIZEP2_M2PL_bus;
-        5'd12: if (~((write_reg)&(CPU_addr != 16'hD00B)))
-                 SIZEP3_M3PL <= SIZEP3_M3PL_bus;
-        5'd13: if (~((write_reg)&(CPU_addr != 16'hD00C)))
-                 SIZEM_P0PL <= SIZEM_P0PL_bus;
-        5'd14: if (~((write_reg)&(CPU_addr != 16'hD00D)))
-                 GRAFP0_P1PL <= GRAFP0_P1PL_bus;
-        5'd15: if (~((write_reg)&(CPU_addr != 16'hD00E)))
-                 GRAFP1_P2PL <= GRAFP1_P2PL_bus;
-        5'd16: if (~((write_reg)&(CPU_addr != 16'hD00F)))
-                 GRAFP2_P3PL <= GRAFP2_P3PL_bus;
-        5'd17: if (~((write_reg)&(CPU_addr != 16'hD010)))
-                 GRAFP3_TRIG0 <= GRAFP3_TRIG0_bus;
-        5'd18: if (~((write_reg)&(CPU_addr != 16'hD011)))
-                 GRAFPM_TRIG1 <= GRAFPM_TRIG1_bus;
-        5'd19: if (~((write_reg)&(CPU_addr != 16'hD012)))
-                 COLPM0_TRIG2 <= COLPM0_TRIG2_bus;
-        5'd20: if (~((write_reg)&(CPU_addr != 16'hD013)))
-                 COLPM1_TRIG3 <= COLPM1_TRIG3_bus;
-        5'd21: if (~((write_reg)&(CPU_addr != 16'hD014)))
-                 COLPM2_PAL <= COLPM2_PAL_bus;
-        5'd22: if (~((write_reg)&(CPU_addr != 16'hD01F)))
-                 CONSPK_CONSOL <= CONSPK_CONSOL_bus;
-      endcase
-    end
-    
   end
   
   // Bus outputs from read/write registers
@@ -394,8 +443,6 @@ module memoryMap(addr_RAM,addr_BIOS,addr_CART,
                         (CPU_addr == 16'hE80E) ? IRQST_BUS :
                         (CPU_addr == 16'hE80F) ? SKSTAT_BUS :
                         
-                        
-                        
                         (CPU_addr == 16'hD400) ? DMACTL :
                         (CPU_addr == 16'hD401) ? CHACTL :
                         (CPU_addr == 16'hD402) ? DLISTL :
@@ -409,8 +456,8 @@ module memoryMap(addr_RAM,addr_BIOS,addr_CART,
                         (CPU_addr == 16'hD40C) ? PENH :
                         (CPU_addr == 16'hD40D) ? PENV :
                         (CPU_addr == 16'hD40E) ? NMIEN :
-                        //(CPU_addr == 16'hD40F) ? NMIRES_NMIST : 
-                        (CPU_addr == 16'hD40F) ? 8'h40 : 
+                        (CPU_addr == 16'hD40F) ? NMIRES_NMIST : 
+                        //(CPU_addr == 16'hD40F) ? 8'h40 : 
                         (CPU_addr == 16'hD000) ? HPOSP0_M0PF : 
                         (CPU_addr == 16'hD001) ? HPOSP1_M1PF : 
                         (CPU_addr == 16'hD002) ? HPOSP2_M2PF : 

@@ -297,3 +297,4 @@ endfunction
 
     BUFG c(out,outClk);
 endmodule
+

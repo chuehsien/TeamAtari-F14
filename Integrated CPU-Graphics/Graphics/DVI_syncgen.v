@@ -8,7 +8,7 @@ module SyncGen(clock, rst, vs, hs, border);
   output reg vs, hs;
   output reg border;
 
-  `include "DVI_parameters.v"
+  `include "Graphics/DVI_parameters.v"
   
   reg [11:0] x = 12'd0;
   reg [11:0] y = 12'd0;

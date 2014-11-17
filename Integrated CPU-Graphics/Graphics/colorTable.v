@@ -1,7 +1,7 @@
 // Color table module
 // Last updated: 10/21/2014 2330H
 
-`include "colorDef.v"
+`include "Graphics/colorDef.v"
 
 module colorTable(colorData, RGB);
 

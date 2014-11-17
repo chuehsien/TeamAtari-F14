@@ -1,30 +1,15 @@
-//NET  GPIO_SW_C            LOC="AJ6";   # Bank 18, Vcco=3.3V, No DCI
-NET  GPIO_SW_E            LOC="AK7";   # Bank 18, Vcco=3.3V, No DCI
-NET  GPIO_SW_S            LOC="V8";    # Bank 18, Vcco=3.3V, No DCI
-NET  GPIO_SW_N            LOC="U8";    # Bank 18, Vcco=3.3V, No DCI
-NET  GPIO_SW_W            LOC="AJ7";   # Bank 18, Vcco=3.3V, No DCI
-NET  LCD_FPGA_DB4         LOC="T9";    # Bank 12, Vcco=3.3V, DCI using 49.9 ohm resistors
-NET  LCD_FPGA_DB5         LOC="G7";    # Bank 12, Vcco=3.3V, DCI using 49.9 ohm resistors
-NET  LCD_FPGA_DB6         LOC="G6";    # Bank 12, Vcco=3.3V, DCI using 49.9 ohm resistors
-NET  LCD_FPGA_DB7         LOC="T11";   # Bank 12, Vcco=3.3V, DCI using 49.9 ohm resistors
-NET  LCD_FPGA_E           LOC="AC9";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors      
-NET  LCD_FPGA_RS          LOC="J17";   # Bank 3, Vcco=2.5V, No DCI      
-NET  LCD_FPGA_RW          LOC="AC10";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
-//NET  USER_CLK             LOC="AH15";  # Bank 4, Vcco=3.3V, No DCI
+// Clocks
+NET  USER_CLK             LOC="AH15";  # Bank 4, Vcco=3.3V, No DCI
 NET  CLK_27MHZ_FPGA       LOC="AG18";  # Bank 4, Vcco=3.3V, No DCI    
 
-NET  GPIO_LED_0           LOC="H18";   # Bank 3, Vcco=2.5V, No DCI
-NET  GPIO_LED_1           LOC="L18";   # Bank 3, Vcco=2.5V, No DCI
-NET  GPIO_LED_2           LOC="G15";   # Bank 3, Vcco=2.5V, No DCI
-NET  GPIO_LED_3           LOC="AD26";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-NET  GPIO_LED_4           LOC="G16";   # Bank 3, Vcco=2.5V, No DCI
-NET  GPIO_LED_5           LOC="AD25";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-NET  GPIO_LED_6           LOC="AD24";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-NET  GPIO_LED_7           LOC="AE24";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-NET  GPIO_LED_N           LOC="AF13";  # Bank 2, Vcco=3.3V
-NET  GPIO_LED_W           LOC="AF23";  # Bank 2, Vcco=3.3V
-//NET  GPIO_LED_S           LOC="AG12";  # Bank 2, Vcco=3.3V
+// Buttons
+NET  GPIO_SW_N            LOC="U8";    # Bank 18, Vcco=3.3V, No DCI
+NET  GPIO_SW_S            LOC="V8";    # Bank 18, Vcco=3.3V, No DCI
+NET  GPIO_SW_E            LOC="AK7";   # Bank 18, Vcco=3.3V, No DCI
+NET  GPIO_SW_W            LOC="AJ7";   # Bank 18, Vcco=3.3V, No DCI
+//NET  GPIO_SW_C            LOC="AJ6";   # Bank 18, Vcco=3.3V, No DCI
 
+// Switches
 NET  GPIO_DIP_SW1         LOC="U25";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
 NET  GPIO_DIP_SW2         LOC="AG27";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
 NET  GPIO_DIP_SW3         LOC="AF25";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
@@ -33,9 +18,9 @@ NET  GPIO_DIP_SW5         LOC="AE27";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm 
 NET  GPIO_DIP_SW6         LOC="AE26";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
 NET  GPIO_DIP_SW7         LOC="AC25";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
 NET  GPIO_DIP_SW8         LOC="AC24";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
-
 NET  "GPIO_SW_S" CLOCK_DEDICATED_ROUTE = FALSE;
 
+// Pinouts
 NET  HDR1_2               LOC="H33";   # Bank 11, Vcco=2.5V or 3.3V user selectable by J20
 NET  HDR1_4               LOC="F34";   # Bank 11, Vcco=2.5V or 3.3V user selectable by J20
 NET  HDR1_6               LOC="H34";   # Bank 11, Vcco=2.5V or 3.3V user selectable by J20
@@ -68,6 +53,7 @@ NET  HDR1_56              LOC="AM33";  # Bank 13, Vcco=2.5V or 3.3V user selecta
 //NET  HDR1_60              LOC="AM32";  # Bank 13, Vcco=2.5V or 3.3V user selectable by J20
 //NET  HDR1_62              LOC="AN34";  # Bank 13, Vcco=2.5V or 3.3V user selectable by J20
 //NET  HDR1_64              LOC="AN33";  # Bank 13, Vcco=2.5V or 3.3V user selectable by J20
+
 //NET  HDR2_2_SM_8_N        LOC="K34";   # Bank 11, Vcco=2.5V or 3.3V user selectable by J20 (SYSMON External Input: VAUXN[15]) J4-2
 //NET  HDR2_4_SM_8_P        LOC="L34";   # Bank 11, Vcco=2.5V or 3.3V user selectable by J20 (SYSMON External Input: VAUXP[15]) J4-4
 //NET  HDR2_6_SM_7_N        LOC="K32";   # Bank 11, Vcco=2.5V or 3.3V user selectable by J20 (SYSMON External Input: VAUXN[14]) J4-6
@@ -100,3 +86,26 @@ NET  HDR2_58_SM_4_N       LOC="AB33";  # Bank 13, Vcco=2.5V or 3.3V user selecta
 NET  HDR2_60_SM_4_P       LOC="AC33";  # Bank 13, Vcco=2.5V or 3.3V user selectable by J20 (SYSMON External Input: VAUXP[2]) J4-60
 NET  HDR2_62_SM_9_N       LOC="AP32";  # Bank 13, Vcco=2.5V or 3.3V user selectable by J20
 NET  HDR2_64_SM_9_P       LOC="AN32";  # Bank 13, Vcco=2.5V or 3.3V user selectable by J20
+
+
+// DVI
+NET  DVI_D0               LOC="AB8";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_D1               LOC="AC8";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_D2               LOC="AN12";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_D3               LOC="AP12";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_D4               LOC="AA9";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_D5               LOC="AA8";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_D6               LOC="AM13";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_D7               LOC="AN13";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_D8               LOC="AA10";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_D9               LOC="AB10";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_D10              LOC="AP14";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_D11              LOC="AN14";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_DE               LOC="AE8";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_H                LOC="AM12";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_RESET_B          LOC="AK6";   # Bank 18, Vcco=3.3V, No DCI
+NET  DVI_V                LOC="AM11";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_XCLK_N           LOC="AL10";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_XCLK_P           LOC="AL11";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  IIC_SCL_VIDEO        LOC="U27";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  IIC_SDA_VIDEO        LOC="T29";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors

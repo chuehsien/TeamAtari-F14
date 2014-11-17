@@ -6,8 +6,8 @@ module clockGen(HALT,phi0_in,fclk,
                 haltAll,RDY,phi1_out,phi2_out,phi1_extout,phi2_extout);
                 
     input HALT,phi0_in,fclk;
-    output haltAll,RDY;
-    reg haltAll = 1'b0;
+    output reg haltAll, RDY = 1'b0;
+    
      (* clock_signal = "yes" *) output phi1_out,phi2_out,phi1_extout,phi2_extout;
     
     reg stop = 1'b0;
@@ -22,7 +22,10 @@ module clockGen(HALT,phi0_in,fclk,
       haltAll <= stop;
     end
     
-    assign RDY = haltAll;
+    always @ (posedge phi0_in) begin
+        RDY <= haltAll;
+        
+    end
     
     BUFG a(phi1_out,~phi0_in);
     BUFG b(phi2_out,phi0_in);

@@ -14,10 +14,11 @@
 
 `include "Control/plaFSM.v"
 
-module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,opcodeToIR,second_first_int,nmiPending,resPending,irqPending,currState,accumVal,outToPCL,outToPCH,A,B,idlContents,rstAll,ALUhold_out,activeInt,currT,DB,SB,ADH,ADL,
+module top_6502C(DBsource,DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,opcodeToIR,second_first_int,nmiPending,resPending,irqPending,currState,accumVal,outToPCL,outToPCH,A,B,idlContents,rstAll,ALUhold_out,activeInt,currT,DB,SB,ADH,ADL,
                 HALT, IRQ_L, NMI_L, RES_L, SO, phi0_in,fastClk,extDB,	
                 RDY,phi1_out, SYNC, extABL, extABH, phi2_out, RW,
                 Accum,Xreg,Yreg);
+            output [7:0] DBsource;
             output [7:0] DBforSR,extAB_b1,SR_contents;
             output [7:0] holdAB;
             output [7:0] SRflags;
@@ -230,7 +231,14 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
            // triState idl_b0[7:0](DB,DB_b0,controlSigs[`DL_DB]);
             //triState idl_b1[7:0](ADL,ADL_b0,controlSigs[`DL_ADL]);
             //triState idl_b2[7:0](ADH,ADH_b0,controlSigs[`DL_ADH]);
-            inputDataLatch dl(haltAll,idlContents,rstAll,phi2,DL_DB, DL_ADL, DL_ADH,extDB,
+         
+            
+            wire latchRdy;
+            wire [7:0] eDB_latch;
+            eDBlatch save_extDB(phi2, haltAll, extDB, latchRdy,eDB_latch);
+            wire [7:0] DBsource;
+            assign DBsource = (latchRdy) ? eDB_latch : extDB;
+            inputDataLatch dl(haltAll,idlContents,rstAll,phi2,DL_DB, DL_ADL, DL_ADH,DBsource,
                         DB,ADL,ADH);
                         
                         
@@ -328,8 +336,8 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             
             //triState ABR_b0[7:0](extABH,extAB_b0,~controlSigs[`nADH_ABH]);
             //triState ABR_b1[7:0](extABL,extAB_b1,~controlSigs[`nADL_ABL]);
-            triState ABR_b0[7:0](extABH,extAB_b0,~haltAll);
-            triState ABR_b1[7:0](extABL,extAB_b1,~haltAll);
+            triState ABR_b0[7:0](extABH,extAB_b0,~RDY);
+            triState ABR_b1[7:0](extABL,extAB_b1,~RDY);
 
             AddressBusReg   add_hi(haltAll,phi1,nADH_ABH, ADH, extAB_b0);
             AddressBusReg   add_lo(haltAll,phi1,nADL_ABL, ADL, extAB_b1);
@@ -421,8 +429,9 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             wire [6:0] currT;  
             wire [7:0] extDB_b0;
             triState8 dor_b(extDB,extDB_b0,(~haltAll) & (controlSigs[`nRW]));
+            
             //dataOutReg          dor(haltAll,phi2,nRW,PCLforDOR,jsrHi,jsrLo, DB, extDB_b0);
-            dataOutReg            dor(haltAll,phi2,nRW, DB,extDB_b0);
+            dataOutReg            dor(haltAll,phi2,nRW,DB,extDB_b0);
                     
             //moving on to left side...
             wire [7:0] predecodeOut, opcodeToIR;
@@ -430,7 +439,7 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             
             wire FSMnmi,FSMirq,FSMres;
             assign interrupt = FSMnmi|FSMirq|FSMres;
-            predecodeRegister   pdr(haltAll,phi2,extDB,predecodeOut);
+            predecodeRegister   pdr(haltAll,phi2,DBsource,predecodeOut);
             predecodeLogic      pdl(predecodeOut,interrupt,opcodeToIR);
             wire brkNow;
             assign brkNow = (predecodeOut == `BRK || interrupt);
