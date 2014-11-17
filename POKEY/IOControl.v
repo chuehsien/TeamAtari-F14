@@ -224,8 +224,11 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, POTGO, side_but, ke
             ctr_pot = 0; //reset the pot counter
             bin_ctr_pot <= 8'd0;
             pot_scan_reg <= 8'd0; //clear the "lines"
-				pot_rel_0_reg <= 1'd1; //turn on transistor0 to clear the cap
-				pot_rel_1_reg <= 1'd1; //turn on transistor1 to clear the cap
+            pot_rel_0_reg <= 1'd1; //turn on transistor0 to clear the cap
+            pot_rel_1_reg <= 1'd1; //turn on transistor1 to clear the cap
+            //lock in the max value in the POT* registers
+            POT0 <= 8'd228;
+            POT1 <= 8'd228;
         end
         
      end

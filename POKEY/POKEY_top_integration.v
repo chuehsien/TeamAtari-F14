@@ -1,15 +1,17 @@
-module POKEY_top_integration(CLK_27MHZ_FPGA, SKCTL, GRACTL, POTGO, HDR2_10_DIFF_0_N, HDR2_12_DIFF_0_P, HDR2_14_DIFF_1_N, HDR2_16_DIFF_1_P, HDR2_18_DIFF_2_N, HDR2_20_DIFF_2_P, HDR2_24_SM_10_P, HDR2_26_SM_11_N,
+module POKEY_top_integration(CLK_27MHZ_FPGA, HDR2_10_DIFF_0_N, HDR2_12_DIFF_0_P, HDR2_14_DIFF_1_N, HDR2_16_DIFF_1_P, HDR2_18_DIFF_2_N, HDR2_20_DIFF_2_P, HDR2_24_SM_10_P, HDR2_26_SM_11_N, GPIO_SW_C, GPIO_DIP_SW1, GPIO_DIP_SW2, GPIO_DIP_SW3, GPIO_DIP_SW4,
 
-                            POT0_bus, POT1_bus, ALLPOT, TRIG0_bus, TRIG1_bus, TRIG2_bus, TRIG3_bus, HDR2_2_SM_8_N, HDR2_4_SM_8_P, HDR2_6_SM_7_N, HDR2_8_SM_7_P, HDR2_22_SM_10_N, HDR2_28_SM_11_P, HDR2_30_DIFF_3_N);
+                            POT0_bus, POT1_bus, ALLPOT_bus, KBCODE_bus, TRIG0_bus, TRIG1_bus, TRIG2_bus, TRIG3_bus, HDR2_2_SM_8_N, HDR2_4_SM_8_P, HDR2_6_SM_7_N, HDR2_8_SM_7_P, HDR2_22_SM_10_N, HDR2_28_SM_11_P, HDR2_30_DIFF_3_N, GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7);
 
 input CLK_27MHZ_FPGA;
-input [7:0] SKCTL, GRACTL, POTGO;
+//input [7:0] SKCTL, GRACTL, POTGO;
 input HDR2_10_DIFF_0_N, HDR2_12_DIFF_0_P, HDR2_14_DIFF_1_N, HDR2_16_DIFF_1_P,  HDR2_18_DIFF_2_N, HDR2_20_DIFF_2_P, HDR2_24_SM_10_P, HDR2_26_SM_11_N;
+input GPIO_SW_C, GPIO_DIP_SW1, GPIO_DIP_SW2, GPIO_DIP_SW3, GPIO_DIP_SW4;
 
 
 output [7:0] POT0_bus, POT1_bus, ALLPOT_bus, KBCODE_bus;
 output TRIG0_bus, TRIG1_bus, TRIG2_bus, TRIG3_bus;
 output HDR2_2_SM_8_N, HDR2_4_SM_8_P, HDR2_6_SM_7_N, HDR2_8_SM_7_P, HDR2_22_SM_10_N, HDR2_28_SM_11_P, HDR2_30_DIFF_3_N;
+output GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7;
 
 
 
@@ -78,6 +80,24 @@ output HDR2_2_SM_8_N, HDR2_4_SM_8_P, HDR2_6_SM_7_N, HDR2_8_SM_7_P, HDR2_22_SM_10
     wire [7:0] bin_ctr_pot, POT0, POT1;
 
     wire trig0_latch, trig1_latch, trig2_latch, trig3_latch;
+    
+    
+    /* Testing harness - Chipscope */
+    wire [35:0] CONTROL0,CONTROL1;
+	wire [7:0] TRIG0,
+    TRIG1,
+    TRIG2,
+    TRIG3,
+    TRIG4,
+    TRIG5,
+    TRIG6,
+    TRIG7,
+    TRIG8,
+    TRIG9,TRIG10, TRIG11, TRIG12, TRIG13, TRIG14, TRIG15;
+	 wire cs_clk1, cs_clk2;
+     wire center_pressed;
+     wire [7:0] SKCTL, GRACTL, POTGO;
+    /* End testing harness */
 
 
     assign pot_scan = {6'd0, pot_scan_2};
@@ -89,6 +109,14 @@ output HDR2_2_SM_8_N, HDR2_4_SM_8_P, HDR2_6_SM_7_N, HDR2_8_SM_7_P, HDR2_22_SM_10
     assign HDR2_30_DIFF_3_N = pot_rel_1;
     assign HDR2_22_SM_10_N = 1'b1; //Pin 9: permanently powered
     assign KBCODE_bus = {3'd0, keycode_latch, 1'd0};
+    
+    /* Begin testing assignments */
+    assign {GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7} = KBCODE_bus[4:1];
+    assign {GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3} = {TRIG0_bus, HDR2_18_DIFF_2_N, TRIG2_bus, TRIG3_bus};
+    assign POTGO = center_pressed ? 8'h00 : 8'hFF;
+    assign GRACTL[2] = GPIO_DIP_SW1;
+    assign SKCTL[3:0] = {GPIO_DIP_SW4, GPIO_DIP_SW3, GPIO_DIP_SW2};
+    /* End testing assignments */
     
     clockDivider #(1800) out15(CLK_27MHZ_FPGA,o2);
     
@@ -107,5 +135,60 @@ output HDR2_2_SM_8_N, HDR2_4_SM_8_P, HDR2_6_SM_7_N, HDR2_8_SM_7_P, HDR2_22_SM_10
     //mux_2 trig1mux ({}, GRACTL[2], TRIG1_bus);
     // mux_2 trig2mux ({}, GRACTL[2], TRIG2_bus);
     //mux_2 trig3mux ({}, GRACTL[2], TRIG3_bus);
+    
+    /* Chipscope stuff */
+    clockone4 clk_divide_mod3(.inClk(CLK_27MHZ_FPGA),.outClk(cs_clk1));
+    
+    DeBounce debounce_mod(.clk(CLK_27MHZ_FPGA), .n_reset(1'b1), .button_in(GPIO_SW_C),.DB_out(center_pressed));
+    
+    
+    chipscope_icon  icon(
+    CONTROL0,
+    CONTROL1);
+	 
+	
+	 
+	chipscope_ila inst0(
+    CONTROL0,
+    cs_clk1,
+    {4'd0, key_scan_L}, //7:0
+    {7'd0, kr1_L}, //15:8
+    {7'd0, o2}, //23:16
+    pot_scan, //31:24
+    {6'd0, pot_scan_2}, //39:32
+    {6'd0,control_input_side_but}, //47:40
+    {1'd0, control_input_pot_scan, control_input_4_1}, //55:48
+    {4'd0, control_output_8_5}, //63:56
+    {4'd0, addr_bus}, //71:64
+    out, //79:72
+    {pot_rel_0, pot_rel_1, ~key_scan_L}, //87:80
+    {4'd0, compare_latch}, //95:88
+    {key_depr,3'd0, compare_latch}, //103:96
+    bin_ctr_pot, //111:104
+    POT0_bus, //119:112
+    POT1_bus); //127:120
+	 
+	 chipscope_ila inst1(
+    CONTROL1,
+    cs_clk1,
+    TRIG0,
+    TRIG1,
+    TRIG2,
+    TRIG3,
+    TRIG4,
+    TRIG5,
+    TRIG6,
+    TRIG7,
+    TRIG8,
+    TRIG9,
+    TRIG10,
+    TRIG11,
+    TRIG12,
+    TRIG13,
+    TRIG14,
+    TRIG15);
+    
+    /* End chipscope stuff */
+    
 
 endmodule
