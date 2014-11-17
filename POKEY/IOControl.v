@@ -7,7 +7,7 @@
 
 `include "muxLib.v"
 
-module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, POTGO, key_scan_L, data_out, pot_rel_0, pot_rel_1, compare_latch, keycode_latch, key_depr, bin_ctr_pot, POT0, POT1, ALLPOT);
+module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, POTGO, side_but, key_scan_L, data_out, pot_rel_0, pot_rel_1, compare_latch, keycode_latch, key_depr, bin_ctr_pot, POT0, POT1, ALLPOT, bottom_latch);
     // key debounce needs FSM?
     // key matrix formed by K0-K5, kr1 reads whether value high or not.
     //parameter NUM_LINES = 228;
@@ -23,6 +23,7 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, POTGO, key_scan_L, 
     input [3:0] addr_bus;
     input sel;
     input [7:0] POTGO;
+    input [1:0] side_but;
     
     output [3:0] key_scan_L; //decide which of the 64 keys to be decoded, decodes 0-63 keys
     output [7:0] data_out; //to output the value of the key that was pressed.
@@ -33,6 +34,7 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, POTGO, key_scan_L, 
 	 output [7:0] bin_ctr_pot;
 	 output [7:0] POT0, POT1;
      output [7:0] ALLPOT;
+     output bottom_latch;
 	 
 
     
@@ -53,10 +55,15 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, POTGO, key_scan_L, 
     reg [7:0] POT0, POT1;
     reg [7:0] pot_scan_reg;
     reg [7:0] ALLPOT_reg, POTGO_reg;
-    reg pot_rel_0_reg, pot_rel_1_reg;
+    reg pot_rel_0_reg, pot_rel_1_reg, bottom_latch_reg;
     integer i;
     
-    
+    assign ALLPOT = ALLPOT_reg;
+    assign key_scan_L = ~bin_ctr_key;
+    assign data_out = sel ? POT0 : {4'd0, keycode_latch};
+    assign pot_rel_0 = pot_rel_0_reg;
+    assign pot_rel_1 = pot_rel_1_reg;
+    assign bottom_latch = bottom_latch_reg;
     
     //need to use FSM to control which states we are in, or actually not really... need FSM to control debounce (to be added later)
     
@@ -98,13 +105,13 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, POTGO, key_scan_L, 
 		  //keyscan stuff
 		  keycode_latch <= 4'd0;
 		  compare_latch <= 4'd0;
+          
+          
+          //trigger stuff
+          bottom_latch_reg <= 1'd0;
      end
      
-     assign ALLPOT = ALLPOT_reg;
-     assign key_scan_L = ~bin_ctr_key;
-     assign data_out = sel ? POT0 : {4'd0, keycode_latch};
-	 assign pot_rel_0 = pot_rel_0_reg;
-	 assign pot_rel_1 = pot_rel_1_reg;
+     
      
      always @ (posedge o2) begin
      
@@ -115,6 +122,12 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, POTGO, key_scan_L, 
         //initialize the counter, starting counting up, check kr1_L for value
         //at certain line values, check kr2_L for value also
         //don't include debounce yet. include debounce? LATER. 
+        /* if (the bit is 1) begin
+            bottom_latch_reg <= side_but[0];
+        end else begin
+            //nothing changes
+        
+        end */
         
         if (kr1_L == 1'd0) begin // there is a button being pressed
 		  
@@ -170,7 +183,7 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, POTGO, key_scan_L, 
         pot_scan_reg <= pot_scan; //may need to put this value in ALLPOT also
 	
         
-        if (POTGO == 4'h0) begin //we need to start over again
+        if (POTGO == 8'h0) begin //we need to start over again
             POTGO_reg <= 8'h00;
             bin_ctr_pot <= 8'd0;
             POT0 <= 8'd0;
