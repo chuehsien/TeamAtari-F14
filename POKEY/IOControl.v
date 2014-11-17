@@ -12,6 +12,11 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
     // key matrix formed by K0-K5, kr1 reads whether value high or not.
     //parameter NUM_LINES = 228;
     
+    /* Need to implement: 
+        - output to wires: KBCODE, POT0, POT1, ALLPOT
+        - 
+    */
+    
     input o2;
     input [7:0] pot_scan; //when pot_scan becomes 1, capture time! 
     input kr1_L, kr2_L;
@@ -163,7 +168,7 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
 	
         
         if (addr_bus == 4'h0) begin //we need to start over again
-				POTGO <= 8'h00;
+            POTGO <= 8'h00;
             bin_ctr_pot <= 8'd0;
             POT0 <= 8'd0;
             POT1 <= 8'd0;
@@ -181,8 +186,14 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
         else if (ctr_pot < 228) begin
             //we are still in the cycle
          
-            if ((pot_scan[0] == 1) && (POT0 == 8'd0)) POT0 <= bin_ctr_pot;
-            if ((pot_scan[1] == 1) && (POT1 == 8'd0)) POT1 <= bin_ctr_pot;
+            if ((pot_scan[0] == 1) && (POT0 == 8'd0)) begin 
+                POT0 <= bin_ctr_pot;
+                ALLPOT[0] <= 1;
+            end
+            if ((pot_scan[1] == 1) && (POT1 == 8'd0)) begin 
+                POT1 <= bin_ctr_pot;
+                ALLPOT[1] <= 1;
+            end
 //            if ((pot_scan[2] == 1) && (POT2 == 8'd0)) POT2 <= bin_ctr_pot;
 //            if ((pot_scan[3] == 1) && (POT3 == 8'd0)) POT3 <= bin_ctr_pot;
 //            if ((pot_scan[4] == 1) && (POT4 == 8'd0)) POT4 <= bin_ctr_pot;

@@ -1,7 +1,8 @@
-module POKEY_top_integration(SKCTL, GRACTL, POTGO, HDR...
+module POKEY_top_integration(CLK_27MHZ_FPGA, SKCTL, GRACTL, POTGO, HDR2_10_DIFF_0_N, HDR2_12_DIFF_0_P, HDR2_14_DIFF_1_N, HDR2_16_DIFF_1_P, HDR2_24_SM_10_P, HDR2_26_SM_11_N,
 
-                            POT0_bus, POT1_bus, ALLPOT, TRIG0_bus, TRIG1_bus, TRIG2_bus, TRIG3_bus, HDR...);
+                            POT0_bus, POT1_bus, ALLPOT, TRIG0_bus, TRIG1_bus, TRIG2_bus, TRIG3_bus, HDR2_2_SM_8_N, HDR2_4_SM_8_P, HDR2_6_SM_7_N, HDR2_8_SM_7_P, HDR2_18_DIFF_2_N, HDR2_20_DIFF_2_P, HDR2_22_SM_10_N, HDR2_28_SM_11_P, HDR2_30_DIFF_3_N);
 
+input CLK_27MHZ_FPGA;
 input [7:0] SKCTL, GRACTL, POTGO;
 input HDR2_10_DIFF_0_N, HDR2_12_DIFF_0_P, HDR2_14_DIFF_1_N, HDR2_16_DIFF_1_P, HDR2_24_SM_10_P, HDR2_26_SM_11_N;
 
@@ -51,20 +52,44 @@ output HDR2_2_SM_8_N, HDR2_4_SM_8_P, HDR2_6_SM_7_N, HDR2_8_SM_7_P, HDR2_18_DIFF_
 
     */
 
+    /* Notes:
+        We need to include functionality for POTGO, ALLPOT, mux-ing the triggers
+    */
+
+    wire[3:0]key_scan_L;
+	wire kr1_L;
+	wire o2;
+	wire[7:0]pot_scan;
+	wire[1:0]pot_scan_2;
+	(* PULLUP="yes" *) wire[3:0]control_input_4_1;
+	wire[3:0]control_output_8_5;
+	wire [2:0] control_input_pot_scan;
+	wire [1:0] control_input_side_but;
+	wire[3:0] addr_bus;
+	wire [7:0] out;
+    
+    wire pot_rel_0, pot_rel_1;
+    wire [3:0] compare_latch;
+    wire [3:0] keycode_latch;
+    wire key_depr;
+    wire [7:0] bin_ctr_pot, POT0, POT1;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+    assign pot_scan = {6'd0, pot_scan_2};
+    assign control_input_4_1 = {HDR2_10_DIFF_0_N, HDR2_12_DIFF_0_P, HDR2_14_DIFF_1_N, HDR2_16_DIFF_1_P};
+    assign control_input_pot_scan = {HDR2_24_SM_10_P, HDR2_26_SM_11_N,HDR2_22_SM_10_N}；
+    assign control_input_side_but = {HDR2_18_DIFF_2_N, HDR2_20_DIFF_2_P};
+    assign {HDR2_2_SM_8_N, HDR2_4_SM_8_P, HDR2_6_SM_7_N, HDR2_8_SM_7_P} = control_output_8_5;
+    assign HDR2_28_SM_11_P = pot_rel_0;
+    assign HDR2_30_DIFF_3_N = pot_rel_1;
+    assign HDR2_22_SM_10_N = 1'b1; //Pin 9: permanently powered
+    
+    clockDivider #(1800) out15(CLK_27MHZ_FPGA,o2);
+    
+    POKEY_controller_interface pokey_ctrl_interface_mod (.key_scan_L(key_scan_L), .control_input({control_input_side_but, control_input_pot_scan, control_input_4_1}), .control_output(control_output_8_5), .kr1_L(kr1_L), .kr2_L(), .pot_scan_2(pot_scan_2));
+    
+    POKEY pokey_mod(.o2(o2), .cs0_L(), .cs1(), .rw_ctrl(), .pot_scan(pot_scan), .kr1_L(kr1_L), .kr2_L(), .addr_bus(addr_bus), .sel(GPIO_SW_E), .key_scan_L(key_scan_L), .irq_L(), .audio_out(), .pot_rel_0(pot_rel_0), .pot_rel_1(pot_rel_1), .compare_latch(compare_latch), .keycode_latch(keycode_latch), .key_depr(key_depr), .bin_ctr_pot(bin_ctr_pot), .POT0(POT0), .POT1(POT1), .data_bus(out), .bclk());
 
 
 
