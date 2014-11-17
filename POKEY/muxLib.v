@@ -11,17 +11,6 @@ module demux (A, sel, Y);
             2'b01: Y = {~A, ~A, A, ~A};
             2'b10: Y = {~A, A, ~A, ~A};
             2'b11: Y = {A, ~A, ~A, ~A};
-				
-				/*2'b00: Y = {A, A, A, A};
-            2'b01: Y = {A, A, A, A};
-            2'b10: Y = {A, A, A, A};
-            2'b11: Y = {A, A, A, A};*/
-				
-				/*2'b00: Y = {~A, ~A, ~A, ~A};
-            2'b01: Y = {~A, ~A, ~A, ~A};
-            2'b10: Y = {~A, ~A, ~A, ~A};
-            2'b11: Y = {~A, ~A, ~A, ~A};*/
-				
             default: Y = {~A, ~A, ~A, ~A};
         endcase
     end
@@ -77,6 +66,24 @@ module mux (Y, sel, A);
             2'b01: A = Y[1];
             2'b10: A = Y[2];
             2'b11: A = Y[3];
+        endcase
+    end
+
+
+endmodule
+
+module mux_2 (Y, sel, A);
+
+    input [1:0] Y;
+    input sel;
+    output A;
+    
+    reg A;
+    
+    always @ (Y or sel) begin
+        case (sel)
+            1'b0: A = Y[0];
+            1'b1: A = Y[1];
         endcase
     end
 
