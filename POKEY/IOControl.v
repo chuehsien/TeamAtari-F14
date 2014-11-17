@@ -144,10 +144,10 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, key_scan_L, data_ou
             //end
         end
 	    //trying this
-	    else begin
-			keycode_latch <= 4'd0; //clear the keycode_latch
-			compare_latch <= 4'd0; //clear the compare_latch		
-	    end
+	    //else begin
+			//keycode_latch <= 4'd0; //clear the keycode_latch
+			//compare_latch <= 4'd0; //clear the compare_latch		
+	    //end
 	    //end trial
             
             

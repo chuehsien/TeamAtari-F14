@@ -200,7 +200,7 @@ endfunction
     parameter width = log2(DIVIDE);
         
     input inClk;
-    (* clock_signal = "yes" *)output out;
+    output out;
 
     
     reg [width:0] counter = 0;

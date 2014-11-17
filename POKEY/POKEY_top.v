@@ -47,7 +47,7 @@ module POKEY_top(CLK_27MHZ_FPGA, HDR1_2, HDR1_4, HDR1_6, HDR1_8, HDR1_20, HDR1_2
 	wire o2;
 	wire[7:0]pot_scan;
 	wire[1:0]pot_scan_2;
-	(* PULLUP="yes" *) wire[3:0]control_input_4_1;
+	wire[3:0]control_input_4_1;
 	wire[3:0]control_output_8_5;
 	wire [2:0] control_input_pot_scan;
 	wire [1:0] control_input_side_but;
@@ -89,7 +89,7 @@ module POKEY_top(CLK_27MHZ_FPGA, HDR1_2, HDR1_4, HDR1_6, HDR1_8, HDR1_20, HDR1_2
 	assign {HDR1_16, HDR1_14, HDR1_12,HDR1_10} = control_output_8_5;
 	assign HDR1_54 = pot_rel_0;
 	assign HDR1_58 = pot_rel_1;
-	assign HDR1_18 = 1'b1; //permanently powered
+	assign HDR1_18 = 1'b1; //permanently powered, controller pin 9
 	assign HDR1_64 = o2;
 	
 	//clockGen179 clk_179(.RST(0),.clk27(CLK_27MHZ_FPGA), .fphi0(testing_wire) ,.phi0(o2),.locked());
