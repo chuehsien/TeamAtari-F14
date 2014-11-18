@@ -2,7 +2,7 @@ module POKEY_top_integration(CLK_27MHZ_FPGA, HDR2_10_DIFF_0_N, HDR2_12_DIFF_0_P,
 										HDR2_18_DIFF_2_N, HDR2_20_DIFF_2_P, HDR2_24_SM_10_P, HDR2_26_SM_11_N, GPIO_SW_C, 
 										GPIO_DIP_SW1, GPIO_DIP_SW2, GPIO_DIP_SW3, GPIO_DIP_SW4,
 
-                            POT0_bus, POT1_bus, ALLPOT_bus, KBCODE_bus, TRIG0_bus, TRIG1_bus, TRIG2_bus, TRIG3_bus, 
+                            POT0_bus, POT1_bus, ALLPOT_bus, KBCODE_bus, SKSTAT_bus, IRQEN_bus, TRIG0_bus, TRIG1_bus, TRIG2_bus, TRIG3_bus, 
 									 HDR2_2_SM_8_N, HDR2_4_SM_8_P, HDR2_6_SM_7_N, HDR2_8_SM_7_P, HDR2_22_SM_10_N, HDR2_28_SM_11_P, 
 									 HDR2_30_DIFF_3_N, 
 									 GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7);
@@ -13,7 +13,7 @@ input HDR2_10_DIFF_0_N, HDR2_12_DIFF_0_P, HDR2_14_DIFF_1_N, HDR2_16_DIFF_1_P,  H
 input GPIO_SW_C, GPIO_DIP_SW1, GPIO_DIP_SW2, GPIO_DIP_SW3, GPIO_DIP_SW4;
 
 
-output [7:0] POT0_bus, POT1_bus, ALLPOT_bus, KBCODE_bus;
+output [7:0] POT0_bus, POT1_bus, ALLPOT_bus, KBCODE_bus, SKSTAT_bus, IRQEN_bus;
 output TRIG0_bus, TRIG1_bus, TRIG2_bus, TRIG3_bus;
 output HDR2_2_SM_8_N, HDR2_4_SM_8_P, HDR2_6_SM_7_N, HDR2_8_SM_7_P, HDR2_22_SM_10_N, HDR2_28_SM_11_P, HDR2_30_DIFF_3_N;
 output GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7;
@@ -87,6 +87,9 @@ output GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, G
     wire trig0_latch, trig1_latch, trig2_latch, trig3_latch;
 	 
 	wire [3:0] KBCODE_4_1;
+    wire [1:0] KBCODE_7_6;
+    
+    wire [7:0] POT0_bus, POT1_bus, ALLPOT_bus, KBCODE_bus, SKSTAT_bus, IRQEN_bus;
     
     
     /* Testing harness - Chipscope */
@@ -113,8 +116,10 @@ output GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, G
     assign HDR2_28_SM_11_P = pot_rel_0;
     assign HDR2_30_DIFF_3_N = pot_rel_1;
     assign HDR2_22_SM_10_N = 1'b1; //Pin 9: permanently powered
-    assign KBCODE_bus = {3'd0, KBCODE_4_1, 1'd0};
-	 
+    assign KBCODE_bus = {KBCODE_7_6, 1'd0, KBCODE_4_1, 1'd0};
+	assign KBCODE_7_6 = control_input_side_but[1] ? 2'b00 : 2'b11;
+    assign SKSTAT_bus = control_input_side_but[1] ? 8'h08 : 8'h00;
+    assign IRQEN_bus = control_input_side_but[1] ? 8'h80 : 8'h00;
 	 
     
     /* Begin testing assignments */
