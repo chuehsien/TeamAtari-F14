@@ -1,19 +1,20 @@
-module trig_latch (side_but, bottom_latch);
+module trig_latch (side_but, en_latch, bottom_latch);
 
     input [1:0] side_but;
-    
+    input en_latch;
     output bottom_latch;
-    
-    
-    reg bottom_latch_reg;
-    
-    assign bottom_latch = bottom_latch_reg;
-    
-    always @ (posedge side_but[0]) begin
-        bottom_latch_reg <= 1'b1;
-    end
 
-
+   FDCE #(
+      .INIT(1'b0) // Initial value of register (1'b0 or 1'b1)
+   ) FDCE_inst (
+      .Q(bottom_latch),      // 1-bit Data output
+      .C(~side_but[0]),      // 1-bit Clock input
+      .CE(en_latch),    // 1-bit Clock enable input
+      .CLR(~en_latch),  // 1-bit Asynchronous clear input
+      .D(1'b1)       // 1-bit Data input
+   );
+  
+  
 
 
 endmodule

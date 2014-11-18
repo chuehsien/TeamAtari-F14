@@ -134,13 +134,13 @@ output GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, G
     POKEY pokey_mod(.o2(o2), .cs0_L(), .cs1(), .rw_ctrl(), .pot_scan(pot_scan), .kr1_L(kr1_L), .kr2_L(), .addr_bus(addr_bus), .sel(GPIO_SW_E), .POTGO(POTGO), .side_but(control_input_side_but), .key_scan_L(key_scan_L), .irq_L(), .audio_out(), .pot_rel_0(pot_rel_0), .pot_rel_1(pot_rel_1), .compare_latch(compare_latch), .keycode_latch(keycode_latch), .key_depr(key_depr), .bin_ctr_pot(bin_ctr_pot), .POT0(POT0_bus), .POT1(POT1_bus), .ALLPOT(ALLPOT_bus), .bottom_latch(), .data_bus(out), .bclk());
 
     //add new module to handle latching of trigger buttons for trig0
-    trig_latch trig_latch_mod_0 (.side_but(control_input_side_but), .bottom_latch(trig0_latch));
+    trig_latch trig_latch_mod_0 (.side_but(control_input_side_but), .en_latch(GRACTL[2]), .bottom_latch(trig0_latch));
 
     /* Need to sort out: SKCTL, GRACTL, how that affects TRIG0-3 */
 
     //latched, unlatched behavior
     
-    mux_2 trig0mux ({trig0_latch,HDR2_20_DIFF_2_P}, GRACTL[2], TRIG0_bus);
+    mux_2 trig0mux ({trig0_latch,~HDR2_20_DIFF_2_P}, GRACTL[2], TRIG0_bus);
     //mux_2 trig1mux ({}, GRACTL[2], TRIG1_bus);
     // mux_2 trig2mux ({}, GRACTL[2], TRIG2_bus);
     //mux_2 trig3mux ({}, GRACTL[2], TRIG3_bus);

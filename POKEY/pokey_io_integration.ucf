@@ -23,6 +23,7 @@ NET  HDR2_14_DIFF_1_N     LOC="R34";   # Bank 11, Vcco=2.5V or 3.3V user selecta
 NET  HDR2_16_DIFF_1_P     LOC="T33";   # Bank 11, Vcco=2.5V or 3.3V user selectable by J20 (SYSMON External Input: VAUXP[12]) J4-16
 NET  HDR2_18_DIFF_2_N     LOC="R32";   # Bank 11, Vcco=2.5V or 3.3V user selectable by J20 (SYSMON External Input: VAUXN[11]) J4-18
 NET  HDR2_20_DIFF_2_P     LOC="R33";   # Bank 11, Vcco=2.5V or 3.3V user selectable by J20 (SYSMON External Input: VAUXP[11]) J4-20
+NET "HDR2_20_DIFF_2_P" CLOCK_DEDICATED_ROUTE = FALSE;
 NET  HDR2_22_SM_10_N      LOC="T34";   # Bank 11, Vcco=2.5V or 3.3V user selectable by J20 (SYSMON External Input: VAUXN[10]) J4-22
 NET  HDR2_24_SM_10_P      LOC="U33";   # Bank 11, Vcco=2.5V or 3.3V user selectable by J20 (SYSMON External Input: VAUXP[10]) J4-24
 NET  HDR2_26_SM_11_N      LOC="U31";   # Bank 11, Vcco=2.5V or 3.3V user selectable by J20 (SYSMON External Input: VAUXN[9]) J4-26
