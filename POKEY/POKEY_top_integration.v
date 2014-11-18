@@ -86,7 +86,7 @@ output GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, G
 
     wire trig0_latch, trig1_latch, trig2_latch, trig3_latch;
 	 
-	 //reg [3:0] KBCODE_4_1;
+	wire [3:0] KBCODE_4_1;
     
     
     /* Testing harness - Chipscope */
@@ -118,12 +118,14 @@ output GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, G
 	 
     
     /* Begin testing assignments */
-    assign {GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7} = keycode_latch;//KBCODE_bus[4:1];
+    assign {GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7} = KBCODE_4_1;//KBCODE_bus[4:1];
     assign {GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3} = {TRIG0_bus, HDR2_18_DIFF_2_N, TRIG2_bus, TRIG3_bus};
     assign POTGO = center_pressed ? 8'h00 : 8'hFF;
     assign GRACTL[2] = GPIO_DIP_SW1;
     assign SKCTL[3:0] = {GPIO_DIP_SW4, GPIO_DIP_SW3, GPIO_DIP_SW2};
     /* End testing assignments */
+    
+    KB_modify kb_modify_mod (.keycode_latch(keycode_latch), .KBCODE_4_1(KBCODE_4_1));
     
     clockDivider #(1800) out15(CLK_27MHZ_FPGA,o2);
     
