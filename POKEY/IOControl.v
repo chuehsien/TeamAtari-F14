@@ -33,8 +33,8 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, POTGO, side_but, ke
 	 output key_depr;
 	 output [7:0] bin_ctr_pot;
 	 output [7:0] POT0, POT1;
-     output [7:0] ALLPOT;
-     output bottom_latch;
+    output [7:0] ALLPOT;
+    output bottom_latch;
 	 
 
     
@@ -108,7 +108,7 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, POTGO, side_but, ke
           
           
           //trigger stuff
-          bottom_latch_reg <= 1'd0;
+          //bottom_latch_reg <= 1'd0;
      end
      
      
@@ -183,8 +183,8 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, POTGO, side_but, ke
         pot_scan_reg <= pot_scan; //may need to put this value in ALLPOT also
 	
         
-        if (POTGO == 8'h0) begin //we need to start over again
-            POTGO_reg <= 8'h00;
+        if (POTGO == 8'h00) begin //we need to start over again
+            POTGO_reg <= POTGO;
             bin_ctr_pot <= 8'd0;
             POT0 <= 8'd0;
             POT1 <= 8'd0;
@@ -227,8 +227,12 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, POTGO, side_but, ke
             pot_rel_0_reg <= 1'd1; //turn on transistor0 to clear the cap
             pot_rel_1_reg <= 1'd1; //turn on transistor1 to clear the cap
             //lock in the max value in the POT* registers
-            POT0 <= 8'd228;
-            POT1 <= 8'd228;
+				/*if (POT0 == 8'd0) begin
+					POT0 <= 8'd228;
+            end
+				if (POT1 == 8'd0) begin
+					POT1 <= 8'd228;
+				end*/
         end
         
      end

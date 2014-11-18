@@ -1,6 +1,11 @@
-module POKEY_top_integration(CLK_27MHZ_FPGA, HDR2_10_DIFF_0_N, HDR2_12_DIFF_0_P, HDR2_14_DIFF_1_N, HDR2_16_DIFF_1_P, HDR2_18_DIFF_2_N, HDR2_20_DIFF_2_P, HDR2_24_SM_10_P, HDR2_26_SM_11_N, GPIO_SW_C, GPIO_DIP_SW1, GPIO_DIP_SW2, GPIO_DIP_SW3, GPIO_DIP_SW4,
+module POKEY_top_integration(CLK_27MHZ_FPGA, HDR2_10_DIFF_0_N, HDR2_12_DIFF_0_P, HDR2_14_DIFF_1_N, HDR2_16_DIFF_1_P, 
+										HDR2_18_DIFF_2_N, HDR2_20_DIFF_2_P, HDR2_24_SM_10_P, HDR2_26_SM_11_N, GPIO_SW_C, 
+										GPIO_DIP_SW1, GPIO_DIP_SW2, GPIO_DIP_SW3, GPIO_DIP_SW4,
 
-                            POT0_bus, POT1_bus, ALLPOT_bus, KBCODE_bus, TRIG0_bus, TRIG1_bus, TRIG2_bus, TRIG3_bus, HDR2_2_SM_8_N, HDR2_4_SM_8_P, HDR2_6_SM_7_N, HDR2_8_SM_7_P, HDR2_22_SM_10_N, HDR2_28_SM_11_P, HDR2_30_DIFF_3_N, GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7);
+                            POT0_bus, POT1_bus, ALLPOT_bus, KBCODE_bus, TRIG0_bus, TRIG1_bus, TRIG2_bus, TRIG3_bus, 
+									 HDR2_2_SM_8_N, HDR2_4_SM_8_P, HDR2_6_SM_7_N, HDR2_8_SM_7_P, HDR2_22_SM_10_N, HDR2_28_SM_11_P, 
+									 HDR2_30_DIFF_3_N, 
+									 GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7);
 
 input CLK_27MHZ_FPGA;
 //input [7:0] SKCTL, GRACTL, POTGO;
@@ -61,12 +66,12 @@ output GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, G
         We need to include functionality for POTGO, ALLPOT, mux-ing the triggers
     */
 
-    wire[3:0]key_scan_L;
+   wire[3:0]key_scan_L;
 	wire kr1_L;
 	wire o2;
 	wire[7:0]pot_scan;
 	wire[1:0]pot_scan_2;
-	(* PULLUP="yes" *) wire[3:0]control_input_4_1;
+	wire[3:0]control_input_4_1;
 	wire[3:0]control_output_8_5;
 	wire [2:0] control_input_pot_scan;
 	wire [1:0] control_input_side_but;
@@ -77,9 +82,11 @@ output GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, G
     wire [3:0] compare_latch;
     wire [3:0] keycode_latch;
     wire key_depr;
-    wire [7:0] bin_ctr_pot, POT0, POT1;
+    wire [7:0] bin_ctr_pot, POT0_bus, POT1_bus;
 
     wire trig0_latch, trig1_latch, trig2_latch, trig3_latch;
+	 
+	 //reg [3:0] KBCODE_4_1;
     
     
     /* Testing harness - Chipscope */
@@ -97,21 +104,21 @@ output GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, G
 	 wire cs_clk1, cs_clk2;
      wire center_pressed;
      wire [7:0] SKCTL, GRACTL, POTGO;
-    /* End testing harness */
-
-
+	  
     assign pot_scan = {6'd0, pot_scan_2};
-    assign control_input_4_1 = {HDR2_10_DIFF_0_N, HDR2_12_DIFF_0_P, HDR2_14_DIFF_1_N, HDR2_16_DIFF_1_P};
-    assign control_input_pot_scan = {HDR2_24_SM_10_P, HDR2_26_SM_11_N,HDR2_22_SM_10_N}；
+	 assign control_input_4_1 = {HDR2_10_DIFF_0_N, HDR2_12_DIFF_0_P, HDR2_14_DIFF_1_N, HDR2_16_DIFF_1_P};
+    assign control_input_pot_scan = {HDR2_24_SM_10_P, HDR2_26_SM_11_N, 1'b1};
     assign control_input_side_but = {HDR2_18_DIFF_2_N, HDR2_20_DIFF_2_P};
     assign {HDR2_2_SM_8_N, HDR2_4_SM_8_P, HDR2_6_SM_7_N, HDR2_8_SM_7_P} = control_output_8_5;
     assign HDR2_28_SM_11_P = pot_rel_0;
     assign HDR2_30_DIFF_3_N = pot_rel_1;
     assign HDR2_22_SM_10_N = 1'b1; //Pin 9: permanently powered
-    assign KBCODE_bus = {3'd0, keycode_latch, 1'd0};
+    assign KBCODE_bus = {3'd0, KBCODE_4_1, 1'd0};
+	 
+	 
     
     /* Begin testing assignments */
-    assign {GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7} = KBCODE_bus[4:1];
+    assign {GPIO_LED_4, GPIO_LED_5, GPIO_LED_6, GPIO_LED_7} = keycode_latch;//KBCODE_bus[4:1];
     assign {GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3} = {TRIG0_bus, HDR2_18_DIFF_2_N, TRIG2_bus, TRIG3_bus};
     assign POTGO = center_pressed ? 8'h00 : 8'hFF;
     assign GRACTL[2] = GPIO_DIP_SW1;
@@ -122,7 +129,7 @@ output GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, G
     
     POKEY_controller_interface pokey_ctrl_interface_mod (.key_scan_L(key_scan_L), .control_input({control_input_side_but, control_input_pot_scan, control_input_4_1}), .control_output(control_output_8_5), .kr1_L(kr1_L), .kr2_L(), .pot_scan_2(pot_scan_2));
     
-    POKEY pokey_mod(.o2(o2), .cs0_L(), .cs1(), .rw_ctrl(), .pot_scan(pot_scan), .kr1_L(kr1_L), .kr2_L(), .addr_bus(addr_bus), .sel(GPIO_SW_E), .POTGO(POTGO), .side_but(control_input_side_but), .key_scan_L(key_scan_L), .irq_L(), .audio_out(), .pot_rel_0(pot_rel_0), .pot_rel_1(pot_rel_1), .compare_latch(compare_latch), .keycode_latch(keycode_latch), .key_depr(key_depr), .bin_ctr_pot(bin_ctr_pot), .POT0(POT0_bus), .POT1(POT1_bus), .ALLPOT(ALLPOT_bus), .bottom_latch(trig0_latch), .data_bus(out), .bclk());
+    POKEY pokey_mod(.o2(o2), .cs0_L(), .cs1(), .rw_ctrl(), .pot_scan(pot_scan), .kr1_L(kr1_L), .kr2_L(), .addr_bus(addr_bus), .sel(GPIO_SW_E), .POTGO(POTGO), .side_but(control_input_side_but), .key_scan_L(key_scan_L), .irq_L(), .audio_out(), .pot_rel_0(pot_rel_0), .pot_rel_1(pot_rel_1), .compare_latch(compare_latch), .keycode_latch(keycode_latch), .key_depr(key_depr), .bin_ctr_pot(bin_ctr_pot), .POT0(POT0_bus), .POT1(POT1_bus), .ALLPOT(ALLPOT_bus), .bottom_latch(), .data_bus(out), .bclk());
 
     //add new module to handle latching of trigger buttons for trig0
     trig_latch trig_latch_mod_0 (.side_but(control_input_side_but), .bottom_latch(trig0_latch));
@@ -163,7 +170,7 @@ output GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, G
     out, //79:72
     {pot_rel_0, pot_rel_1, ~key_scan_L}, //87:80
     {4'd0, compare_latch}, //95:88
-    {key_depr,3'd0, compare_latch}, //103:96
+    {key_depr,3'd0, keycode_latch}, //103:96
     bin_ctr_pot, //111:104
     POT0_bus, //119:112
     POT1_bus); //127:120
@@ -171,9 +178,9 @@ output GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, G
 	 chipscope_ila inst1(
     CONTROL1,
     cs_clk1,
-    TRIG0,
-    TRIG1,
-    TRIG2,
+    POTGO, //7:0
+    GRACTL,//15:8
+    SKCTL,//23:16
     TRIG3,
     TRIG4,
     TRIG5,
