@@ -87,7 +87,7 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
                                controlSigs[`AC_DB] +
                                controlSigs[`P_DB];
             wire DBZ,ALUZ;
-            assign RW = ~controlSigs[`nRW];
+            assign RW = ~((controlSigs[`nRW])&(~RDY));
             wire updateOthers;
             
           
@@ -428,7 +428,7 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             */
             wire [6:0] currT;  
             wire [7:0] extDB_b0;
-            triState8 dor_b(extDB,extDB_b0,(~haltAll) & (controlSigs[`nRW]));
+            triState8 dor_b(extDB,extDB_b0,(~RDY) & (controlSigs[`nRW]));
             
             //dataOutReg          dor(haltAll,phi2,nRW,PCLforDOR,jsrHi,jsrLo, DB, extDB_b0);
             dataOutReg            dor(haltAll,phi2,nRW,DB,extDB_b0);

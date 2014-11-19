@@ -17,7 +17,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
              printDLIST, currState, MSR, loadMSR_both, loadDLIST_both,
              IR_rdy, mode, numBytes, MSRdata, DLISTL, blankCount, addressIn, loadMSRdata, 
              charData, newDLISTptr, loadDLIST, DLISTend, idle, loadMSRstate,
-             addressOut, haltANTIC, rdyANTIC);
+             addressOut, haltANTIC, rdyANTIC, colorSel4, ANTIC_writeNMI);
 
       input Fphi0;
       input LP_L;
@@ -51,7 +51,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
       output [7:0] IR_out;
       output loadIR;
       
-      output reg [7:0] VCOUNT = 8'd0;
+      output [7:0] VCOUNT;
       output reg [7:0] PENH = 8'd0;
       output reg [7:0] PENV = 8'd0;
       output reg [2:0] ANTIC_writeEn = 3'd0;
@@ -85,6 +85,8 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
       output [15:0] addressOut;
       output haltANTIC;
       output rdyANTIC;
+      output [1:0] colorSel4;
+      output ANTIC_writeNMI;
       //endtemp
       
       assign haltANTIC = halt;
@@ -113,6 +115,9 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
       reg ANTIC_initVBI = 1'b0;
       reg VBI_hold = 1'b0;
       reg VBI_hold2 = 1'b0;
+      reg [7:0] WSYNC_prev = 8'd0;
+      reg WSYNC_halt = 1'b0;
+      reg reqBlank = 1'b0;
       
       wire [15:0] addressOut;
       wire [7:0] data;
@@ -135,10 +140,12 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
       wire ANTIC_writeVBI;
       wire ANTIC_writeNMI;
       wire charSingleColor;
+      wire update_WSYNC;
+      //wire blankScreen;
       
       // * Temp:
       assign printDLIST = {DLISTH_bus, DLISTL_bus};
-      assign halt = DMA;
+      assign halt = DMA|WSYNC_halt;
       assign IR_out = IR;
       assign loadDLIST_both = {loadDLISTH, loadDLISTL};
       assign loadMSR_both = {loadMSRH, loadMSRL};
@@ -149,22 +156,23 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
 
       // Module instantiations
       AddressBusRegANTIC addr(.clk(Fphi0), .load(loadAddr), .incr(incrDLIST), .addressIn(addressIn), .addressOut(addressOut));
-      dataTranslate dt(.IR(IR), .IR_rdy(IR_rdy), .Fphi0(Fphi0), .rst(rst), .vblank(vblank), .DMACTL(DMACTL), .MSRdata_rdy(MSRdata_rdy), 
+      dataTranslate dt(.IR(IR), .IR_rdy(IR_rdy), .Fphi0(Fphi0), .rst(rst|(~DLIST_DMA_en)), .vblank(vblank), .DMACTL(DMACTL), .MSRdata_rdy(MSRdata_rdy), 
                        .charData(charData), .colorSel(colorSel), .charLoaded(charLoaded), .MSRdata_reverse(MSRdata_reverse),
-                       .AN(AN), .loadIR(loadIR),
+                       .DMA(DMA), .RDY(RDY), .reqBlank(reqBlank), .AN(AN), .loadIR(loadIR),
                        .loadDLISTL(loadDLISTL), .loadDLISTH(loadDLISTH),
                        .loadPtr(loadPtr), .loadMSRL(loadMSRL), .loadMSRH(loadMSRH), .incrMSR(incrMSR), .loadMSRdata(loadMSRdata),
                        .mode(mode), .numBytes(numBytes), .charMode(charMode), .loadChar(loadChar),
                        .blankCount(blankCount), .loadDLIST(loadDLIST), .ANTIC_writeDLIST(ANTIC_writeDLIST), .numLines(numLines),
                        .width(width), .height(height), .ANTIC_writeDLI(ANTIC_writeDLI), .ANTIC_writeVBI(ANTIC_writeVBI),
                        .ANTIC_writeNMI(ANTIC_writeNMI),
-                       .idle(idle), .loadMSRstate(loadMSRstate), .DLISTend(DLISTend), .charSingleColor(charSingleColor));
+                       .idle(idle), .loadMSRstate(loadMSRstate), .DLISTend(DLISTend), .charSingleColor(charSingleColor),
+                       .colorSel4(colorSel4), .update_WSYNC(update_WSYNC), .VCOUNT(VCOUNT), .blankScreen(blankScreen));
       
       // Update DLISTPTR (JUMP instruction)
       assign DLISTL_bus = loadDLIST ? newDLISTptr[7:0] : (incrDLIST ? DLISTL : 8'hzz);
       assign DLISTH_bus = loadDLIST ? newDLISTptr[15:8] : 8'hzz;
       
-      assign NMIRES_NMIST_bus = ANTIC_writeDLI ? 8'h80 : ((ANTIC_writeVBI|ANTIC_initVBI) ? 8'h40 : 8'hzz);
+      assign NMIRES_NMIST_bus = (ANTIC_writeDLI&(NMIEN[7])) ? 8'h80 : (((ANTIC_writeVBI|ANTIC_initVBI)&(NMIEN[6])) ? 8'h40 : 8'hzz);
       
       // Reverse character bits
       assign data_reverse = {DB[0], DB[1], DB[2], DB[3], DB[4], DB[5], DB[6], DB[7]};
@@ -176,7 +184,6 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
         
         // * TODO: Add all reset vectors (based on initialization vectors
         if (rst) begin
-          VCOUNT <= 8'd0;
           PENH <= 8'd0;
           PENV <= 8'd0;
           ANTIC_writeEn <= 3'd0;
@@ -191,35 +198,46 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
           newDLISTptr <= 16'd0;
           IR <= 8'd0;
           init <= 1'b0;
-          VBI_count <= 14'd0;
+          VBI_count <= 16'd0;
           ANTIC_initVBI <= 1'b0;
           NMI_L <= 1'b1;
           VBI_hold <= 1'b0;
           VBI_hold2 <= 1'b0;
           nextState <= `FSMinit;
+          WSYNC_prev <= 8'd0;
+          WSYNC_halt <= 1'b0;
+          //reqBlank <= 1'b0;
         end
         
         // Wait for CPU initialization to complete
         else begin
-        
-          if (~init) begin
+          
+          if (~init) begin //(init&blankScreen)) begin
             if (DLIST_DMA_en) begin
               init <= 1'b1;
               ANTIC_writeEn <= 3'd0;
               ANTIC_initVBI <= 1'b0;
               NMI_L <= 1'b1;
               VBI_hold <= 1'b0;
+              VBI_hold2 <= 1'b0;
+              //reqBlank <= 1'b1;
             end
             
             // Initialization VBI
             if (VBI_count == 16'd65535) begin
-              ANTIC_writeEn <= 3'd6;
-              ANTIC_initVBI <= 1'b1;
-              VBI_count <= 16'd0;
-              NMI_L <= 1'b1;
-              VBI_hold <= 1'b1;
+              if (NMIEN[6]) begin
+                ANTIC_writeEn <= 3'd6;
+                ANTIC_initVBI <= 1'b1;
+                VBI_count <= 16'd0;
+                NMI_L <= 1'b1;
+                VBI_hold <= 1'b1;
+              end
+              else
+                VBI_count <= 16'd0;
             end
             else if (VBI_hold) begin
+              ANTIC_writeEn <= 3'd0;
+              ANTIC_initVBI <= 1'b0;
               NMI_L <= 1'b0;
               VBI_hold <= 1'b0;
               VBI_hold2 <= 1'b1;
@@ -229,8 +247,6 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
               VBI_hold2 <= 1'b0;
             end
             else begin
-              ANTIC_writeEn <= 3'd0;
-              ANTIC_initVBI <= 1'b0;
               VBI_count <= VBI_count + 16'd1;
               NMI_L <= 1'b1;
               VBI_hold <= 1'b0;
@@ -242,20 +258,64 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
           
             // * TODO: Add vertical blank occurrence signal to dataTranslate module
             
-            if (~(DMA&(~RDY))) begin
+            if (~DLIST_DMA_en) begin
+              PENH <= 8'd0;
+              PENV <= 8'd0;
+              ANTIC_writeEn <= 3'd0;
+              DMA <= `DMA_off;
+              loadAddr <= 1'b0;
+              IR_rdy <= 1'b0;
+              MSRdata_rdy <= 1'b0;
+              charLoaded <= 1'b0;
+              charByte <= 8'd0;
+              incrDLIST <= 1'b0;
+              loadMSRdata_hold <= 1'b0;
+              newDLISTptr <= 16'd0;
+              IR <= 8'd0;
+              init <= 1'b0;
+              VBI_count <= 16'd0;
+              ANTIC_initVBI <= 1'b0;
+              NMI_L <= 1'b1;
+              VBI_hold <= 1'b0;
+              VBI_hold2 <= 1'b0;
+              nextState <= `FSMinit;
+              WSYNC_prev <= WSYNC;
+              WSYNC_halt <= 1'b0;
+              //reqBlank <= 1'b0;
+            end
             
-              if (ANTIC_writeDLIST)
+            else if (~(DMA&(~RDY))) begin
+            
+              ANTIC_writeEn <= 3'd0;
+
+              if (update_WSYNC)
+                WSYNC_prev <= WSYNC;
+                
+              if (WSYNC_prev != WSYNC)
+                WSYNC_halt <= 1'b1;
+              else
+                WSYNC_halt <= 1'b0;
+
+              if (ANTIC_writeDLIST&ANTIC_writeNMI) begin
+                ANTIC_writeEn <= 3'd5;
+                VBI_hold <= 1'b1;
+              end
+              else if (ANTIC_writeDLIST) begin
                 ANTIC_writeEn <= 3'd2;
+              end
               else if (ANTIC_writeNMI) begin
                 ANTIC_writeEn <= 3'd6;
                 VBI_hold <= 1'b1;
               end
-              else
-                ANTIC_writeEn <= 3'd0;
               
               if (VBI_hold) begin
                 NMI_L <= 1'b0;
                 VBI_hold <= 1'b0;
+                VBI_hold2 <= 1'b1;
+              end
+              else if (VBI_hold2) begin
+                NMI_L <= 1'b0;
+                VBI_hold2 <= 1'b0;
               end
               else
                 NMI_L <= 1'b1;
@@ -337,6 +397,11 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
                       if (~loadPtr) begin
                         incrDLIST <= 1'b1;
                         DLISTL <= DLISTL + 8'd1;
+                        if (ANTIC_writeNMI) begin
+                          ANTIC_writeEn <= 3'd4;
+                          VBI_hold <= 1'b1;
+                        end
+                        else
                         ANTIC_writeEn <= 3'd1;
                       end
                       IR <= DB;

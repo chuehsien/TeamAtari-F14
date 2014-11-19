@@ -16,7 +16,7 @@
 `include "Graphics/GTIA.v"
 `include "Graphics/DVI.v"
 
-`define DIV 8'd4 
+`define DIV 8'd4
 
 module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO_SW_W,
                  GPIO_DIP_SW1, GPIO_DIP_SW2, GPIO_DIP_SW3, GPIO_DIP_SW4,
@@ -235,6 +235,10 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
     wire haltANTIC;
     wire rdyANTIC;
     wire [7:0] MSRdata;
+    wire [1:0] colorSel4;
+    wire [7:0] colorData;
+    wire [23:0] RGB;
+    wire ANTIC_writeNMI;
 
     // Module instantiation
     ANTIC antic(.Fphi0(Fphi0), .LP_L(), .RW(), .rst(rst), .vblank(vblank), .hblank(hblank), .DMACTL(DMACTL), .CHACTL(CHACTL),
@@ -247,7 +251,8 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
                 .loadMSR_both(), .IR_rdy(IR_rdy), .mode(mode), .numBytes(), .MSRdata(MSRdata), 
                 .DLISTL(DLISTL), .blankCount(), .addressIn(), .loadMSRdata(),
                 .charData(), .newDLISTptr(), .loadDLIST(), .DLISTend(DLISTend), 
-                .idle(idle), .loadMSRstate(loadMSRstate), .addressOut(addressOut), .haltANTIC(haltANTIC), .rdyANTIC(rdyANTIC));
+                .idle(idle), .loadMSRstate(loadMSRstate), .addressOut(addressOut), .haltANTIC(haltANTIC), .rdyANTIC(rdyANTIC),
+                .colorSel4(colorSel4), .ANTIC_writeNMI(ANTIC_writeNMI));
     
     GTIA gtia(.address(), .AN(AN), .CS(), .DEL(), .OSC(), .RW(), .trigger(), .Fphi0(Fphi0), .rst(rst), .charMode(charMode),
               .DLISTend(DLISTend), .numLines(numLines), .width(width), .height(height),
@@ -264,7 +269,8 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
               .CONSPK_CONSOL_bus(CONSPK_CONSOL_bus),
               .COL(), .CSYNC(), .phi2(phi2), .HALT(), .L(),
               .dBuf_data(dBuf_data), .dBuf_addr(dBuf_addr), .dBuf_writeEn(dBuf_writeEn),
-              .vblank(vblank), .hblank(hblank), .x(x), .y(y));
+              .vblank(vblank), .hblank(hblank), .x(x), .y(y),
+              .colorData(colorData), .RGB(RGB));
                  
 
     displayBlockMem dbm(.clka(Fphi0), .wea(dBuf_writeEn), .addra(dBuf_addr), .dina(dBuf_data), .clkb(clk_DVI),
@@ -327,6 +333,8 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
     wire [15:0] cartROMadd;
     assign cartROMadd = (memAdd - 16'h4000);
     memDefender memD(.clka(memReadClock),.addra(cartROMadd[14:0]),.douta(data_CART));
+    
+    wire [7:0] NMIRES_NMIST, VCOUNT_val; //
 
     memoryMap map(.addr_RAM(addr_RAM),.addr_BIOS(addr_BIOS),.addr_CART(addr_CART),
                   .Fclk(memReadClock), .clk(memReadClock), .rst(rst), .CPU_writeEn(~RW), .CPU_addr(memAdd), 
@@ -349,7 +357,8 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
                   .COLPM0_TRIG2_bus(COLPM0_TRIG2_bus), .COLPM1_TRIG3_bus(COLPM1_TRIG3_bus), .COLPM2_PAL_bus(COLPM2_PAL_bus),
                   .CONSPK_CONSOL_bus(CONSPK_CONSOL_bus), .DMACTL(DMACTL), .CHACTL(CHACTL), .HSCROL(HSCROL), .VSCROL(VSCROL), .PMBASE(PMBASE),
                   .CHBASE(CHBASE), .WSYNC(WSYNC), .NMIEN(NMIEN), .COLPM3(COLPM3), .COLPF0(COLPF0), .COLPF1(COLPF1), .COLPF2(COLPF2),
-                  .COLPF3(COLPF3), .COLBK(COLBK), .PRIOR(PRIOR), .VDELAY(VDELAY), .GRACTL(GRACTL), .HITCLR(HITCLR));
+                  .COLPF3(COLPF3), .COLBK(COLBK), .PRIOR(PRIOR), .VDELAY(VDELAY), .GRACTL(GRACTL), .HITCLR(HITCLR),
+                  .NMIRES_NMIST(NMIRES_NMIST), .VCOUNT(VCOUNT_val));
 
 
     /*-------------------------------------------------------------*/
@@ -422,7 +431,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
     {RW,activeInt,RDY,IRQ_L,NMI_L,RES_L},
     Accum,
     Xreg,
-    {6'd0,HALT,haltAll},
+    VCOUNT_val,
     OP,
     Yreg,
     SRcontents);
@@ -434,19 +443,19 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
       .TRIG0(AN), // IN BUS [3:0]
       .TRIG1(IR), // IN BUS [7:0]
       .TRIG2(currStateANTIC), // IN BUS [1:0]
-      .TRIG3(mode), // IN BUS [3:0]
+      .TRIG3({1'b0, ANTIC_writeEn}), // IN BUS [3:0]
       .TRIG4(dlist), // IN BUS [15:0]
       .TRIG5(dBuf_addr), // IN BUS [15:0]
       .TRIG6(dBuf_data), // IN BUS [31:0]
       .TRIG7(dBuf_writeEn), // IN BUS [0:0]
       .TRIG8(x), // IN BUS [8:0]
-      .TRIG9(y), // IN BUS [7:0]
+      .TRIG9(NMIRES_NMIST_bus), // IN BUS [7:0]
       .TRIG10(Fphi0), // IN BUS [0:0]
       .TRIG11(IR_rdy), // IN BUS [0:0]
-      .TRIG12(MSRdata),
+      .TRIG12(VCOUNT_val),
       .TRIG13(address),
       .TRIG14(extDB),
-      .TRIG15(haltANTIC)
+      .TRIG15(ANTIC_writeNMI)
     );
 
     // extra ila for use...

@@ -15,7 +15,7 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
             COLPM2_PAL_bus, CONSPK_CONSOL_bus,
             COL, CSYNC, phi2, HALT, L,
             dBuf_data, dBuf_addr, dBuf_writeEn,
-            vblank, hblank, x, y);
+            vblank, hblank, x, y, colorData, RGB);
 
       // Control inputs
       input [4:0] address;
@@ -90,6 +90,8 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
       output reg hblank = 1'b0;
       output [8:0] x;
       output [7:0] y;
+      output [7:0] colorData;//
+      output [23:0] RGB;//
       
       reg [1:0] clkdiv = 2'd0;
       reg [8:0] x = 9'd0; // 320 pixels
