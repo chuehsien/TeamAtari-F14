@@ -82,7 +82,7 @@ output GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, G
     wire [3:0] compare_latch;
     wire [3:0] keycode_latch;
     wire key_depr;
-    wire [7:0] bin_ctr_pot, POT0_bus, POT1_bus;
+    wire [7:0] bin_ctr_pot;
 
     wire trig0_latch, trig1_latch, trig2_latch, trig3_latch;
 	 
