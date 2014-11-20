@@ -87,15 +87,16 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
                                controlSigs[`AC_DB] +
                                controlSigs[`P_DB];
             wire DBZ,ALUZ;
-            assign RW = ~((controlSigs[`nRW])&(~RDY));
+                        //clock
+            wire phi1,phi2;
+            wire haltAll;
+            clockGen clock(HALT,phi0_in,fastClk,haltAll,RDY,phi1,phi2,phi1_out,phi2_out);
+            
+            assign RW = ~((controlSigs[`nRW])&(~RDY)&phi2);
             wire updateOthers;
             
           
-            //clock
-            wire phi1,phi2;
-            wire haltAll;
-			clockGen clock(HALT,phi0_in,fastClk,haltAll,RDY,phi1,phi2,phi1_out,phi2_out);
-            
+
             wire phi1_1,phi1_7;
              wire DBZ_latch;
             // internal signal latcher - used to latch signals across the phi1 uptick transition.

@@ -67,9 +67,18 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
   wire [7:0] extABH,extABL,extDB; 
   wire [7:0] extABH_b,extABL_b,extDB_b;
   
-  wire phi0_in, fphi0;
-  clockGen179 #(.div(`DIV)) makeclock(GPIO_SW_S,CLK_27MHZ_FPGA,phi0_in,fphi0,locked);
+  (* clock_signal = "yes" *) wire phi0_in, fphi0,phi0_inX2, fphi0X2;
+  clockGen179 #(.div(`DIV)) makeclock(GPIO_SW_S,CLK_27MHZ_FPGA,phi0_inX2,fphi0X2,locked);
    
+   wire phi0_in_b,fphi0_b;
+   
+
+    clockHalf out179(phi0_inX2,phi0_in_b);
+    clockHalf out358(fphi0X2,fphi0_b);
+       
+    BUFG makephi0(phi0_in,phi0_in_b);
+    BUFG makefphi0(fphi0,fphi0_b);
+    
     (* clock_signal = "yes" *) wire clk64,clk16,clk15,clk60;
 
     clockDivider #(422) out64(CLK_27MHZ_FPGA,clk64);
@@ -311,11 +320,16 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
     wire audio1,audio2,audio3,audio4;
     wire [3:0] vol1,vol2,vol3,vol4;
     wire [7:0] POT0_BUS, POT1_BUS, POT2_BUS, POT3_BUS, POT4_BUS, POT5_BUS, POT6_BUS, POT7_BUS, ALLPOT_BUS, KBCODE_BUS, RANDOM_BUS;
-    
+    /*
     assign HDR1_50 = audio1;
     assign HDR1_52 = audio2;
     assign HDR1_54 = audio3;
     assign HDR1_56 = audio4;
+   */
+    assign HDR1_50 = phi0_inX2;
+    assign HDR1_52 = ~fphi0X2;
+    assign HDR1_54 = phi0_in;
+    assign HDR1_56 = fphi0;
     
     assign {HDR2_34_SM_15_N, HDR2_36_SM_15_P, HDR2_38_SM_6_N, HDR2_40_SM_6_P} = vol1;
     assign {HDR2_48_SM_12_P,HDR2_46_SM_12_N,HDR2_44_SM_14_P,HDR2_42_SM_14_N} = vol2;
@@ -335,9 +349,17 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
     memDefender memD(.clka(memReadClock),.addra(cartROMadd[14:0]),.douta(data_CART));
     
     wire [7:0] NMIRES_NMIST, VCOUNT_val; //
+    wire [7:0] data_in_b;
+    wire write_RAM;
+    
+    
 
-    memoryMap map(.addr_RAM(addr_RAM),.addr_BIOS(addr_BIOS),.addr_CART(addr_CART),
-                  .Fclk(memReadClock), .clk(memReadClock), .rst(rst), .CPU_writeEn(~RW), .CPU_addr(memAdd), 
+
+
+    memoryMap map(.write_RAM(write_RAM),.data_in_b(data_in_b),
+
+                  .addr_RAM(addr_RAM),.addr_BIOS(addr_BIOS),.addr_CART(addr_CART),
+                  .latchClk(fphi0X2), .Fclk(fphi0), .clk(fphi0), .rst(rst), .CPU_writeEn(~RW), .CPU_addr(memAdd), 
                   .data_CART_out(data_CART), .CPU_data(extDB),
                   .AUDF1(AUDF1), .AUDC1(AUDC1), .AUDF2(AUDF2), .AUDC2(AUDC2), 
                   .AUDF3(AUDF3), .AUDC3(AUDC3), .AUDF4(AUDF4), .AUDC4(AUDC4), .AUDCTL(AUDCTL),
@@ -396,7 +418,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
                 .activeInt(activeInt),.currT(currT),
                 
                 .DB(DB),.SB(SB),.ADH(ADH),.ADL(ADL),
-                .HALT(HALT),.IRQ_L(IRQ_L), .NMI_L(NMI_L), .RES_L(RES_L), .SO(SO), .phi0_in(phi0_in),.fastClk(fastClk),
+                .HALT(HALT),.IRQ_L(IRQ_L), .NMI_L(NMI_L), .RES_L(RES_L), .SO(SO), .phi0_in(phi0_in),.fastClk(fphi0),
                 .RDY(RDY),.extDB(extDB), .phi1_out(phi1_out), .phi2_out(phi2_out),.SYNC(SYNC), .extABH(extABH),.extABL(extABL),  .RW(RW),
                 .Accum(Accum),.Xreg(Xreg),.Yreg(Yreg));
            
@@ -431,10 +453,10 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
     {RW,activeInt,RDY,IRQ_L,NMI_L,RES_L},
     Accum,
     Xreg,
-    VCOUNT_val,
+    {addr_RAM,write_RAM,5'd0,fphi0},
     OP,
     Yreg,
-    SRcontents);
+    data_CART2);
 
     
     chipscope_ila_graphics ila2 (
@@ -449,10 +471,10 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
       .TRIG6(dBuf_data), // IN BUS [31:0]
       .TRIG7(dBuf_writeEn), // IN BUS [0:0]
       .TRIG8(x), // IN BUS [8:0]
-      .TRIG9(NMIRES_NMIST_bus), // IN BUS [7:0]
+      .TRIG9(y), // IN BUS [7:0]
       .TRIG10(Fphi0), // IN BUS [0:0]
       .TRIG11(IR_rdy), // IN BUS [0:0]
-      .TRIG12(VCOUNT_val),
+      .TRIG12(MSRdata),
       .TRIG13(address),
       .TRIG14(extDB),
       .TRIG15(ANTIC_writeNMI)

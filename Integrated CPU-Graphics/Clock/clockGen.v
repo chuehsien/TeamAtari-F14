@@ -11,8 +11,8 @@ module clockGen179(RST,clk27,phi0,fphi0,locked);
    //produces 57.6MHz
     clockDiv try0(.CLKIN1_IN(clk27), .RST_IN(RST), .CLK0_OUT(clk576_phi0),.CLK2X_OUT(clk1052_fphi0), .LOCKED_OUT(locked));
 
-    clockoneX #(.width(div+1)) phi0make(clk576_phi0,clk576_phi0_b);
-    clockoneX #(.width(div+1)) fphi0make(clk1052_fphi0,clk1052_fphi0_b); 
+    clockoneX #(.width(div)) phi0make(clk576_phi0,clk576_phi0_b);
+    clockoneX #(.width(div)) fphi0make(clk1052_fphi0,clk1052_fphi0_b); 
 /*
     clockone32 phi0make(clk576_phi0,clk576_phi0_b);
     clockone32 fphi0make(clk1052_fphi0,clk1052_fphi0_b);
@@ -88,7 +88,7 @@ module clockGen50(CLK100,out);
 endmodule
 
 
-
+/*
 module clockHalf(inClk,outClk);
     input inClk;
     output reg outClk = 1'b0;
@@ -98,6 +98,21 @@ module clockHalf(inClk,outClk);
     end
     
 endmodule
+*/
+
+module clockHalf(inClk,outClk);
+    input inClk;
+    output outClk;
+    
+    reg count;
+    
+    always @ (posedge inClk) begin
+        count <= count + 1;
+    end
+    
+    assign outClk = count;
+    
+endmodule  
 
 module clockone4(inClk,outClk);
     input inClk;
@@ -291,7 +306,7 @@ endfunction
     reg outClk = 1'b0;
     
     always @ (negedge inClk) begin
-            if (en) outClk <= ~outClk;
+            if (en) outClk <= (outClk) ? 1'b0 : 1'b1;
             else outClk <= outClk;
     end
 

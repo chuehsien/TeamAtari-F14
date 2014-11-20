@@ -4,8 +4,13 @@
 
 
 
-module memoryMap(addr_RAM,addr_BIOS,addr_CART,
-                Fclk, clk, rst, CPU_writeEn, ANTIC_writeEn, GTIA_writeEn, CPU_addr, 
+module memoryMap(
+
+
+                write_RAM,data_in_b,
+                             
+                addr_RAM,addr_BIOS,addr_CART,
+                latchClk,Fclk, clk, rst, CPU_writeEn, ANTIC_writeEn, GTIA_writeEn, CPU_addr, 
 
                  VCOUNT_in, PENH_in, PENV_in,
                  POT0_BUS, POT1_BUS, POT2_BUS, POT3_BUS, POT4_BUS, POT5_BUS, POT6_BUS, POT7_BUS, ALLPOT_BUS, KBCODE_BUS, RANDOM_BUS, SERIN_BUS, IRQST_BUS, SKSTAT_BUS,
@@ -25,10 +30,12 @@ module memoryMap(addr_RAM,addr_BIOS,addr_CART,
                  
                  NMIRES_NMIST, VCOUNT
                  );
+  output write_RAM;
+  output [7:0] data_in_b;
   
   output addr_RAM,addr_BIOS,addr_CART;
   // Control signals
-  input Fclk;
+  input latchClk,Fclk;
   input clk;
   input rst;
   input CPU_writeEn;
@@ -194,6 +201,13 @@ module memoryMap(addr_RAM,addr_BIOS,addr_CART,
   wire addr_RAM,addr_BIOS,addr_CART;
   wire write_RAM, write_reg;
   
+  wire write_RAM_latch, write_reg_latch;
+  sigLatchWclk latchRAMwrites(~clk,~latchClk,write_RAM_latch,write_RAM);
+  sigLatchWclk latchregwrites(~clk,~latchClk,write_reg_latch,write_reg);
+   
+  //assign write_RAM = write_RAM_latch;
+  //assign write_reg = write_reg_latch;
+  
   wire [15:0] CPU_addr_b;
   wire [7:0] data_RAM_out_b,data_BIOS_out_b, data_in_b;
   buf memB0[7:0] (data_RAM_out, data_RAM_out_b);
@@ -223,7 +237,7 @@ module memoryMap(addr_RAM,addr_BIOS,addr_CART,
   
   addrCheck ac(.addr(CPU_addr), .addr_RAM(addr_RAM),.addr_BIOS(addr_BIOS),.addr_CART(addr_CART));
   
-  writeMux wm(.addr_RAM(addr_RAM), .writeEn(CPU_writeEn), .write_RAM(write_RAM), .write_reg(write_reg));
+  writeMux wm(.addr_RAM(addr_RAM), .writeEn(CPU_writeEn), .write_RAM(write_RAM_latch), .write_reg(write_reg_latch));
 
 
   always @(posedge Fclk or posedge rst) begin
