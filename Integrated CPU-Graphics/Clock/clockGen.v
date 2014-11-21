@@ -1,26 +1,25 @@
-module clockGen179(RST,clk27,phi0,fphi0,locked);
+module clockGen179(RST,clk27,phi0,fphi0,fphi0x2,locked);
     parameter div = 6;
     input RST,clk27;
-    (* clock_signal = "yes" *)output phi0,fphi0;
+    (* clock_signal = "yes" *)output phi0,fphi0,fphi0x2;
     output locked;
 
-    wire clk576_phi0,clk1052_fphi0,clk576_phi1;
-    wire clk576_phi0_b,clk1052_fphi0_b,clk576_phi1_b;
+    wire clk576_phi0,clk1052_fphi0;
+    wire clk576_phi0_b,clk1052_fphi0_b,clk2104_fphi0_b;
 
 
    //produces 57.6MHz
     clockDiv try0(.CLKIN1_IN(clk27), .RST_IN(RST), .CLK0_OUT(clk576_phi0),.CLK2X_OUT(clk1052_fphi0), .LOCKED_OUT(locked));
 
+
+    
     clockoneX #(.width(div+1)) phi0make(clk576_phi0,clk576_phi0_b);
     clockoneX #(.width(div+1)) fphi0make(clk1052_fphi0,clk1052_fphi0_b); 
-/*
-    clockone32 phi0make(clk576_phi0,clk576_phi0_b);
-    clockone32 fphi0make(clk1052_fphi0,clk1052_fphi0_b);
-    clockone32 phi1make(clk576_phi1,clk576_phi1_b); 
-*/
+    clockoneX #(.width(div)) fphi0x2make(clk1052_fphi0,clk2104_fphi0_b); 
 
     BUFG phi0out(phi0,clk576_phi0_b);
     BUFG fphi0out(fphi0,clk1052_fphi0_b);
+    BUFG fphi0x2out(fphi0x2,clk2104_fphi0_b);
  
 endmodule
 
@@ -88,7 +87,7 @@ module clockGen50(CLK100,out);
 endmodule
 
 
-
+/*
 module clockHalf(inClk,outClk);
     input inClk;
     output reg outClk = 1'b0;
@@ -98,6 +97,21 @@ module clockHalf(inClk,outClk);
     end
     
 endmodule
+*/
+
+module clockHalf(inClk,outClk);
+    input inClk;
+    output outClk;
+    
+    reg count;
+    
+    always @ (posedge inClk) begin
+        count <= count + 1;
+    end
+    
+    assign outClk = count;
+    
+endmodule  
 
 module clockone4(inClk,outClk);
     input inClk;
@@ -291,7 +305,7 @@ endfunction
     reg outClk = 1'b0;
     
     always @ (negedge inClk) begin
-            if (en) outClk <= ~outClk;
+            if (en) outClk <= (outClk) ? 1'b0 : 1'b1;
             else outClk <= outClk;
     end
 

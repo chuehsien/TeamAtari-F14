@@ -59,7 +59,7 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             trireg [7:0]  DB, ADL, ADH, SB;
 `endif            
             //control sigs
-            wire [79:0] controlSigs;
+            wire [66:0] controlSigs;
             wire rstAll;
             
             wire [2:0] adhDrivers,sbDrivers,dbDrivers;
@@ -87,15 +87,16 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
                                controlSigs[`AC_DB] +
                                controlSigs[`P_DB];
             wire DBZ,ALUZ;
-            assign RW = ~controlSigs[`nRW];
+                        //clock
+            wire phi1,phi2;
+            wire haltAll;
+            clockGen clock(HALT,phi0_in,fastClk,haltAll,RDY,phi1,phi2,phi1_out,phi2_out);
+            
+            assign RW = ~((controlSigs[`nRW])&(~RDY)&phi2);
             wire updateOthers;
             
           
-            //clock
-            wire phi1,phi2;
-            wire haltAll;
-			clockGen clock(HALT,phi0_in,fastClk,haltAll,RDY,phi1,phi2,phi1_out,phi2_out);
-            
+
             wire phi1_1,phi1_7;
              wire DBZ_latch;
             // internal signal latcher - used to latch signals across the phi1 uptick transition.
@@ -366,7 +367,7 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             
             //store db/alu status during phi2, and update SR in phi1. applicable for TAY,TYA etc. only.
             wire [7:0] storedDB;
-            FlipFlop8   store_db(phi2,DB,STORE_DB,storedDB);
+            FlipFlop8   store_db(phi2,DB,(STORE_DB&~haltAll),storedDB);
             
             
             assign DBZ  = ~(|DBforSR);
@@ -428,7 +429,7 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             */
             wire [6:0] currT;  
             wire [7:0] extDB_b0;
-            triState8 dor_b(extDB,extDB_b0,(~haltAll) & (controlSigs[`nRW]));
+            triState8 dor_b(extDB,extDB_b0,(~RDY) & (controlSigs[`nRW]));
             
             //dataOutReg          dor(haltAll,phi2,nRW,PCLforDOR,jsrHi,jsrLo, DB, extDB_b0);
             dataOutReg            dor(haltAll,phi2,nRW,DB,extDB_b0);
