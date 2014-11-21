@@ -311,7 +311,7 @@ module eDBlatch(phi2, haltAll, extDB, latchRdy,eDB_latch);
         latchRdy <= 1'b1;
       end
       else if (~haltAll & latchRdy) begin
-        eDB_latch <= 8'ha5; //dummy value
+        eDB_latch <= 8'h00; //dummy value
         latchRdy <= 1'b0;
       end
       else eDB_latch <= eDB_latch;
@@ -662,8 +662,16 @@ module statusReg(phi1_1,phi1_7,haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB
     wire phi1_7,phi1_6,phi1_3,phi1_2,phi1_1,phi1_0;
  
     always @ (posedge phi1) begin
-    
-        begin
+		
+		if (haltAll) begin
+		      currVal7 <= currVal7;
+            currVal6 <= currVal6;
+            currVal3 <= currVal3;
+            currVal2 <= currVal2;
+            currVal1 <= currVal1;
+            currVal0 <= currVal0;
+		end
+       else begin
             currVal7 <= phi1_7;
             currVal6 <= phi1_6;
             currVal3 <= phi1_3;

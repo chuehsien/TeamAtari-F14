@@ -75,7 +75,7 @@
 `define nRW         7'd65
 `define DEC_PC      7'd66
 
-`define emptyControl 65'd0
+`define emptyControl 67'd0
 /*
 `define DBO_C 6'd49
 `define IR5_C 6'd50

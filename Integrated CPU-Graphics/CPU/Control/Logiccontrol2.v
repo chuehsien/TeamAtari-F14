@@ -33,7 +33,7 @@ module randomLogic2(updateOthers,T,OP,prevOP,phi1,phi2,activeInt,dir,carry,statu
          assign updateDBZ = phi1 & (T==`Ttwo) & (prevOP == `BIT_zp || prevOP == `BIT_abs); */
 
     always @ (*) begin
-        control = 66'd0;
+        control = 67'd0;
         //getControls(T,OP,phi1,phi2,activeInt,carry,statusC,decMode,control);
         getControls(phi1,phi2,dir,carry,statusC,decMode,activeInt,OP,T,control);
         //settle prevOP

@@ -202,8 +202,8 @@ module memoryMap(
   wire write_RAM, write_reg;
   
   wire write_RAM_latch, write_reg_latch;
-  sigLatchWclk latchRAMwrites(~clk,~latchClk,write_RAM_latch,write_RAM);
-  sigLatchWclk latchregwrites(~clk,~latchClk,write_reg_latch,write_reg);
+  sigLatchWclk latchRAMwrites(~clk,latchClk,write_RAM_latch,write_RAM);
+  sigLatchWclk latchregwrites(~clk,latchClk,write_reg_latch,write_reg);
    
   //assign write_RAM = write_RAM_latch;
   //assign write_reg = write_reg_latch;
