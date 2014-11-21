@@ -129,55 +129,62 @@ module IOControl (o2, pot_scan, kr1_L, kr2_L, addr_bus, sel, POTGO, side_but, ke
         
         end */
         
-        if (kr1_L == 1'd0) begin // there is a button being pressed
+         if (kr1_L == 1'd0) begin // there is a button being pressed
 		  
-			if (key_depr == 1'b0) begin //key has not been depressed, first time kr1_L went low
-				compare_latch <= bin_ctr_key;
-				key_depr <= 1'b1;
+				if (key_depr == 1'b0) begin 
+					//first time in
+					keycode_latch <= keycode_latch;
+					compare_latch <= bin_ctr_key;
+					key_depr <= 1'b1;
+				end
+				else if (key_depr) begin
+					//2nd time in
+					
+					if (compare_latch == bin_ctr_key) begin
+						//same key
+						keycode_latch <= compare_latch;
+						compare_latch <= compare_latch;
+						key_depr <= 1'b1;
+					end
+					else begin
+						//different key, do nothing
+						keycode_latch <= keycode_latch;
+						compare_latch <= compare_latch;
+						key_depr <= key_depr;
+					end
+				end
+
+				
 			end
-			else if ((keycode_latch != compare_latch) && (compare_latch == bin_ctr_key)) begin //key depressed has been noted, and the key is still being depressed, but value not recorded yet
-				keycode_latch <= compare_latch; //ready for confirmation to the CPU, value in keycode_latch
-                //NOTE: if more than one button pressed, will not record the updated one
-					 //i THINK it will just not register anything if there are two buttons pressed at same time
-			end
-			//else begin //value has already been recorded but the button is still depressed
-                //continue;
-			//end
+			else begin
 			
-        end
-        else if (compare_latch == bin_ctr_key) begin //kr1_L is high, no buttons being pressed and we are checking the same button
-            if ((key_depr == 1'b1) && (keycode_latch != 4'd0)) begin //not pressed anymore but had been previously and value already recorded
-                keycode_latch <= 4'd0; //clear the keycode_latch
-                compare_latch <= 4'd0; //clear the compare_latch
-                key_depr <= 1'b0; //clear the status that key had been earlier pressed
-            end
-            else if (key_depr == 1'b1) begin //key had been depressed earlier, but now not pressed anymore and was only pressed for one cycle: it's debouncing
-                key_depr <= 1'b0;     
-				//keycode_latch <= 4'd0; //clear the keycode_latch
-                //compare_latch <= 4'd0; //clear the compare_latch					 
-            end
-			else if (key_depr == 1'b0) begin
-				keycode_latch <= 4'd0; //clear the keycode_latch
-				compare_latch <= 4'd0; //clear the compare_latch		
+				//no button pressed
+				if (compare_latch == bin_ctr_key) begin
+					//went first time in, entering 2nd time
+					//button got released
+					compare_latch <= 4'd0;
+					keycode_latch <= 4'd0;
+					key_depr <= 1'b0;
+					
+				end
+				
+				
+				else begin
+					//went first time in, now cycling other keys
+					//ignore
+					compare_latch <= compare_latch;
+					keycode_latch <= keycode_latch;
+					key_depr <= key_depr;
+				end
+			
 			end
-            //else begin
-                //continue; //no key earlier depressed, just continue
-            //end
-        end
-	    //trying this
-	    //else begin
-			//keycode_latch <= 4'd0; //clear the keycode_latch
-			//compare_latch <= 4'd0; //clear the compare_latch		
-	    //end
-	    //end trial
+       
             
             
         /*Actual Scanning Process*/
         if (bin_ctr_key < 4'd15) bin_ctr_key <= bin_ctr_key + 1; //increment the counter
         else bin_ctr_key <= 4'd0; //reset
         
-        
-
         
         /* Potentiometer Code */
         pot_scan_reg <= pot_scan; //may need to put this value in ALLPOT also

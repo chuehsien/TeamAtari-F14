@@ -151,8 +151,11 @@ output GPIO_LED_0, GPIO_LED_1, GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_5, G
     //mux_2 trig3mux ({}, GRACTL[2], TRIG3_bus);
     
     /* Chipscope stuff */
-    clockone4 clk_divide_mod3(.inClk(CLK_27MHZ_FPGA),.outClk(cs_clk1));
-    
+
+    clockDivider #(400) outt(CLK_27MHZ_FPGA,cs_clk1);
+	 
+	 
+	 
     DeBounce debounce_mod(.clk(CLK_27MHZ_FPGA), .n_reset(1'b1), .button_in(GPIO_SW_C),.DB_out(center_pressed));
     
     
