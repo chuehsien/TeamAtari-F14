@@ -5,7 +5,7 @@
 `include "Graphics/colorTable.v"
 
 module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTend, numLines,
-            width, height,
+            width, height, incrY,
             COLPM3, COLPF0, COLPF1, COLPF2, COLPF3, COLBK, PRIOR, VDELAY, GRACTL, HITCLR,
             DB, switch,
             HPOSP0_M0PF_bus, HPOSP1_M1PF_bus, HPOSP2_M2PF_bus, HPOSP3_M3PF_bus, HPOSM0_P0PF_bus, 
@@ -27,11 +27,12 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
       input [3:0] trigger;
       input Fphi0;
       input rst;
-      input [1:0] charMode;
+      input [2:0] charMode;
       input DLISTend;
       input [1:0] numLines;
       input [8:0] width;
       input [7:0] height;
+      input incrY;
       
       // Memory-mapped register inputs
       input [7:0] COLPM3;
@@ -82,7 +83,7 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
       
       // Display buffer outputs
       output [31:0] dBuf_data;
-      output [15:0] dBuf_addr;
+      output [16:0] dBuf_addr;
       output reg dBuf_writeEn = 1'b0;
       
       // Other outputs
@@ -95,7 +96,7 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
       
       reg [1:0] clkdiv = 2'd0;
       reg [8:0] x = 9'd0; // 320 pixels
-      reg [7:0] y = 8'd0; // 192 pixels
+      reg [7:0] y = 8'd0; // 192(216) pixels
       reg [7:0] colorData = 8'd0;
       reg incrXY = 1'b0;
       reg incrXY_nextcycle = 1'b0;
@@ -210,6 +211,13 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
             x <= 9'd0;
             y <= 8'd0;
           end
+          
+          else if (incrY) begin
+            if (y == (height - 8'd1))
+              y <= 8'd0;
+            else
+              y <= y + 8'd1;
+          end
       
           else if (incrXY) begin
             
@@ -217,11 +225,12 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
             hblank <= 1'b0;
 
             // Display in 8 by 8 blocks
-            if (charMode != 2'd0) begin
+            if (charMode != 3'd0) begin
               
               case (charMode)
               
-                2'd1: begin
+                // 16 x 8 blocks (x=16, y=8)
+                3'd1: begin
                   // End of entire display block
                   if ((x == (width-1))&&(y == (height-1))) begin
                     x <= 9'd0;
@@ -231,6 +240,108 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
                   
                   else begin
                     // Transition from end of 20/40 blocks to start of next line of blocks
+                    if ((x == (width-1))&&((y % 8) == 8'd7)) begin
+                      x <= 9'd0;
+                      y <= y + 8'd1;
+                      hblank <= 1'b1;
+                    end
+                    
+                    else begin
+                      // Transition from end of single block to start of next block
+                      if (((x % 16) == 9'd15)&&((y % 8) == 8'd7)) begin
+                        x <= x + 9'd1;
+                        y <= y - 8'd7;
+                      end
+                      
+                      else begin
+                        // Transition from end of single line in block to start of next line
+                        if ((x % 16) == 9'd15) begin
+                          x <= x - 9'd15;
+                          y <= y + 8'd1;
+                        end
+                        
+                        // Normal transition to next pixel on the right
+                        else begin
+                          x <= x + 9'd1;
+                        end
+                      end
+                    end
+                  end
+                end
+                
+                // 16 x 16 blocks (x=16, y=16)
+                3'd2: begin
+                
+                  // End of entire display block
+                  if ((x == (width-1))&&(y == (height-1))) begin
+                    x <= 9'd0;
+                    y <= 8'd0;
+                    vblank <= 1'b1;
+                  end
+                  
+                  else begin
+                    
+                    // Transition from end of 20 blocks to start of next line of blocks
+                    if ((x == (width-1))&&(((y-24) % 16) == 8'd15)) begin
+                      x <= 9'd0;
+                      y <= y + 8'd1;
+                      hblank <= 1'b1;
+                    end
+                    
+                    else begin
+                    
+                      // Transition from end of single block to start of next block
+                      if (((x % 16) == 9'd15)&&(((y-24) % 16) == 8'd15)) begin
+                        x <= x + 9'd1;
+                        y <= y - 8'd15;
+                      end
+                      
+                      else begin
+                      
+                        // Transition from end of double line in block to start of next double line
+                        if (((x % 16) == 9'd15)&&((y % 2) == 8'd1)) begin
+                          x <= x - 9'd15;
+                          y <= y + 8'd1;
+                        end
+                        
+                        else begin
+                        
+                          // Transition from end of mini-block to start of next mini-block
+                          if (((x % 2) == 9'd1)&&((y % 2) == 8'd1)) begin
+                            x <= x + 9'd1;
+                            y <= y - 8'd1;
+                          end
+                          
+                          else begin
+                          
+                            // Transition from first line pixel 1 to next line pixel 0
+                            if ((x % 2) == 9'd1) begin
+                              x <= x - 9'd1;
+                              y <= y + 8'd1;
+                            end
+                            
+                            // Transition to next pixel on the right
+                            else
+                              x <= x + 9'd1;
+                              
+                          end
+                        end
+                      end
+                    end
+                  end
+                end
+                
+                // 8 x 8 blocks (x=8, y=8)
+                3'd3: begin
+                  // End of entire display block
+                  if ((x == (width-1))&&(y == (height-1))) begin
+                    x <= 9'd0;
+                    y <= 8'd0;
+                    vblank <= 1'b1;
+                  end
+                  
+                  else begin
+                    // Transition from end of 40 blocks to start of next line of blocks
                     if ((x == (width-1))&&((y % 8) == 8'd7)) begin
                       x <= 9'd0;
                       y <= y + 8'd1;
@@ -260,8 +371,8 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
                   end
                 end
                 
-                2'd2: begin
-                
+                // 16 x 8 blocks (x=16, y=8)
+                3'd4: begin
                   // End of entire display block
                   if ((x == (width-1))&&(y == (height-1))) begin
                     x <= 9'd0;
@@ -270,47 +381,36 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
                   end
                   
                   else begin
-                    
-                    // Transition from end of 20 blocks to start of next line of blocks
-                    if ((x == (width-1))&&((y % 16) == 8'd15)) begin
+                    // Transition from end of 40 blocks to start of next line of blocks
+                    if ((x == (width-1))&&((y % 8) == 8'd7)) begin
                       x <= 9'd0;
                       y <= y + 8'd1;
                       hblank <= 1'b1;
                     end
                     
                     else begin
-                    
                       // Transition from end of single block to start of next block
-                      if (((x % 16) == 9'd15)&&((y % 16) == 8'd15)) begin
+                      if (((x % 16) == 9'd15)&&((y % 8) == 8'd7)) begin
                         x <= x + 9'd1;
-                        y <= y - 8'd15;
+                        y <= y - 8'd7;
                       end
                       
                       else begin
-                      
                         // Transition from end of single line in block to start of next line
-                        if (((x % 16) == 9'd15)&&((y % 2) == 8'd1)) begin
+                        if ((x % 16) == 9'd15) begin
                           x <= x - 9'd15;
                           y <= y + 8'd1;
                         end
                         
+                        // Normal transition to next pixel on the right
                         else begin
-                        
-                          // Transition from end of mini-block to start of next mini-block
-                          if (((x % 2) == 9'd1)&&((y % 2) == 8'd1)) begin
-                            x <= x + 9'd1;
-                            y <= y - 8'd1;
-                          end
-                          
-                          // Normal transition to pixel below
-                          else begin
-                            y <= y + 8'd1;
-                          end
+                          x <= x + 9'd1;
                         end
                       end
                     end
                   end
                 end
+                
               endcase
             end
           

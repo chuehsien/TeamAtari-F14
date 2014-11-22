@@ -15,6 +15,7 @@
 `include "Graphics/ANTIC.v"
 `include "Graphics/GTIA.v"
 `include "Graphics/DVI.v"
+`include "Graphics/displayBlockMem.v"
 
 `define DIV 8'd4
 
@@ -126,7 +127,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
     wire [63:0] doutB;
     wire [11:0] DVI_D;
 
-    reg [14:0] addrB = 15'd0;
+    reg [15:0] addrB = 16'd0;
     
     assign DVI_D11 = DVI_D[11];
     assign DVI_D10 = DVI_D[10];
@@ -157,63 +158,27 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
         clkdiv <= clkdiv + 2'd1;
     end
     
-    // GTIA to memoryMap wires
-    wire [7:0] COLPM3;
-    wire [7:0] COLPF0;
-    wire [7:0] COLPF1;
-    wire [7:0] COLPF2;
-    wire [7:0] COLPF3;
-    wire [7:0] COLBK;
-    wire [7:0] PRIOR;
-    wire [7:0] VDELAY;
-    wire [7:0] GRACTL;
-    wire [7:0] HITCLR;
-    wire [7:0] HPOSP0_M0PF_bus;
-    wire [7:0] HPOSP1_M1PF_bus;
-    wire [7:0] HPOSP2_M2PF_bus;
-    wire [7:0] HPOSP3_M3PF_bus;
-    wire [7:0] HPOSM0_P0PF_bus;
-    wire [7:0] HPOSM1_P1PF_bus;
-    wire [7:0] HPOSM2_P2PF_bus;
-    wire [7:0] HPOSM3_P3PF_bus;
-    wire [7:0] SIZEP0_M0PL_bus;
-    wire [7:0] SIZEP1_M1PL_bus;
-    wire [7:0] SIZEP2_M2PL_bus;
-    wire [7:0] SIZEP3_M3PL_bus;
-    wire [7:0] SIZEM_P0PL_bus;
-    wire [7:0] GRAFP0_P1PL_bus;
-    wire [7:0] GRAFP1_P2PL_bus;
-    wire [7:0] GRAFP2_P3PL_bus;
-    wire [7:0] GRAFP3_TRIG0_bus;
-    wire [7:0] GRAFPM_TRIG1_bus;
-    wire [7:0] COLPM0_TRIG2_bus;
-    wire [7:0] COLPM1_TRIG3_bus;
-    wire [7:0] COLPM2_PAL_bus;
-    wire [7:0] CONSPK_CONSOL_bus;
+    // GTIA to memory map wires
+    wire [7:0] COLPM3, COLPF0, COLPF1, COLPF2, COLPF3, COLBK, PRIOR, VDELAY,
+               GRACTL, HITCLR, HPOSP0_M0PF_bus, HPOSP1_M1PF_bus, HPOSP2_M2PF_bus, 
+               HPOSP3_M3PF_bus, HPOSM0_P0PF_bus, HPOSM1_P1PF_bus, HPOSM2_P2PF_bus, 
+               HPOSM3_P3PF_bus, SIZEP0_M0PL_bus, SIZEP1_M1PL_bus, SIZEP2_M2PL_bus, 
+               SIZEP3_M3PL_bus, SIZEM_P0PL_bus, GRAFP0_P1PL_bus, GRAFP1_P2PL_bus, 
+               GRAFP2_P3PL_bus, GRAFP3_TRIG0_bus, GRAFPM_TRIG1_bus, COLPM0_TRIG2_bus, 
+               COLPM1_TRIG3_bus, COLPM2_PAL_bus, CONSPK_CONSOL_bus;
+    
+    // ANTIC to memory map wires
+    wire [7:0] DMACTL, CHACTL, HSCROL, VSCROL, PMBASE, CHBASE, WSYNC, NMIEN, 
+               NMIRES_NMIST_bus, DLISTL_bus, DLISTH_bus, VCOUNT, PENH, PENV;
+    wire [2:0] ANTIC_writeEn;
     
     wire [31:0] dBuf_data;
-    wire [15:0] dBuf_addr;
+    wire [16:0] dBuf_addr; 
     wire dBuf_writeEn;
-    
-    wire [7:0] DMACTL;
-    wire [7:0] CHACTL;
-    wire [7:0] HSCROL;
-    wire [7:0] VSCROL;
-    wire [7:0] PMBASE;
-    wire [7:0] CHBASE;
-    wire [7:0] WSYNC;
-    wire [7:0] NMIEN;
-    wire [7:0] NMIRES_NMIST_bus;
-    wire [7:0] DLISTL_bus;
-    wire [7:0] DLISTH_bus;
-    wire [7:0] VCOUNT;
-    wire [7:0] PENH;
-    wire [7:0] PENV;
-    wire [2:0] ANTIC_writeEn;
     
     wire [3:0] AN;
     wire [15:0] address = {extABH, extABL};
-    wire charMode;
+    wire [2:0] charMode;
     wire vblank, hblank;
     wire [1:0] numLines;
     wire [8:0] width;
@@ -240,6 +205,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
     wire [7:0] colorData;
     wire [23:0] RGB;
     wire ANTIC_writeNMI;
+    wire incrY;
 
     // Module instantiation
     ANTIC antic(.Fphi0(Fphi0), .LP_L(), .RW(), .rst(rst), .vblank(vblank), .hblank(hblank), .DMACTL(DMACTL), .CHACTL(CHACTL),
@@ -247,7 +213,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
                 .DB(extDB), .NMIRES_NMIST_bus(NMIRES_NMIST_bus), .DLISTL_bus(DLISTL_bus), .DLISTH_bus(DLISTH_bus),
                 .address(address), .AN(AN), .halt(HALT), .NMI_L(NMI_L), .RDY(RDY), .REF_L(), .RNMI_L(), .phi0(), 
                 .IR_out(IR), .loadIR(), .VCOUNT(VCOUNT), .PENH(PENH), .PENV(PENV), .ANTIC_writeEn(ANTIC_writeEn), 
-                .charMode(charMode), .numLines(numLines), .width(width), .height(height),
+                .charMode(charMode), .numLines(numLines), .width(width), .height(height), .incrY(incrY),
                 .printDLIST(dlist), .currState(currStateANTIC), .MSR(MSR), .loadDLIST_both(), 
                 .loadMSR_both(), .IR_rdy(IR_rdy), .mode(mode), .numBytes(), .MSRdata(MSRdata), 
                 .DLISTL(DLISTL), .blankCount(), .addressIn(), .loadMSRdata(),
@@ -256,7 +222,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
                 .colorSel4(colorSel4), .ANTIC_writeNMI(ANTIC_writeNMI));
     
     GTIA gtia(.address(), .AN(AN), .CS(), .DEL(), .OSC(), .RW(), .trigger(), .Fphi0(Fphi0), .rst(rst), .charMode(charMode),
-              .DLISTend(DLISTend), .numLines(numLines), .width(width), .height(height),
+              .DLISTend(DLISTend), .numLines(numLines), .width(width), .height(height), .incrY(incrY),
               .COLPM3(COLPM3), .COLPF0(COLPF0), .COLPF1(COLPF1), .COLPF2(COLPF2), .COLPF3(COLPF3), .COLBK(COLBK),
               .PRIOR(PRIOR), .VDELAY(VDELAY), .GRACTL(GRACTL), .HITCLR(HITCLR),
               .DB(extDB), .switch(),
@@ -285,13 +251,13 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
     // FSM to control DVI reads from port B
     always @(posedge request or posedge nRES_L) begin
       if (nRES_L) begin
-        addrB <= 15'd0;
+        addrB <= 16'd0;
       end
       else begin
-        if (addrB >= 15'd30719)
-          addrB <= 15'd0;
+        if (addrB >= 16'd34559)
+          addrB <= 16'd0;
         else
-          addrB <= addrB + 15'd1;
+          addrB <= addrB + 16'd1;
       end
     end
 
@@ -338,15 +304,14 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
       
     wire [15:0] cartROMadd;
     assign cartROMadd = (memAdd - 16'h4000);
+    
+    // Soft Cartridge ROM instantiation
     memDefender memD(.clka(fphi0),.addra(cartROMadd[14:0]),.douta(data_CART));
+    //memMario    memM(.clka(fphi0),.addra(cartROMadd[14:0]),.douta(data_CART));
     
     wire [7:0] NMIRES_NMIST, VCOUNT_val; //
     wire [7:0] data_in_b;
     wire write_RAM;
-    
-    
-
-
 
     memoryMap map(.write_RAM(write_RAM),.data_in_b(data_in_b),
 
@@ -459,7 +424,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
       .TRIG2(currStateANTIC), // IN BUS [1:0]
       .TRIG3({1'b0, ANTIC_writeEn}), // IN BUS [3:0]
       .TRIG4(dlist), // IN BUS [15:0]
-      .TRIG5(dBuf_addr), // IN BUS [15:0]
+      .TRIG5(MSR), // IN BUS [15:0]
       .TRIG6(dBuf_data), // IN BUS [31:0]
       .TRIG7(dBuf_writeEn), // IN BUS [0:0]
       .TRIG8(x), // IN BUS [8:0]
