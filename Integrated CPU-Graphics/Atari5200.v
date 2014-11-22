@@ -352,12 +352,15 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
 
     wire [15:0] cartROMadd;
     assign cartROMadd = (memAdd - 16'h4000);
-    memDefender memD(.clka(fphi0),.addra(cartROMadd[14:0]),.douta(data_CART));
+    
+    // Soft Cartridge ROM instantiation
+    //memDefender memD(.clka(fphi0),.addra(cartROMadd[14:0]),.douta(data_CART));
+    memMario    memM(.clka(fphi0),.addra(cartROMadd[14:0]),.douta(data_CART));
     
     wire [7:0] NMIRES_NMIST, VCOUNT_val; //
     wire [7:0] data_in_b;
     wire write_RAM;
-    
+
     memoryMap map(.write_RAM(write_RAM),.data_in_b(data_in_b),
 
                   .addr_RAM(addr_RAM),.addr_BIOS(addr_BIOS),.addr_CART(addr_CART),
@@ -461,7 +464,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
       .TRIG2(currStateANTIC), // IN BUS [1:0]
       .TRIG3({1'b0, ANTIC_writeEn}), // IN BUS [3:0]
       .TRIG4(dlist), // IN BUS [15:0]
-      .TRIG5(dBuf_addr), // IN BUS [15:0]
+      .TRIG5(MSR), // IN BUS [15:0]
       .TRIG6(dBuf_data), // IN BUS [31:0]
       .TRIG7(dBuf_writeEn), // IN BUS [0:0]
       .TRIG8(x), // IN BUS [8:0]

@@ -10,7 +10,7 @@
 `define idle 1'b1
 
 module DVI(clock, reset, data, SDA, SCL, DVI_V, DVI_H, DVI_D, DVI_XCLK_P,
-                DVI_XCLK_N, DVI_DE, DVI_RESET_B , request);
+                DVI_XCLK_N, DVI_DE, DVI_RESET_B, request);
 
   input clock;
   input reset;

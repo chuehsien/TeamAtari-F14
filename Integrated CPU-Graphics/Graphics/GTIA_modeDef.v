@@ -3,7 +3,7 @@
 `define modeNorm_bgColor      4'b0000
 `define modeNorm_vSync        4'b0001
 `define modeNorm_hBlank_c40   4'b0010
-`define modeNorm_hBlank_s40   4'b0011
+`define modeNorm_lum1col2     4'b0011
 `define modeNorm_playfield0   4'b0100
 `define modeNorm_playfield1   4'b0101
 `define modeNorm_playfield2   4'b0110

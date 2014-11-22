@@ -48,17 +48,17 @@ module displayBlockMem(
 
 input clka;
 input [0 : 0] wea;
-input [15 : 0] addra;
+input [16 : 0] addra;
 input [31 : 0] dina;
 input clkb;
-input [14 : 0] addrb;
+input [15 : 0] addrb;
 output [63 : 0] doutb;
 
 // synthesis translate_off
 
   BLK_MEM_GEN_V7_2 #(
-    .C_ADDRA_WIDTH(16),
-    .C_ADDRB_WIDTH(15),
+    .C_ADDRA_WIDTH(17),
+    .C_ADDRB_WIDTH(16),
     .C_ALGORITHM(1),
     .C_AXI_ID_WIDTH(4),
     .C_AXI_SLAVE_TYPE(0),
@@ -92,8 +92,8 @@ output [63 : 0] doutb;
     .C_MEM_TYPE(1),
     .C_MUX_PIPELINE_STAGES(0),
     .C_PRIM_TYPE(1),
-    .C_READ_DEPTH_A(61440),
-    .C_READ_DEPTH_B(30720),
+    .C_READ_DEPTH_A(69120),
+    .C_READ_DEPTH_B(34560),
     .C_READ_WIDTH_A(32),
     .C_READ_WIDTH_B(64),
     .C_RST_PRIORITY_A("CE"),
@@ -104,15 +104,15 @@ output [63 : 0] doutb;
     .C_SIM_COLLISION_CHECK("ALL"),
     .C_USE_BYTE_WEA(0),
     .C_USE_BYTE_WEB(0),
-    .C_USE_DEFAULT_DATA(1),
+    .C_USE_DEFAULT_DATA(0),
     .C_USE_ECC(0),
     .C_USE_SOFTECC(0),
     .C_WEA_WIDTH(1),
     .C_WEB_WIDTH(1),
-    .C_WRITE_DEPTH_A(61440),
-    .C_WRITE_DEPTH_B(30720),
+    .C_WRITE_DEPTH_A(69120),
+    .C_WRITE_DEPTH_B(34560),
     .C_WRITE_MODE_A("WRITE_FIRST"),
-    .C_WRITE_MODE_B("WRITE_FIRST"),
+    .C_WRITE_MODE_B("NO_CHANGE"),
     .C_WRITE_WIDTH_A(32),
     .C_WRITE_WIDTH_B(64),
     .C_XDEVICEFAMILY("virtex5")

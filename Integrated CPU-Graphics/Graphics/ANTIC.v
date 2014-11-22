@@ -17,7 +17,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
              printDLIST, currState, MSR, loadMSR_both, loadDLIST_both,
              IR_rdy, mode, numBytes, MSRdata, DLISTL, blankCount, addressIn, loadMSRdata, 
              charData, newDLISTptr, loadDLIST, DLISTend, idle, loadMSRstate,
-             addressOut, haltANTIC, rdyANTIC, colorSel4, ANTIC_writeNMI);
+             addressOut, haltANTIC, rdyANTIC, colorSel4, ANTIC_writeNMI, incrY, saveY);
 
       input Fphi0;
       input LP_L;
@@ -55,7 +55,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
       output reg [7:0] PENH = 8'd0;
       output reg [7:0] PENV = 8'd0;
       output reg [2:0] ANTIC_writeEn = 3'd0;
-      output [1:0] charMode;
+      output [2:0] charMode;
       output [1:0] numLines;
       output [8:0] width;
       output [7:0] height;
@@ -71,7 +71,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
       output [6:0] numBytes;
       output [7:0] MSRdata;
       output [7:0] DLISTL;
-      output [14:0] blankCount;
+      output [3:0] blankCount;
       output [15:0] addressIn;
       output loadMSRdata;
       output [63:0] charData;
@@ -88,6 +88,9 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
       output [1:0] colorSel4;
       output ANTIC_writeNMI;
       //endtemp
+      
+      output incrY;
+      output saveY;
       
       assign haltANTIC = halt;
       assign rdyANTIC = RDY;
@@ -118,6 +121,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
       reg [7:0] WSYNC_prev = 8'd0;
       reg WSYNC_halt = 1'b0;
       reg reqBlank = 1'b0;
+      reg [15:0] savedMSR = 16'd0;
       
       wire [15:0] addressOut;
       wire [7:0] data;
@@ -141,7 +145,8 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
       wire ANTIC_writeNMI;
       wire charSingleColor;
       wire update_WSYNC;
-      //wire blankScreen;
+      wire blankScreen;
+      wire saveMSR, resetMSR;
       
       // * Temp:
       assign printDLIST = {DLISTH_bus, DLISTL_bus};
@@ -166,7 +171,8 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
                        .width(width), .height(height), .ANTIC_writeDLI(ANTIC_writeDLI), .ANTIC_writeVBI(ANTIC_writeVBI),
                        .ANTIC_writeNMI(ANTIC_writeNMI),
                        .idle(idle), .loadMSRstate(loadMSRstate), .DLISTend(DLISTend), .charSingleColor(charSingleColor),
-                       .colorSel4(colorSel4), .update_WSYNC(update_WSYNC), .VCOUNT(VCOUNT), .blankScreen(blankScreen));
+                       .colorSel4(colorSel4), .update_WSYNC(update_WSYNC), .VCOUNT(VCOUNT), .blankScreen(blankScreen),
+                       .saveMSR(saveMSR), .resetMSR(resetMSR), .incrY(incrY), .saveY(saveY));
       
       // Update DLISTPTR (JUMP instruction)
       assign DLISTL_bus = loadDLIST ? newDLISTptr[7:0] : (incrDLIST ? DLISTL : 8'hzz);
@@ -206,7 +212,8 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
           nextState <= `FSMinit;
           WSYNC_prev <= 8'd0;
           WSYNC_halt <= 1'b0;
-          //reqBlank <= 1'b0;
+          reqBlank <= 1'b0;
+          savedMSR <= 16'd0;
         end
         
         // Wait for CPU initialization to complete
@@ -220,7 +227,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
               NMI_L <= 1'b1;
               VBI_hold <= 1'b0;
               VBI_hold2 <= 1'b0;
-              //reqBlank <= 1'b1;
+              reqBlank <= 1'b1;
             end
             
             // Initialization VBI
@@ -253,6 +260,11 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
             end
               
           end
+          
+          else if (reqBlank) begin
+            if (blankScreen)
+              reqBlank <= 1'b0;
+          end
            
           else begin
           
@@ -281,7 +293,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
               nextState <= `FSMinit;
               WSYNC_prev <= WSYNC;
               WSYNC_halt <= 1'b0;
-              //reqBlank <= 1'b0;
+              reqBlank <= 1'b0;
             end
             
             else if (~(DMA&(~RDY))) begin
@@ -325,6 +337,12 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
                 MSR[7:0] <= IR;
               else if (loadMSRH)
                 MSR[15:8] <= IR;
+                
+              if (saveMSR)
+                savedMSR <= MSR;
+              
+              if (resetMSR)
+                MSR <= savedMSR;
                 
               if (incrMSR)
                 MSR <= MSR + 16'd1;
@@ -443,7 +461,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
                         if (charSingleColor)
                           addressIn <= {CHBASE, 8'h00} + (MSRdata[5:0]*8) + charByte;
                         else
-                          addressIn <= {CHBASE, 8'h00} + (MSRdata*8) + charByte;
+                          addressIn <= {CHBASE, 8'h00} + (MSRdata[6:0]*8) + charByte;
                         loadAddr <= 1'b1;
                       end
                       else begin
