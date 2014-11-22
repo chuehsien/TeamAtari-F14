@@ -62,11 +62,6 @@ module transBuf(en, leftDriver, rightDriver, left, right);
 endmodule
 
 
-
-
-
-
-
 // DeBounce_v.v
 
 

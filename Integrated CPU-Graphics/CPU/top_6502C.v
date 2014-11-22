@@ -86,13 +86,13 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
                                controlSigs[`SB_DB] +
                                controlSigs[`AC_DB] +
                                controlSigs[`P_DB];
-            wire DBZ,ALUZ;
+            wire ALUZ;
                         //clock
             wire phi1,phi2;
             wire haltAll;
             clockGen clock(HALT,phi0_in,fastClk,haltAll,RDY,phi1,phi2,phi1_out,phi2_out);
             
-            assign RW = ~((controlSigs[`nRW])&(~RDY)&phi2);
+            assign RW = ~((controlSigs[`nRW])&(~RDY));
             wire updateOthers;
             
           
@@ -147,6 +147,7 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
 
           
             wire [7:0] DBforSR;
+            wire DBZ;
           
             
             sigLatchWclk8 db4sr1(~phi1,fastClk,DB,DBforSR); 
@@ -203,8 +204,9 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             
             
             wire SB_DB, SB_ADH;
-            sigLatchWclk l55(1'b1,fastClk,controlSigs[`SB_DB],SB_DB);
-            sigLatchWclk l56(1'b1,fastClk,controlSigs[`SB_ADH],SB_ADH);
+
+            sigLatchWclkDual l55(fastClk,controlSigs[`SB_DB],SB_DB);
+            sigLatchWclkDual l56(fastClk,controlSigs[`SB_ADH],SB_ADH);
 
             wire nI_PC,DEC_PC;
             sigLatchWclk l57(phi1,fastClk,controlSigs[`nI_PC],nI_PC);
@@ -370,7 +372,7 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             FlipFlop8   store_db(phi2,DB,(STORE_DB&~haltAll),storedDB);
             
             
-            assign DBZ  = ~(|DBforSR);
+            assign DBZ  = ~(|DB);
             assign ALUZ = ~(|ALUhold_out);
             
             
@@ -390,7 +392,7 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
          */               
            statusReg SR(.phi1_1(phi1_1),.phi1_7(phi1_7),.haltAll(haltAll),.rstAll(rstAll),.phi1(phi1),.DB_P(DB_P),
            .loadDBZ(FLAG_DBZ),.flagsALU(FLAG_ALU),.flagsDB(FLAG_DB),
-                        .P_DB(P_DB), .DBZ(DBZ), .ALUZ(ALUZ), .ACR(aluACR), .AVR(aluAVR), .B(BRKins),
+                        .P_DB(P_DB), .DBZ(DBZ_latch), .ALUZ(ALUZ), .ACR(aluACR), .AVR(aluAVR), .B(BRKins),
                         .C_set(SET_C), .C_clr(CLR_C),
                         .I_set(SET_I), .I_clr(CLR_I), 
                         .V_clr(CLR_V),

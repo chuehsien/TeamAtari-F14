@@ -14,6 +14,7 @@ module memoryMap(
 
                  VCOUNT_in, PENH_in, PENV_in,
                  POT0_BUS, POT1_BUS, POT2_BUS, POT3_BUS, POT4_BUS, POT5_BUS, POT6_BUS, POT7_BUS, ALLPOT_BUS, KBCODE_BUS, RANDOM_BUS, SERIN_BUS, IRQST_BUS, SKSTAT_BUS,
+                 TRIG0_BUS,TRIG1_BUS,TRIG2_BUS,TRIG3_BUS,
                  data_CART_out,
 
 
@@ -26,9 +27,12 @@ module memoryMap(
                  COLPF3, COLBK, PRIOR, VDELAY, GRACTL, HITCLR,
 
                  AUDF1, AUDC1, AUDF2, AUDC2, AUDF3, AUDC3, AUDF4, AUDC4, AUDCTL, 
-                 STIMER, SKREST, POTGO, SEROUT, SERIN, IRQEN, SKCTL,
+                 STIMER, SKREST, POTGO, SEROUT, SERIN, IRQEN, SKCTL,CONSPK_CONSOL,
                  
-                 NMIRES_NMIST, VCOUNT
+                 NMIRES_NMIST, VCOUNT,
+
+
+                 POTGO_strobe, STIMER_strobe
                  );
   output write_RAM;
   output [7:0] data_in_b;
@@ -45,6 +49,7 @@ module memoryMap(
   
 
   input [7:0] POT0_BUS, POT1_BUS, POT2_BUS, POT3_BUS, POT4_BUS, POT5_BUS, POT6_BUS, POT7_BUS, ALLPOT_BUS, KBCODE_BUS, RANDOM_BUS, SERIN_BUS, IRQST_BUS, SKSTAT_BUS;
+  input [7:0] TRIG0_BUS,TRIG1_BUS,TRIG2_BUS,TRIG3_BUS;
   input [7:0] data_CART_out;
 
 
@@ -106,10 +111,13 @@ module memoryMap(
   output [7:0] HITCLR;
   
   //outputs to POKEY
-  output [7:0] AUDF1, AUDC1, AUDF2, AUDC2, AUDF3, AUDC3, AUDF4, AUDC4, AUDCTL, STIMER, SKREST, POTGO, SEROUT, SERIN, IRQEN , SKCTL;
+  output [7:0] AUDF1, AUDC1, AUDF2, AUDC2, AUDF3, AUDC3, AUDF4, AUDC4, AUDCTL, STIMER, SKREST, POTGO, SEROUT, SERIN, IRQEN , SKCTL,CONSPK_CONSOL;
 
   // Temporary
   output [7:0] NMIRES_NMIST, VCOUNT;
+
+  //STROBE SIGNALS
+  output POTGO_strobe, STIMER_strobe;
 
   // ANTIC hardware registers
   reg [7:0] DMACTL;       // | $D400 | Write      |                   |
@@ -205,9 +213,11 @@ module memoryMap(
   sigLatchWclk latchRAMwrites(~clk,latchClk,write_RAM_latch,write_RAM);
   sigLatchWclk latchregwrites(~clk,latchClk,write_reg_latch,write_reg);
    
-  //assign write_RAM = write_RAM_latch;
-  //assign write_reg = write_reg_latch;
-  
+    
+
+
+
+
   wire [15:0] CPU_addr_b;
   wire [7:0] data_RAM_out_b,data_BIOS_out_b, data_in_b;
   buf memB0[7:0] (data_RAM_out, data_RAM_out_b);
@@ -241,7 +251,6 @@ module memoryMap(
 
 
   always @(posedge Fclk or posedge rst) begin
-    // * TODO: De-conflict simultaneous assigns by CPU and ANTIC
   
     if (rst) begin    
       DMACTL <= 8'd0;
@@ -287,6 +296,22 @@ module memoryMap(
       GRACTL <= 8'd0;
       HITCLR <= 8'd0;
       CONSPK_CONSOL <= 8'd0;
+
+      AUDF1   <= 8'd0;
+      AUDC1   <= 8'd0;
+      AUDF2   <= 8'd0;
+      AUDC2   <= 8'd0;
+      AUDF3   <= 8'd0;
+      AUDC3   <= 8'd0;
+      AUDF4   <= 8'd0;
+      AUDC4   <= 8'd0;
+      AUDCTL  <= 8'd0;
+      STIMER  <= 8'd0;
+      SKREST  <= 8'd0;
+      POTGO   <= 8'd0;
+      SEROUT  <= 8'd0;
+      IRQEN   <= 8'd0;
+      SKCTL   <= 8'd0;
     end
     
     else begin
@@ -487,7 +512,6 @@ module memoryMap(
                         (CPU_addr == 16'hD40D) ? PENV :
                         (CPU_addr == 16'hD40E) ? NMIEN :
                         (CPU_addr == 16'hD40F) ? NMIRES_NMIST : 
-                        //(CPU_addr == 16'hD40F) ? 8'h40 : 
                         (CPU_addr == 16'hC000) ? HPOSP0_M0PF : 
                         (CPU_addr == 16'hC001) ? HPOSP1_M1PF : 
                         (CPU_addr == 16'hC002) ? HPOSP2_M2PF : 
@@ -504,10 +528,10 @@ module memoryMap(
                         (CPU_addr == 16'hC00D) ? GRAFP0_P1PL : 
                         (CPU_addr == 16'hC00E) ? GRAFP1_P2PL : 
                         (CPU_addr == 16'hC00F) ? GRAFP2_P3PL : 
-                        (CPU_addr == 16'hC010) ? GRAFP3_TRIG0 : 
-                        (CPU_addr == 16'hC011) ? GRAFPM_TRIG1 : 
-                        (CPU_addr == 16'hC012) ? COLPM0_TRIG2 : 
-                        (CPU_addr == 16'hC013) ? COLPM1_TRIG3 : 
+                        (CPU_addr == 16'hC010) ? TRIG0_BUS : 
+                        (CPU_addr == 16'hC011) ? TRIG1_BUS : 
+                        (CPU_addr == 16'hC012) ? TRIG2_BUS : 
+                        (CPU_addr == 16'hC013) ? TRIG3_BUS : 
                         (CPU_addr == 16'hC014) ? COLPM2_PAL : 
                         (CPU_addr == 16'hC015) ? COLPM3 : 
                         (CPU_addr == 16'hC016) ? COLPF0 : 
@@ -521,6 +545,14 @@ module memoryMap(
                         (CPU_addr == 16'hC01E) ? HITCLR : 
                         (CPU_addr == 16'hC01F) ? CONSPK_CONSOL : 8'hzz;
 
+
+
+
+          /* ============================= STROBE DETECTION ========================*/
+          wire POTGO_strobe, STIMER_strobe;
+
+          strobeDetect strobePotGo(rst,Fclk,(~rst & (CPU_addr == 16'hE80B) & write_reg),POTGO_strobe);
+          strobeDetect strobeStimer(rst,Fclk,(~rst & (CPU_addr == 16'hE809) & write_reg),STIMER_strobe);
 endmodule
 
 // Tristate driver which splits databus into in/out wires
@@ -584,5 +616,34 @@ module writeMux(addr_RAM, writeEn, write_RAM, write_reg);
   
   assign write_RAM = (writeEn & addr_RAM) ? 1'b1 : 1'b0;
   assign write_reg = (writeEn & ~addr_RAM) ? 1'b1 : 1'b0;
+
+endmodule
+
+module strobeDetect(rst,clk,writeNow,strobeOut);
+    parameter strobeWidth = 8; //number of counts before releasing strobe.
+    input rst, clk, writeNow;
+    output reg strobeOut;
+
+
+    integer counter = 0;
+    always @ (posedge clk) begin
+        if (rst) begin
+            counter <= 0;
+            strobeOut <= 1'b0;
+        end
+        else begin
+
+            if (writeNow) strobeOut <= 1'b1;
+            else if (strobeOut) begin
+                //start counting
+                counter <= counter + 1;
+            end
+            
+            if (counter == strobeWidth) begin
+                counter <= 0;
+                strobeOut <= 1'b0;
+            end
+        end
+    end
 
 endmodule

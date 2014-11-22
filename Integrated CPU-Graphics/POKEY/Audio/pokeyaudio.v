@@ -1,17 +1,19 @@
-module pokeyaudio (mainClock,chn4base8bit,init_L,clk179,clk64,clk16,AUDF1,AUDF2,AUDF3,AUDF4,
+module pokeyaudio (init_L,clk179,clk64,clk16,STIMER_strobe,AUDF1,AUDF2,AUDF3,AUDF4,
                     AUDC1,AUDC2,AUDC3,AUDC4,AUDCTL,
-                    audio1,audio2,audio3,audio4,vol1,vol2,vol3,vol4,RANDOM);
-    output mainClock,chn4base8bit;
-    input init_L, clk179,clk64,clk16;
+                    audio1,audio2,audio3,audio4,vol1,vol2,vol3,vol4,RANDOM,int1,int2,int4);
+
+    input init_L, clk179,clk64,clk16,STIMER_strobe;
     input [7:0] AUDF1,AUDF2,AUDF3,AUDF4,
                     AUDC1,AUDC2,AUDC3,AUDC4,AUDCTL;
     output audio1,audio2,audio3,audio4;
     output [3:0] vol1,vol2,vol3,vol4;
     output [7:0] RANDOM;
+    output int1, int2, int4;
 
     wire mainClock;
     assign mainClock = (AUDCTL[0]) ? clk16 : clk64;
     
+
     //generate poly channels
     wire poly4out,poly5out,poly17_9out;
     poly4bit poly4(.clk(mainClock),.init_L(init_L),.out(poly4out));
@@ -41,30 +43,36 @@ module pokeyaudio (mainClock,chn4base8bit,init_L,clk179,clk64,clk16,AUDF1,AUDF2,
     
     //wire chn1baseT;
     //clockDivider #(213) out213(mainClock,chn1baseT);
-    
+    wire int1_A,int1_B,int1,int2_A,int2_B,int2,int4_A,int4_B,int4;
+
     wire chn1base_unfiltered,chn1base_filtered;
-    divideByN chn1divideA(AUDF1,mainClock,chn1baseA);
-    divideByN chn1divideB(AUDF1,clk179,chn1baseB);
+    divideByN chn1divideA(STIMER_strobe,AUDF1,mainClock,1'b0,chn1baseA,int1_A);
+    divideByN chn1divideB(STIMER_strobe,AUDF1,clk179,1'b0,chn1baseB,int1_B);
+    assign int1 = AUDCTL[6] ? int1_B : int1_A;
+
     assign chn1base_unfiltered = AUDCTL[4] ? 1'b0 : (AUDCTL[6] ? chn1baseB:chn1baseA);
     highpass    chn1passfilter(chn1base_unfiltered,chn3base,chn1base_filtered);
     assign chn1base = AUDCTL[2] ? chn1base_filtered : chn1base_unfiltered;
     
     wire chn2base8bit,chn2base16bit,chn2base_unfiltered,chn2base_filtered;
-    divideByN chn2divide8bit(AUDF2,mainClock,chn2base8bit);
-    divideByN16bit chn2divide16bit({AUDF2,AUDF1},mainClock,chn2base16bit);
+    divideByN chn2divide8bit(STIMER_strobe,AUDF2,mainClock,1'b0,chn2base8bit,int2_A);
+    divideByN16bit chn2divide16bit(STIMER_strobe,{AUDF2,AUDF1},mainClock,1'b0,chn2base16bit,int2_B);
+    assign int2 = AUDCTL[4] ? int2_B : int2_A;
+
     assign chn2base_unfiltered = AUDCTL[4] ? chn2base16bit : chn2base8bit;
     highpass    chn2passfilter(chn2base_unfiltered,chn4base,chn2base_filtered);
     assign chn2base = AUDCTL[1] ? chn2base_filtered : chn2base_unfiltered;
     
     wire chn3baseA,chn3baseB;
-    divideByN chn3divideA(AUDF3,mainClock,chn3baseA);
-    divideByN chn3divideB(AUDF3,clk179,chn3baseB);
+    divideByN chn3divideA(STIMER_strobe,AUDF3,mainClock,1'b1,chn3baseA,);
+    divideByN chn3divideB(STIMER_strobe,AUDF3,clk179,1'b1,chn3baseB,);
     assign chn3base = AUDCTL[3] ? 1'b0 : (AUDCTL[5] ? chn3baseB:chn3baseA);   
     
     wire chn4base8bit,chn4base16bit;
-    divideByN chn4divide8bit(AUDF4,mainClock,chn4base8bit);
-    divideByN16bit chn4divide16bit({AUDF4,AUDF3},mainClock,chn4base16bit);
+    divideByN chn4divide8bit(STIMER_strobe,AUDF4,mainClock,1'b1,chn4base8bit,int4_A);
+    divideByN16bit chn4divide16bit(STIMER_strobe,{AUDF4,AUDF3},mainClock,1'b1,chn4base16bit,int4_B);
     assign chn4base = AUDCTL[3] ? chn4base16bit : chn4base8bit;
+    assign int4 = AUDCTL[3] ? int4_B : int4_A;
     
     
     wire chn1out,chn2out,chn3out,chn4out; //output before inter-channel mixing
@@ -139,129 +147,95 @@ module distortion(in,filter,out);
 endmodule
 
 
-//does this work for N = 0?
-//up to max of divide by 65536.
-module divideByN(N,in,out);
-
+module divideByN(strobe,N,in,def,out,interrupt);
+    
+    input strobe;
     input [7:0] N;
-    input in;
+    input in,def;
     (* clock_signal = "yes" *)output out;
+    output interrupt;
     
     reg [8:0] counter = 0;
 
-    always @ (posedge in) begin
-        counter <= counter + 1;
-        if (counter == N>>1) counter <= 0;
+    wire strobed;
+	 reg clrstrobe = 1'b0;
+    FDCE #(.INIT(1'b0)) strobetimer(.Q(strobed), .C(strobe),.CE(1'b1), .CLR(clrstrobe), .D(1'b1));
+
+
+   always @ (posedge in) begin
+        if (strobed) counter <= 0;
+        else begin
+            counter <= counter + 1;
+            if (counter == N>>1) counter <= 0;
+        end
     end
     
     wire en;
     assign en = (counter == 0);
-
+    assign interrupt = (counter == 0);
     reg outClk = 1'b0;
     
+    
+
     always @ (negedge in) begin
+        if (strobed) begin  
+            outClk <= def;
+            clrstrobe <= 1'b1;
+        end
+        else begin
+            clrstrobe <= 1'b0;
             if (en) outClk <= ~outClk;
             else outClk <= outClk;
+        end
     end
 
     BUFG c(out,outClk);
-    
-    
-    
-    
-    
-/*
-    reg [8:0] counter = 0;
-    
-    wire allow,allow_b;
-    wire outDiv;
-    BUFGCTRL #(
-       .INIT_OUT(0),           // Initial value of BUFGCTRL output ($VALUES;)
-       .PRESELECT_I0("TRUE"), // BUFGCTRL output uses I0 input ($VALUES;)
-       .PRESELECT_I1("FALSE")  // BUFGCTRL output uses I1 input ($VALUES;)
-    )
-    BUFGCTRL_inst (
-       .O(outDiv),             // 1-bit output: Clock output
-       .CE0(1'b1),         // 1-bit input: Clock enable input for I0
-       .CE1(1'b0),         // 1-bit input: Clock enable input for I1
-       .I0(in),           // 1-bit input: Primary clock
-       .I1(1'b0),           // 1-bit input: Secondary clock
-       .IGNORE0(1'b1), // 1-bit input: Clock ignore input for I0
-       .IGNORE1(1'b1), // 1-bit input: Clock ignore input for I1
-       .S0(allow),           // 1-bit input: Clock select for I0
-       .S1(~allow)            // 1-bit input: Clock select for I1
-    );
-   assign out = (N==0) ? in : outDiv;
-    //BUFGCE clockBuf(.O(out),.I(in),.CE(allow_b));
-    assign allow = (counter == 0) & (in);
-   
-    always @ (posedge in) begin
-        if (counter == N-1) counter <= 0;
-        else counter <= counter + 1;
-    end
-    */
-    
-    
-    
-  
+
 endmodule
 
-module divideByN16bit(N,in,out);
-
+module divideByN16bit(strobe,N,in,def,out,interrupt);
+    
+    input strobe;
     input [15:0] N;
-    input in;
+    input in,def;
     (* clock_signal = "yes" *)output out;
+    output interrupt;
     
     reg [16:0] counter = 0;
 
-    always @ (posedge in) begin
-        counter <= counter + 1;
-        if (counter == N>>1) counter <= 0;
+    wire strobed;
+	 reg clrstrobe = 1'b0;
+    FDCE #(.INIT(1'b0)) strobetimer(.Q(strobed), .C(strobe),.CE(1'b1), .CLR(clrstrobe), .D(1'b1));
+
+
+   always @ (posedge in) begin
+        if (strobed) counter <= 0;
+        else begin
+            counter <= counter + 1;
+            if (counter == N>>1) counter <= 0;
+        end
     end
     
     wire en;
     assign en = (counter == 0);
-
+    assign interrupt = (counter == 0);
     reg outClk = 1'b0;
     
+    
     always @ (negedge in) begin
+        if (strobed) begin  
+            outClk <= def;
+            clrstrobe <= 1'b1;
+        end
+        else begin
+            clrstrobe <= 1'b0;
             if (en) outClk <= ~outClk;
             else outClk <= outClk;
+        end
     end
 
     BUFG c(out,outClk);
-    
-    
-    /*
-    reg [16:0] counter = 0;
-    
-    wire allow,allow_b;
-    wire outDiv;
-    BUFGCTRL #(
-       .INIT_OUT(0),           // Initial value of BUFGCTRL output ($VALUES;)
-       .PRESELECT_I0("TRUE"), // BUFGCTRL output uses I0 input ($VALUES;)
-       .PRESELECT_I1("FALSE")  // BUFGCTRL output uses I1 input ($VALUES;)
-    )
-    BUFGCTRL_inst (
-       .O(outDiv),             // 1-bit output: Clock output
-       .CE0(1'b1),         // 1-bit input: Clock enable input for I0
-       .CE1(1'b0),         // 1-bit input: Clock enable input for I1
-       .I0(in),           // 1-bit input: Primary clock
-       .I1(1'b0),           // 1-bit input: Secondary clock
-       .IGNORE0(1'b1), // 1-bit input: Clock ignore input for I0
-       .IGNORE1(1'b1), // 1-bit input: Clock ignore input for I1
-       .S0(allow),           // 1-bit input: Clock select for I0
-       .S1(~allow)            // 1-bit input: Clock select for I1
-    );
-    assign out = (N==0) ? in : outDiv;
-    //BUFGCE clockBuf(.O(out),.I(in),.CE(allow_b));
-    assign allow = (counter == 0) & (in);
-   
-    always @ (posedge in) begin
-        if (counter == N-1) counter <= 0;
-        else counter <= counter + 1;
-    end
-    */
+
 endmodule
 
 module highpass(orig,filter,out);

@@ -15,19 +15,41 @@
 
 */
 
+module sigLatchWclkDual(clk,in,out);
+  input clk;
+  input in;
+  output out;
+  
+  reg ffout = 1'b0;
+
+
+  wire seen;
+  assign seen = (ffout == 1'b1);
+
+  always @ (posedge clk) begin
+    ffout <= (seen) ? 1'b0 : in;
+  end
+
+  assign out = ffout | in;
+  
+endmodule
+
+
+
+
+
+
 module sigLatchWclk8(refclk,clk,in,out);
   input refclk,clk;
   input [7:0] in;
   output [7:0] out;
   
-  reg [7:0] ffout = 1'b0;
+  reg [7:0] ffout = 8'd0;
  // assign ffin = (ffout) ? 1'b0 : in;
   always @ (posedge clk) begin
     ffout <= (refclk) ? in : 8'd0;
   end
   
-  //FDCPE #(.INIT(1'b0)) FF0(.Q(ffout),.C(clk),.CE(refclk),.CLR(1'b0),.D(ffin),.PRE(1'b0));
-
   assign out = ffout | in;
   
 endmodule
@@ -609,8 +631,8 @@ module register(haltAll,currVal,rstAll,phi2, load, bus_en,SBin,
     assign SB = (bus_en) ? currVal : 8'bzzzzzzzz;
     
     always @(posedge phi2) begin
-    
-        if (haltAll) currVal <= currVal;
+        if (rstAll) currVal <= 8'h00;
+        else if (haltAll) currVal <= currVal;
         else if (load) currVal <= SBin;
         else currVal <= currVal;
        
