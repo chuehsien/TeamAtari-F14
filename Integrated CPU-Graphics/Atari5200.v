@@ -206,6 +206,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
     wire [23:0] RGB;
     wire ANTIC_writeNMI;
     wire incrY;
+    wire saveY;
 
     // Module instantiation
     ANTIC antic(.Fphi0(Fphi0), .LP_L(), .RW(), .rst(rst), .vblank(vblank), .hblank(hblank), .DMACTL(DMACTL), .CHACTL(CHACTL),
@@ -213,7 +214,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
                 .DB(extDB), .NMIRES_NMIST_bus(NMIRES_NMIST_bus), .DLISTL_bus(DLISTL_bus), .DLISTH_bus(DLISTH_bus),
                 .address(address), .AN(AN), .halt(HALT), .NMI_L(NMI_L), .RDY(RDY), .REF_L(), .RNMI_L(), .phi0(), 
                 .IR_out(IR), .loadIR(), .VCOUNT(VCOUNT), .PENH(PENH), .PENV(PENV), .ANTIC_writeEn(ANTIC_writeEn), 
-                .charMode(charMode), .numLines(numLines), .width(width), .height(height), .incrY(incrY),
+                .charMode(charMode), .numLines(numLines), .width(width), .height(height), .incrY(incrY), .saveY(saveY),
                 .printDLIST(dlist), .currState(currStateANTIC), .MSR(MSR), .loadDLIST_both(), 
                 .loadMSR_both(), .IR_rdy(IR_rdy), .mode(mode), .numBytes(), .MSRdata(MSRdata), 
                 .DLISTL(DLISTL), .blankCount(), .addressIn(), .loadMSRdata(),
@@ -222,7 +223,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
                 .colorSel4(colorSel4), .ANTIC_writeNMI(ANTIC_writeNMI));
     
     GTIA gtia(.address(), .AN(AN), .CS(), .DEL(), .OSC(), .RW(), .trigger(), .Fphi0(Fphi0), .rst(rst), .charMode(charMode),
-              .DLISTend(DLISTend), .numLines(numLines), .width(width), .height(height), .incrY(incrY),
+              .DLISTend(DLISTend), .numLines(numLines), .width(width), .height(height), .incrY(incrY), .saveY(saveY),
               .COLPM3(COLPM3), .COLPF0(COLPF0), .COLPF1(COLPF1), .COLPF2(COLPF2), .COLPF3(COLPF3), .COLBK(COLBK),
               .PRIOR(PRIOR), .VDELAY(VDELAY), .GRACTL(GRACTL), .HITCLR(HITCLR),
               .DB(extDB), .switch(),
@@ -306,8 +307,8 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK, GPIO_SW_E, GPIO_SW_S, GPIO_SW_N, GPIO
     assign cartROMadd = (memAdd - 16'h4000);
     
     // Soft Cartridge ROM instantiation
-    memDefender memD(.clka(fphi0),.addra(cartROMadd[14:0]),.douta(data_CART));
-    //memMario    memM(.clka(fphi0),.addra(cartROMadd[14:0]),.douta(data_CART));
+    //memDefender memD(.clka(fphi0),.addra(cartROMadd[14:0]),.douta(data_CART));
+    memMario    memM(.clka(fphi0),.addra(cartROMadd[14:0]),.douta(data_CART));
     
     wire [7:0] NMIRES_NMIST, VCOUNT_val; //
     wire [7:0] data_in_b;

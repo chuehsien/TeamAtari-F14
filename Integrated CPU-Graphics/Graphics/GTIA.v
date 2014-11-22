@@ -5,7 +5,7 @@
 `include "Graphics/colorTable.v"
 
 module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTend, numLines,
-            width, height, incrY,
+            width, height, incrY, saveY,
             COLPM3, COLPF0, COLPF1, COLPF2, COLPF3, COLBK, PRIOR, VDELAY, GRACTL, HITCLR,
             DB, switch,
             HPOSP0_M0PF_bus, HPOSP1_M1PF_bus, HPOSP2_M2PF_bus, HPOSP3_M3PF_bus, HPOSM0_P0PF_bus, 
@@ -33,6 +33,7 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
       input [8:0] width;
       input [7:0] height;
       input incrY;
+      input saveY;
       
       // Memory-mapped register inputs
       input [7:0] COLPM3;
@@ -100,6 +101,7 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
       reg [7:0] colorData = 8'd0;
       reg incrXY = 1'b0;
       reg incrXY_nextcycle = 1'b0;
+      reg [7:0] savedY = 8'd0;
       
       wire [23:0] RGB;
       wire [1:0] mode;
@@ -167,8 +169,8 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
                   ;
                 `modeNorm_hBlank_c40:
                   ;
-                `modeNorm_hBlank_s40:
-                  ;
+                `modeNorm_lum1col2:
+                  colorData <= {COLPF2[7:4], COLPF1[3:0]};
                 `modeNorm_playfield0:
                   colorData <= COLPF0;
                 `modeNorm_playfield1:
@@ -203,9 +205,13 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
           y <= 8'd0;
           vblank <= 1'b0;
           hblank <= 1'b0;
+          savedY <= 8'd0;
         end
         
         else begin
+        
+          if (saveY)
+            savedY <= y;
       
           if (DLISTend) begin
             x <= 9'd0;
@@ -282,7 +288,7 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
                   else begin
                     
                     // Transition from end of 20 blocks to start of next line of blocks
-                    if ((x == (width-1))&&(((y-24) % 16) == 8'd15)) begin
+                    if ((x == (width-1))&&(((y - savedY) % 16) == 8'd15)) begin
                       x <= 9'd0;
                       y <= y + 8'd1;
                       hblank <= 1'b1;
@@ -291,7 +297,7 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
                     else begin
                     
                       // Transition from end of single block to start of next block
-                      if (((x % 16) == 9'd15)&&(((y-24) % 16) == 8'd15)) begin
+                      if (((x % 16) == 9'd15)&&(((y - savedY) % 16) == 8'd15)) begin
                         x <= x + 9'd1;
                         y <= y - 8'd15;
                       end
@@ -342,7 +348,7 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
                   
                   else begin
                     // Transition from end of 40 blocks to start of next line of blocks
-                    if ((x == (width-1))&&((y % 8) == 8'd7)) begin
+                    if ((x == (width-1))&&(((y - savedY) % 8) == 8'd7)) begin
                       x <= 9'd0;
                       y <= y + 8'd1;
                       hblank <= 1'b1;
@@ -350,7 +356,7 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
                     
                     else begin
                       // Transition from end of single block to start of next block
-                      if (((x % 8) == 9'd7)&&((y % 8) == 8'd7)) begin
+                      if (((x % 8) == 9'd7)&&(((y - savedY) % 8) == 8'd7)) begin
                         x <= x + 9'd1;
                         y <= y - 8'd7;
                       end
@@ -382,7 +388,7 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
                   
                   else begin
                     // Transition from end of 40 blocks to start of next line of blocks
-                    if ((x == (width-1))&&((y % 8) == 8'd7)) begin
+                    if ((x == (width-1))&&(((y - savedY) % 8) == 8'd7)) begin
                       x <= 9'd0;
                       y <= y + 8'd1;
                       hblank <= 1'b1;
@@ -390,7 +396,7 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
                     
                     else begin
                       // Transition from end of single block to start of next block
-                      if (((x % 16) == 9'd15)&&((y % 8) == 8'd7)) begin
+                      if (((x % 16) == 9'd15)&&(((y - savedY) % 8) == 8'd7)) begin
                         x <= x + 9'd1;
                         y <= y - 8'd7;
                       end

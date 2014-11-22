@@ -34,7 +34,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                      ANTIC_writeDLIST, numLines, width, height, ANTIC_writeDLI, ANTIC_writeVBI,
                      ANTIC_writeNMI,
                      idle, loadMSRstate, DLISTend, charSingleColor, colorSel4, update_WSYNC, VCOUNT,
-                     blankScreen, saveMSR, resetMSR, incrY);
+                     blankScreen, saveMSR, resetMSR, incrY, saveY);
   
   input [7:0] IR;
   input IR_rdy;
@@ -84,6 +84,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
   output reg saveMSR = 1'b0;
   output reg resetMSR = 1'b0;
   output reg incrY = 1'b0;
+  output reg saveY = 1'b0;
   
   reg idle = 1'b1;
   reg [3:0] mode = 4'd0;
@@ -174,6 +175,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
       resetMSR <= 1'b0;
       incrY <= 1'b0;
       sentTwice <= 1'b0;
+      saveY <= 1'b0;
     end
     
     else begin
@@ -471,15 +473,18 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                         incrMSR <= 1'b1;
                         width <= `width;
                         height <= `height;
+                        charSingleColor <= 1'b1;
                       end
                       
                       else begin
                         loadMSRdata <= 1'b0;
                         incrMSR <= 1'b0;
+                        saveY <= 1'b0;
                         if (MSRdata_rdy) begin
                           // Informs GTIA that display is sent in 8x8 char blocks
                           charMode <= 3'd3;
                           loadChar <= 1'b1;
+                          saveY <= 1'b1;
                         end
                         
                         else if (charLoaded|charLoadHold) begin
@@ -505,7 +510,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                             
                             else begin
                               if (charData[charBit] == 1'b1)
-                                AN <= `modeNorm_playfield1; // Text foreground color
+                                AN <= `modeNorm_lum1col2; // Text foreground color
                               else
                                 AN <= `modeNorm_playfield2; // Text background color
 
@@ -568,16 +573,18 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                         width <= `width;
                         height <= `height;
                         numRepeat <= 3'd1;
+                        charSingleColor <= 1'b1;
                       end
                       
                       else begin
                         loadMSRdata <= 1'b0;
                         incrMSR <= 1'b0;
+                        saveY <= 1'b0;
                         if (MSRdata_rdy) begin
                           // Informs GTIA that display is sent in 16x8 char blocks
                           charMode <= 3'd4;
-                          charSingleColor <= 1'b1;
                           loadChar <= 1'b1;
+                          saveY <= 1'b1;
                         end
                         
                         else if (charLoaded|charLoadHold) begin
@@ -659,15 +666,17 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                         width <= `width;
                         height <= `height;
                         numRepeat <= 3'd3;
+                        charSingleColor <= 1'b1;
                       end
                       
                       else begin
                         loadMSRdata <= 1'b0;
                         incrMSR <= 1'b0;
+                        saveY <= 1'b0;
                         if (MSRdata_rdy) begin
                           // Informs GTIA that display is sent in 8x8 char blocks
+                          saveY <= 1'b1;
                           charMode <= 3'd2;
-                          charSingleColor <= 1'b1;
                           loadChar <= 1'b1;
                         end
                         

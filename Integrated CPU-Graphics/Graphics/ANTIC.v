@@ -17,7 +17,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
              printDLIST, currState, MSR, loadMSR_both, loadDLIST_both,
              IR_rdy, mode, numBytes, MSRdata, DLISTL, blankCount, addressIn, loadMSRdata, 
              charData, newDLISTptr, loadDLIST, DLISTend, idle, loadMSRstate,
-             addressOut, haltANTIC, rdyANTIC, colorSel4, ANTIC_writeNMI, incrY);
+             addressOut, haltANTIC, rdyANTIC, colorSel4, ANTIC_writeNMI, incrY, saveY);
 
       input Fphi0;
       input LP_L;
@@ -90,6 +90,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
       //endtemp
       
       output incrY;
+      output saveY;
       
       assign haltANTIC = halt;
       assign rdyANTIC = RDY;
@@ -171,7 +172,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
                        .ANTIC_writeNMI(ANTIC_writeNMI),
                        .idle(idle), .loadMSRstate(loadMSRstate), .DLISTend(DLISTend), .charSingleColor(charSingleColor),
                        .colorSel4(colorSel4), .update_WSYNC(update_WSYNC), .VCOUNT(VCOUNT), .blankScreen(blankScreen),
-                       .saveMSR(saveMSR), .resetMSR(resetMSR), .incrY(incrY));
+                       .saveMSR(saveMSR), .resetMSR(resetMSR), .incrY(incrY), .saveY(saveY));
       
       // Update DLISTPTR (JUMP instruction)
       assign DLISTL_bus = loadDLIST ? newDLISTptr[7:0] : (incrDLIST ? DLISTL : 8'hzz);
@@ -460,7 +461,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
                         if (charSingleColor)
                           addressIn <= {CHBASE, 8'h00} + (MSRdata[5:0]*8) + charByte;
                         else
-                          addressIn <= {CHBASE, 8'h00} + (MSRdata*8) + charByte;
+                          addressIn <= {CHBASE, 8'h00} + (MSRdata[6:0]*8) + charByte;
                         loadAddr <= 1'b1;
                       end
                       else begin
