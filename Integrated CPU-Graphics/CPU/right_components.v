@@ -15,8 +15,8 @@
 
 */
 
-module sigLatchWclkDual(clk,in,out);
-  input clk;
+module sigLatchWclkDual(haltAll,clk,in,out);
+  input haltAll,clk;
   input in;
   output out;
   
@@ -27,7 +27,8 @@ module sigLatchWclkDual(clk,in,out);
   assign seen = (ffout == 1'b1);
 
   always @ (posedge clk) begin
-    ffout <= (seen) ? 1'b0 : in;
+		if (haltAll) ffout <= ffout;
+		else ffout <= (seen) ? 1'b0 : in;
   end
 
   assign out = ffout | in;
@@ -35,19 +36,51 @@ module sigLatchWclkDual(clk,in,out);
 endmodule
 
 
-
-
-
-
-module sigLatchWclk8(refclk,clk,in,out);
-  input refclk,clk;
+module sigLatchWclk8nohold(haltAll,refclk,clk,in,out);
+  input haltAll,refclk,clk;
   input [7:0] in;
   output [7:0] out;
   
   reg [7:0] ffout = 8'd0;
  // assign ffin = (ffout) ? 1'b0 : in;
   always @ (posedge clk) begin
-    ffout <= (refclk) ? in : 8'd0;
+    if (haltAll) ffout <= ffout;
+	 else ffout <= (refclk) ? in : 8'd0;
+  end
+  
+  assign out = ffout;
+  
+endmodule
+//only latch if ref clock is high.
+module sigLatchWclknohold(haltAll,refclk,clk,in,out);
+  input haltAll,refclk,clk, in;
+  output out;
+  
+  reg ffout = 1'b0;
+ // assign ffin = (ffout) ? 1'b0 : in;
+  always @ (posedge clk) begin
+	 if (haltAll) ffout <= ffout;
+    else ffout <= (refclk) ? in : 1'b0;
+  end
+  
+  //FDCPE #(.INIT(1'b0)) FF0(.Q(ffout),.C(clk),.CE(refclk),.CLR(1'b0),.D(ffin),.PRE(1'b0));
+
+  assign out = ffout;
+  
+endmodule
+
+
+
+module sigLatchWclk8(haltAll,refclk,clk,in,out);
+  input haltAll,refclk,clk;
+  input [7:0] in;
+  output [7:0] out;
+  
+  reg [7:0] ffout = 8'd0;
+ // assign ffin = (ffout) ? 1'b0 : in;
+  always @ (posedge clk) begin
+    if (haltAll) ffout <= ffout;
+    else ffout <= (refclk) ? in : 8'd0;
   end
   
   assign out = ffout | in;
@@ -55,14 +88,15 @@ module sigLatchWclk8(refclk,clk,in,out);
 endmodule
 
 //only latch if ref clock is high.
-module sigLatchWclk(refclk,clk,in,out);
-  input refclk,clk, in;
+module sigLatchWclk(haltAll,refclk,clk,in,out);
+  input haltAll,refclk,clk, in;
   output out;
   
   reg ffout = 1'b0;
  // assign ffin = (ffout) ? 1'b0 : in;
   always @ (posedge clk) begin
-    ffout <= (refclk) ? in : 1'b0;
+    if (haltAll) ffout <= ffout;
+    else ffout <= (refclk) ? in : 1'b0;
   end
   
   //FDCPE #(.INIT(1'b0)) FF0(.Q(ffout),.C(clk),.CE(refclk),.CLR(1'b0),.D(ffin),.PRE(1'b0));
@@ -132,11 +166,12 @@ module ALU(A, B, DAA, I_ADDC, SUMS, ANDS, EORS, ORS, SRS, ALU_out, AVR, ACR, HC,
   wire [8:0] result;
   assign result = (A + B + I_ADDC) & 9'h1ff;
   wire [4:0] halfResult;
-  assign halfResult = (A[3:0] + B[3:0]) & 5'h1f;
+  assign halfResult = (A[3:0] + B[3:0] + I_ADDC) & 5'h1f;
   
-  
-    assign ACR = (SUMS) ? (result[8]) : 
-               ((SRS) ? B[0] : 1'b0);
+    assign ACR = (DAA) ? (result > 9'h99) :
+						((SUMS) ? (result[8]) : 
+               ((SRS) ? B[0] : 1'b0));
+               
                
     assign HC = halfResult[4];
     assign AVR = (SUMS) ?  ((A[7]==B[7]) & (A[7] != result[7])) : 1'b0;
@@ -644,7 +679,151 @@ endmodule
 //this needs to push out B bit when its a BRK.
 //the x_set and x_clr are edge triggered.
 //everything else is ticked in when 'update' is asserted.
-module statusReg(phi1_1,phi1_7,haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
+module statusReg(haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
+                        P_DB, DBZ, ALUZ, ACR, AVR, B,
+                        C_set, C_clr,
+                        I_set,I_clr, 
+                        V_clr,
+                        D_set,D_clr,
+                        DB,ALU,storedDB,opcode,DBout,
+                        status);
+    input haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
+                        P_DB, DBZ,ALUZ, ACR, AVR,B,
+                        C_set, C_clr,
+                        I_set,I_clr, 
+                        V_clr,
+                        D_set,D_clr; 
+                        
+    input [7:0] DB,ALU,storedDB,opcode;
+    inout [7:0] DBout;
+    output [7:0] status; //used by the FSM
+    
+    wire rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
+                    P_DB, DBZ,ALUZ,ACR, AVR,B,
+                    C_set, C_clr,
+                    I_set,I_clr, 
+                    V_clr,
+                    D_set,D_clr; 
+
+    wire [7:0] DB,ALU,opcode;
+    wire [7:0] DBout;
+    wire [7:0] status;
+    
+
+    reg currVal7,currVal6,currVal3,currVal2,currVal1,currVal0;
+    assign DBout = (P_DB) ? status : 8'bzzzzzzzz;
+    assign status = {currVal7,currVal6,1'b1,B,currVal3,currVal2,currVal1,currVal0};
+
+    
+    wire class1,class2,class3,class4,class5; //diff classes of opcodes affect diff status bits.
+    assign class1 = (opcode == `ADC_abs || opcode == `ADC_abx || opcode == `ADC_aby || opcode == `ADC_imm || 
+                 opcode == `ADC_izx || opcode == `ADC_izy || opcode == `ADC_zp  || opcode == `ADC_zpx ||
+                 opcode == `SBC_abs || opcode == `SBC_abx || opcode == `SBC_aby || opcode == `SBC_imm || 
+                 opcode == `SBC_izx || opcode == `SBC_izy || opcode == `SBC_zp  || opcode == `SBC_zpx );
+                 
+    assign class2 =  (opcode == `ORA_izx ||opcode == `ORA_izy ||opcode == `ORA_aby ||opcode == `ORA_abx ||
+                        opcode == `ORA_abs ||opcode == `ORA_imm ||opcode == `ORA_zp || opcode == `ORA_zpx||
+                        opcode == `AND_izx ||opcode == `AND_izy ||opcode == `AND_aby ||opcode == `AND_abx ||
+                        opcode == `AND_abs ||opcode == `AND_imm ||opcode == `AND_zp || opcode == `AND_zpx||
+                        opcode == `EOR_izx ||opcode == `EOR_izy ||opcode == `EOR_aby ||opcode == `EOR_abx ||
+                        opcode == `EOR_abs ||opcode == `EOR_imm ||opcode == `EOR_zp || opcode == `EOR_zpx) ;  
+     
+    assign class3 = (opcode == `BIT_zp || opcode == `BIT_abs);
+    assign class4 = (opcode == `TAX || opcode == `TAY ||  
+            opcode == `TXA ||  opcode == `TYA || opcode == `TSX);             
+    
+    assign class5 = (opcode == `CMP_izx ||opcode == `CMP_izy ||opcode == `CMP_aby ||opcode == `CMP_abx ||
+                        opcode == `CMP_abs ||opcode == `CMP_imm ||opcode == `CMP_zp || opcode == `CMP_zpx);
+ 
+    always @ (posedge phi1) begin
+
+      if (rstAll) begin
+        currVal7 <= 1'b0;
+        currVal6 <= 1'b0;
+        currVal3 <= 1'b0;
+        currVal2 <= 1'b0;
+        currVal1 <= 1'b0;
+        currVal0 <= 1'b0;
+      end
+      else begin
+        if (haltAll) begin
+          currVal7 <= currVal7;
+          currVal6 <= currVal6;
+          currVal3 <= currVal3;
+          currVal2 <= currVal2;
+          currVal1 <= currVal1;
+          currVal0 <= currVal0;
+        end
+        else begin
+          currVal7 <= currVal7;
+          currVal6 <= currVal6;
+          currVal3 <= currVal3;
+          currVal2 <= currVal2;
+          currVal1 <= currVal1;
+          currVal0 <= currVal0;
+        
+          //N bit
+          if (flagsALU) currVal7 <= ALU[7];
+          else if (flagsDB) begin
+            if (class4) currVal7 <= storedDB[7];
+            else currVal7 <= DB[7];
+          end
+          else if (DB_P) currVal7 <= DB[7];
+          
+          //V bit
+          if (flagsALU & class1) currVal6 <= AVR;
+          else if (flagsDB & class3) currVal6 <= DB[6];
+          else if (DB_P) currVal6 <= DB[6];
+          else if (V_clr) currVal6 <= 1'b0;
+          
+          //D bit
+          if (DB_P) currVal3 <= DB[3];
+          else if (D_set) currVal3 <= 1'b1;
+          else if (D_clr) currVal3 <= 1'b0;
+          
+          //I bit
+          if (DB_P) currVal2 <= DB[2];
+          else if (I_set) currVal2 <= 1'b1;
+          else if (I_clr) currVal2 <= 1'b0;
+          
+          //Z bit
+          if (loadDBZ) currVal1 <= DBZ;
+          else if (flagsDB) begin
+            if (class4) currVal1 <= (storedDB == 8'd0);
+            else if (class3) currVal1 <= currVal1;
+            else currVal1 <= DBZ;
+          end
+          else if (flagsALU) currVal1 <= ALUZ;
+          else if (DB_P) currVal1 <= DB[1];
+          
+          //C bit
+          if (flagsALU) begin
+            if (class2) currVal0 <= currVal0;
+            else currVal0 <= ACR;
+          end
+          else if (DB_P) currVal0 <= DB[0];
+          else if (C_set) currVal0 <= 1'b1;
+          else if (C_clr) currVal0 <= 1'b0;
+        
+        end
+        
+      end
+
+    
+	end
+
+         
+    
+
+
+endmodule
+
+/*
+//backup
+//this needs to push out B bit when its a BRK.
+//the x_set and x_clr are edge triggered.
+//everything else is ticked in when 'update' is asserted.
+module statusReg(haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
                         P_DB, DBZ, ALUZ, ACR, AVR, B,
                         C_set, C_clr,
                         I_set,I_clr, 
@@ -732,8 +911,6 @@ module statusReg(phi1_1,phi1_7,haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB
                     ((flagsDB&class4) ? special_7 :
                      (flagsDB ? DB[7] : 
                      (DB_P ? DB[7] : currVal7))));
-                     
-    //assign phi2_7 = (flagsDB & class4) ? DB[7] : currVal7;
     
     //V bit
     assign phi1_6 = loadDBZ ? currVal6 :
@@ -741,19 +918,17 @@ module statusReg(phi1_1,phi1_7,haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB
                     (flagsDB ? (class3 ? DB[6] : currVal6) :
                     (DB_P ? DB[6] :  (V_clr ? 1'b0 : currVal6))));
     
-   // assign phi2_6 = currVal6;
-    
+
     //D bit
     assign phi1_3 = loadDBZ ? currVal3 : 
                     (flagsALU  ? currVal3 : 
                     (flagsDB ? currVal3 :
                     (DB_P ? DB[3] : (D_set ? 1'b1 : (D_clr ? 1'b0 : currVal3)))));
                     
-  //  assign phi2_3 = currVal3;
-    
+
     //I bit
     assign phi1_2 = DB_P ? DB[2] : (I_set ? 1'b1 : (I_clr ? 1'b0 : currVal2));           
-   // assign phi2_2 = currVal2;           
+
     
     //Z bit
     wire special_1;
@@ -764,171 +939,18 @@ module statusReg(phi1_1,phi1_7,haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB
                     (flagsDB ? DBZ :
                     (flagsALU ? ALUZ :
                     (DB_P ? DB[1] : currVal1)))));
-          /*          
-                    (flagsALU ? ((ALU == 8'd0)) :
-                    ((flagsDB & class4) ? special_1 :
-                    (flagsDB ? (class3 ? currVal1 : (DB == 8'd0) ):
-                    (DB_P ? DB[1] : currVal1))));
-     */
 
-    //assign phi2_1 = (flagsDB & class4) ? (DBZ) : currVal1;
-    
     //C bit
     assign phi1_0 = loadDBZ ? currVal0 :
                     (flagsALU ?  (class1 ? ACR : (class2 ? currVal0 : ACR)) :
                     (flagsDB ? currVal0 :
                     (DB_P ? DB[0] :
                     (C_set ? 1'b1 : (C_clr ? 1'b0 : currVal0)))));
-                    
-    //assign phi2_0 = currVal0;
-                    
-                    
-    /*
-    always @ (posedge phi1 or posedge phi2) begin
-    
-        if (phi1) begin
-            if (rstAll)  begin
-                currVal[7:5] <= 3'b001;
-                currVal[3:0] <= 4'b0000;
-            end
-            
-            else if (loadDBZ) begin
-             
-             
-                currVal[`status_Z] <= DBZ;
-                //just to keep synthesizer happy.
-                currVal[`status_C] <= currVal[`status_C];
-                currVal[`status_V] <= currVal[`status_V];
-                currVal[`status_N] <= currVal[`status_N];
-                currVal[5] <= currVal[5];
-                currVal[3] <= currVal[3];
-                currVal[2] <= currVal[2];
-                
-            end
-            
-            else if (flagsALU) begin
-                if (opcode == `ADC_abs || opcode == `ADC_abx || opcode == `ADC_aby || opcode == `ADC_imm || 
-                 opcode == `ADC_izx || opcode == `ADC_izy || opcode == `ADC_zp  || opcode == `ADC_zpx ||
-                 opcode == `SBC_abs || opcode == `SBC_abx || opcode == `SBC_aby || opcode == `SBC_imm || 
-                 opcode == `SBC_izx || opcode == `SBC_izy || opcode == `SBC_zp  || opcode == `SBC_zpx )begin
-
-                    //ADC, SBC - NZCV (ALU)
-                    currVal[`status_C] <= ACR;
-                    currVal[`status_V] <= AVR;
-                    currVal[`status_Z] <= ~(|ALU);
-                    currVal[`status_N] <= ALU[7];
-                    currVal[5] <= currVal[5];
-                    currVal[3] <= currVal[3];
-                    currVal[2] <= currVal[2];
-                end
-                
-                else if (opcode == `ORA_izx ||opcode == `ORA_izy ||opcode == `ORA_aby ||opcode == `ORA_abx ||
-                        opcode == `ORA_abs ||opcode == `ORA_imm ||opcode == `ORA_zp || opcode == `ORA_zpx||
-                        opcode == `AND_izx ||opcode == `AND_izy ||opcode == `AND_aby ||opcode == `AND_abx ||
-                        opcode == `AND_abs ||opcode == `AND_imm ||opcode == `AND_zp || opcode == `AND_zpx||
-                        opcode == `EOR_izx ||opcode == `EOR_izy ||opcode == `EOR_aby ||opcode == `EOR_abx ||
-                        opcode == `EOR_abs ||opcode == `EOR_imm ||opcode == `EOR_zp || opcode == `EOR_zpx) begin
-                        
-                    //AND,EOR,ORA,=NZ (ALU)
-
-                    currVal[`status_Z] <= ~(|ALU);
-                    currVal[`status_N] <= ALU[7];
-                    
-                    currVal[`status_C] <= currVal[`status_C];
-                    currVal[`status_V] <= currVal[`status_V];
-                    currVal[5] <= currVal[5];
-                    currVal[3] <= currVal[3];
-                    currVal[2] <= currVal[2];
-                end
-                
-                else begin//opcode == NZC 
-                    //ASL - NZC (ALU)
-                    //CMP,CPX,CPY - NZC (ALU)
-                    //LSR, ROL, ROR - NZC (ALU)
-                    currVal[`status_C] <= ACR;
-                    currVal[`status_V] <= AVR;
-                    currVal[`status_Z] <= ~(|ALU);
-                    currVal[`status_N] <= ALU[7];
-                    currVal[5] <= currVal[5];
-                    currVal[3] <= currVal[3];
-                    currVal[2] <= currVal[2];
-                    //NV_BDIZC
-                end
-
-            end
-
-            else if (flagsDB) begin
-
-                //INC,INX,INY,DEC,DEX,DEY,LDA,LDX,LDY - NZ 
-             
-                if (opcode == `BIT_zp || opcode == `BIT_abs) begin
-                    currVal[`status_N] <= DB[7];
-                    currVal[`status_V] <= DB[6];
-                    
-                    currVal[`status_C] <= currVal[`status_C];
-                    currVal[`status_Z] <= currVal[`status_Z];
-                    currVal[5] <= currVal[5];
-                    currVal[3] <= currVal[3];
-                    currVal[2] <= currVal[2];
-                    
-                end
-                else begin
-                    currVal[`status_Z] <= ~(|DB);
-                    currVal[`status_N] <= DB[7];
-                    
-                    currVal[`status_C] <= currVal[`status_C];
-                    currVal[`status_V] <= currVal[`status_V];
-                    currVal[5] <= currVal[5];
-                    currVal[3] <= currVal[3];
-                    currVal[2] <= currVal[2];
-                    
-                end
-            end
-            else if (DB_P) begin
-                currVal[7:5] <= DB[7:5];
-                currVal[3:0] <= DB[3:0];
-            end
-            else begin
-                currVal[`status_C] <=  C_set ? 1'b1 : (C_clr ? 1'b0 : currVal[`status_C]);
-                currVal[`status_I] <=  I_set ? 1'b1 : (I_clr ? 1'b0 : currVal[`status_I]);
-                currVal[`status_V] <=  (V_clr ? 1'b0 : currVal[`status_V]);
-                currVal[`status_D] <=  D_set ? 1'b1 : (D_clr ? 1'b0 : currVal[`status_D]);
-                
-                currVal[5] <= currVal[5];
-                currVal[7] <= currVal[7];
-                currVal[`status_Z] <= currVal[`status_Z];
-                //NV_BDIZC
-            end
-            
-            
-        end    
-        else if (phi2) begin
-            
-            
-            if ((flagsDB) & (opcode == `TAX || opcode == `TAY || opcode == `TSX || 
-            opcode == `TXA || opcode == `TXS || opcode == `TYA)) begin
-            
-                currVal[`status_Z] <= ~(|DB);
-                currVal[`status_N] <= DB[7];
-                
-                currVal[`status_C] <= currVal[`status_C];
-                currVal[`status_V] <= currVal[`status_V];
-                currVal[5] <= currVal[5];
-                currVal[3] <= currVal[3];
-                currVal[2] <= currVal[2];
-                
-            end
-
-
-        end
-        
-    
-    end
-    */
-    
 
 
 endmodule
+
+*/
 
 module prechargeMos(rstAll,phi2,
                     bus);

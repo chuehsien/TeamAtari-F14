@@ -3,15 +3,14 @@
 `include "CPU/Control/Logiccontrol2.v"
 
 module clockGen(HALT,phi0_in,fclk,
-                haltAll,RDY,phi1_out,phi2_out,phi1_extout,phi2_extout);
+                stop,haltAll,RDY,phi1_out,phi2_out,phi1_extout,phi2_extout);
                 
     input HALT,phi0_in,fclk;
-    output reg haltAll, RDY = 1'b0;
+    output reg stop,haltAll, RDY = 1'b0;
     
      (* clock_signal = "yes" *) output phi1_out,phi2_out,phi1_extout,phi2_extout;
     
-    reg stop = 1'b0;
-    
+
     
     //latch on phi1 ticks
     always @ (negedge phi0_in) begin

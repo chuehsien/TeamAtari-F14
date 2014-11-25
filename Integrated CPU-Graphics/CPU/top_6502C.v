@@ -89,10 +89,10 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             wire ALUZ;
                         //clock
             wire phi1,phi2;
-            wire haltAll;
-            clockGen clock(HALT,phi0_in,fastClk,haltAll,RDY,phi1,phi2,phi1_out,phi2_out);
+            wire haltAll,stop;
+            clockGen clock(HALT,phi0_in,fastClk,stop,haltAll,RDY,phi1,phi2,phi1_out,phi2_out);
             
-            assign RW = ~((controlSigs[`nRW])&(~RDY));
+            assign RW = ~((controlSigs[`nRW])&(~RDY)&(~phi1));
             wire updateOthers;
             
           
@@ -103,83 +103,100 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             wire nADH_ABH, nADL_ABL, DB_P, FLAG_DBZ, FLAG_ALU, FLAG_DB, P_DB, SET_C, CLR_C, SET_I, CLR_I, CLR_V, SET_D, CLR_D;
             assign holdAB = {nADH_ABH,FLAG_ALU,ALUZ,1'd0,1'd0,FLAG_DB,DBZ_latch,nADL_ABL};
             
-            sigLatchWclk l1(~phi1,fastClk,controlSigs[`nADH_ABH],nADH_ABH);
-            sigLatchWclk l2(~phi1,fastClk,controlSigs[`nADL_ABL],nADL_ABL);
-            sigLatchWclk l3(~phi1,fastClk,controlSigs[`DB_P],DB_P);
-            sigLatchWclk l4(~phi1,fastClk,controlSigs[`FLAG_DBZ],FLAG_DBZ);
-            sigLatchWclk l5(~phi1,fastClk,controlSigs[`FLAG_ALU],FLAG_ALU);
-            sigLatchWclk l6(~phi1,fastClk,controlSigs[`FLAG_DB],FLAG_DB);
-            sigLatchWclk l7(~phi1,fastClk,controlSigs[`P_DB],P_DB);
-            sigLatchWclk l8(~phi1,fastClk,controlSigs[`SET_C],SET_C);
-            sigLatchWclk l9(~phi1,fastClk,controlSigs[`CLR_C],CLR_C);
-            sigLatchWclk l10(~phi1,fastClk,controlSigs[`SET_I],SET_I);
-            sigLatchWclk l11(~phi1,fastClk,controlSigs[`CLR_I],CLR_I);
-            sigLatchWclk l12(~phi1,fastClk,controlSigs[`CLR_V],CLR_V);
-            sigLatchWclk l13(~phi1,fastClk,controlSigs[`SET_D],SET_D);
-            sigLatchWclk l14(~phi1,fastClk,controlSigs[`CLR_D],CLR_D);
+            sigLatchWclk l1(stop,~phi1,fastClk,controlSigs[`nADH_ABH],nADH_ABH);
+            sigLatchWclk l2(stop,~phi1,fastClk,controlSigs[`nADL_ABL],nADL_ABL);
+            sigLatchWclk l3(stop,~phi1,fastClk,controlSigs[`DB_P],DB_P);
+            sigLatchWclk l4(stop,~phi1,fastClk,controlSigs[`FLAG_DBZ],FLAG_DBZ);
+            sigLatchWclk l5(stop,~phi1,fastClk,controlSigs[`FLAG_ALU],FLAG_ALU);
+            sigLatchWclk l6(stop,~phi1,fastClk,controlSigs[`FLAG_DB],FLAG_DB);
+            sigLatchWclk l7(stop,~phi1,fastClk,controlSigs[`P_DB],P_DB);
+            sigLatchWclk l8(stop,~phi1,fastClk,controlSigs[`SET_C],SET_C);
+            sigLatchWclk l9(stop,~phi1,fastClk,controlSigs[`CLR_C],CLR_C);
+            sigLatchWclk l10(stop,~phi1,fastClk,controlSigs[`SET_I],SET_I);
+            sigLatchWclk l11(stop,~phi1,fastClk,controlSigs[`CLR_I],CLR_I);
+            sigLatchWclk l12(stop,~phi1,fastClk,controlSigs[`CLR_V],CLR_V);
+            sigLatchWclk l13(stop,~phi1,fastClk,controlSigs[`SET_D],SET_D);
+            sigLatchWclk l14(stop,~phi1,fastClk,controlSigs[`CLR_D],CLR_D);
             
             //phi2 uptick latcher:
             //nRW,STORE_DB, SB_X, SB_Y, SB_AC, SB_S
-            sigLatchWclk l15(phi1,fastClk,controlSigs[`nRW],nRW);
-            sigLatchWclk l16(phi1,fastClk,controlSigs[`STORE_DB],STORE_DB);
-            sigLatchWclk l17(phi1,fastClk,controlSigs[`SB_X],SB_X);
-            sigLatchWclk l18(phi1,fastClk,controlSigs[`SB_Y],SB_Y);
-            sigLatchWclk l19(phi1,fastClk,controlSigs[`SB_AC],SB_AC);
-            sigLatchWclk l20(phi1,fastClk,controlSigs[`SB_S],SB_S);
+            sigLatchWclk l15(stop,phi1,fastClk,controlSigs[`nRW],nRW);
+            sigLatchWclk l16(stop,phi1,fastClk,controlSigs[`STORE_DB],STORE_DB);
+            sigLatchWclk l17(stop,phi1,fastClk,controlSigs[`SB_X],SB_X);
+            sigLatchWclk l18(stop,phi1,fastClk,controlSigs[`SB_Y],SB_Y);
+            sigLatchWclk l19(stop,phi1,fastClk,controlSigs[`SB_AC],SB_AC);
+            sigLatchWclk l20(stop,phi1,fastClk,controlSigs[`SB_S],SB_S);
             
             //last ones
             wire O_ADL0, O_ADL1, O_ADL2, O_ADH0, O_ADH1to7;
             
-            sigLatchWclk l21(~phi1,fastClk,controlSigs[`O_ADL0],O_ADL0);
-            sigLatchWclk l22(~phi1,fastClk,controlSigs[`O_ADL1],O_ADL1);
-            sigLatchWclk l23(~phi1,fastClk,controlSigs[`O_ADL2],O_ADL2);
-            sigLatchWclk l24(~phi1,fastClk,controlSigs[`O_ADH0],O_ADH0);
-            sigLatchWclk l25(~phi1,fastClk,controlSigs[`O_ADH1to7],O_ADH1to7);
+            sigLatchWclk l21(stop,~phi1,fastClk,controlSigs[`O_ADL0],O_ADL0);
+            sigLatchWclk l22(stop,~phi1,fastClk,controlSigs[`O_ADL1],O_ADL1);
+            sigLatchWclk l23(stop,~phi1,fastClk,controlSigs[`O_ADL2],O_ADL2);
+            sigLatchWclk l24(stop,~phi1,fastClk,controlSigs[`O_ADH0],O_ADH0);
+            sigLatchWclk l25(stop,~phi1,fastClk,controlSigs[`O_ADH1to7],O_ADH1to7);
 
 
             wire PCH_ADH,PCL_ADL,ADD_ADL,S_ADL,DL_ADL,DL_ADH;
-            sigLatchWclk l26(~phi1,fastClk,controlSigs[`PCL_ADL],PCL_ADL);
-            sigLatchWclk l27(~phi1,fastClk,controlSigs[`PCH_ADH],PCH_ADH);
-            sigLatchWclk l28(~phi1,fastClk,controlSigs[`ADD_ADL],ADD_ADL);
-            sigLatchWclk l29(~phi1,fastClk,controlSigs[`S_ADL],S_ADL);
-            sigLatchWclk l30(~phi1,fastClk,controlSigs[`DL_ADL],DL_ADL);
-            sigLatchWclk l31(~phi1,fastClk,controlSigs[`DL_ADH],DL_ADH);
+            sigLatchWclk l26(stop,~phi1,fastClk,controlSigs[`PCL_ADL],PCL_ADL);
+            sigLatchWclk l27(stop,~phi1,fastClk,controlSigs[`PCH_ADH],PCH_ADH);
+            sigLatchWclk l28(stop,~phi1,fastClk,controlSigs[`ADD_ADL],ADD_ADL);
+            sigLatchWclk l29(stop,~phi1,fastClk,controlSigs[`S_ADL],S_ADL);
+            sigLatchWclk l30(stop,~phi1,fastClk,controlSigs[`DL_ADL],DL_ADL);
+            sigLatchWclk l31(stop,~phi1,fastClk,controlSigs[`DL_ADH],DL_ADH);
 
           
             wire [7:0] DBforSR;
             wire DBZ;
-          
-            
-            sigLatchWclk8 db4sr1(~phi1,fastClk,DB,DBforSR); 
-            sigLatchWclk db4sr2(~phi1,fastClk,DBZ,DBZ_latch);
+				wire [7:0] DBforDOR,ADLforABL,ADHforABH;
+				
+           // sigLatchWclk8 db4dor(stop,phi1,fastClk,DB,DBforDOR); 
+				//sigLatchWclk8 adl4abl(stop,~phi1,fastClk,ADL,ADLforABL); 
+				//sigLatchWclk8 adh4abh(stop,~phi1,fastClk,ADH,ADHforABH); 
+				
+            sigLatchWclk8 db4sr1(stop,~phi1,fastClk,DB,DBforSR); 
+            sigLatchWclk db4sr2(stop,~phi1,fastClk,DBZ,DBZ_latch);
             
             wire [7:0] opcode,OPforSR;
-            sigLatchWclk op4sr1(~phi1,fastClk,opcode[0],OPforSR[0]); 
-            sigLatchWclk op4sr2(~phi1,fastClk,opcode[1],OPforSR[1]);
-            sigLatchWclk op4sr3(~phi1,fastClk,opcode[2],OPforSR[2]);
-            sigLatchWclk op4sr4(~phi1,fastClk,opcode[3],OPforSR[3]);
-            sigLatchWclk op4sr5(~phi1,fastClk,opcode[4],OPforSR[4]);
-            sigLatchWclk op4sr6(~phi1,fastClk,opcode[5],OPforSR[5]);
-            sigLatchWclk op4sr7(~phi1,fastClk,opcode[6],OPforSR[6]);
-            sigLatchWclk op4sr8(~phi1,fastClk,opcode[7],OPforSR[7]);
+				
+           sigLatchWclk8 op4sr(stop,~phi1,fastClk,opcode,OPforSR); 
+
             
 
+/*
+            wire [7:0] DBforSR;
+            wire DBZ;
+          
+            
+            sigLatchWclk8 db4sr1(stop,~phi1,fastClk,DB,DBforSR); 
+            sigLatchWclk db4sr2(stop,~phi1,fastClk,DBZ,DBZ_latch);
+            
+            wire [7:0] opcode,OPforSR;
+            sigLatchWclk op4sr1(stop,~phi1,fastClk,opcode[0],OPforSR[0]); 
+            sigLatchWclk op4sr2(stop,~phi1,fastClk,opcode[1],OPforSR[1]);
+            sigLatchWclk op4sr3(stop,~phi1,fastClk,opcode[2],OPforSR[2]);
+            sigLatchWclk op4sr4(stop,~phi1,fastClk,opcode[3],OPforSR[3]);
+            sigLatchWclk op4sr5(stop,~phi1,fastClk,opcode[4],OPforSR[4]);
+            sigLatchWclk op4sr6(stop,~phi1,fastClk,opcode[5],OPforSR[5]);
+            sigLatchWclk op4sr7(stop,~phi1,fastClk,opcode[6],OPforSR[6]);
+            sigLatchWclk op4sr8(stop,~phi1,fastClk,opcode[7],OPforSR[7]);
+  */          
                             
             wire  I_ADDC,SUMS,ANDS,EORS,ORS,SRS;
             //sigLatchWclk l32(phi1,fastClk,controlSigs[`nDAA],nDAA);    
-            sigLatchWclk l33(phi1,fastClk,controlSigs[`I_ADDC],I_ADDC); 
-            sigLatchWclk l34(phi1,fastClk,controlSigs[`SUMS],SUMS); 
-            sigLatchWclk l35(phi1,fastClk,controlSigs[`ANDS],ANDS); 
-            sigLatchWclk l36(phi1,fastClk,controlSigs[`EORS],EORS); 
-            sigLatchWclk l37(phi1,fastClk,controlSigs[`ORS],ORS); 
-            sigLatchWclk l38(phi1,fastClk,controlSigs[`SRS],SRS); 
+            sigLatchWclk l33(stop,phi1,fastClk,controlSigs[`I_ADDC],I_ADDC); 
+            sigLatchWclk l34(stop,phi1,fastClk,controlSigs[`SUMS],SUMS); 
+            sigLatchWclk l35(stop,phi1,fastClk,controlSigs[`ANDS],ANDS); 
+            sigLatchWclk l36(stop,phi1,fastClk,controlSigs[`EORS],EORS); 
+            sigLatchWclk l37(stop,phi1,fastClk,controlSigs[`ORS],ORS); 
+            sigLatchWclk l38(stop,phi1,fastClk,controlSigs[`SRS],SRS); 
                             
             wire DB_L_ADD, DB_ADD, ADL_ADD, O_ADD, SB_ADD;
-            sigLatchWclk l39(phi1,fastClk,controlSigs[`DB_L_ADD],DB_L_ADD);    
-            sigLatchWclk l40(phi1,fastClk,controlSigs[`DB_ADD],DB_ADD); 
-            sigLatchWclk l41(phi1,fastClk,controlSigs[`ADL_ADD],ADL_ADD); 
-            sigLatchWclk l42(phi1,fastClk,controlSigs[`O_ADD],O_ADD); 
-            sigLatchWclk l43(phi1,fastClk,controlSigs[`SB_ADD],SB_ADD); 
+            sigLatchWclk l39(stop,phi1,fastClk,controlSigs[`DB_L_ADD],DB_L_ADD);    
+            sigLatchWclk l40(stop,phi1,fastClk,controlSigs[`DB_ADD],DB_ADD); 
+            sigLatchWclk l41(stop,phi1,fastClk,controlSigs[`ADL_ADD],ADL_ADD); 
+            sigLatchWclk l42(stop,phi1,fastClk,controlSigs[`O_ADD],O_ADD); 
+            sigLatchWclk l43(stop,phi1,fastClk,controlSigs[`SB_ADD],SB_ADD); 
                          
             wire S_S, S_SB, X_SB, Y_SB;
             //sigLatchWclk l44(phi1,fastClk,controlSigs[`S_S],S_S); 
@@ -188,35 +205,35 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             //sigLatchWclk l47(phi1,fastClk,controlSigs[`Y_SB],Y_SB); 
             
             wire ADD_SB0to6, ADD_SB7;
-            sigLatchWclk l48(~phi1,fastClk,controlSigs[`ADD_SB0to6],ADD_SB0to6); 
-            sigLatchWclk l49(~phi1,fastClk,controlSigs[`ADD_SB7],ADD_SB7);            
+            sigLatchWclk l48(stop,~phi1,fastClk,controlSigs[`ADD_SB0to6],ADD_SB0to6); 
+            sigLatchWclk l49(stop,~phi1,fastClk,controlSigs[`ADD_SB7],ADD_SB7);            
              
              
             wire DL_DB,PCL_DB,PCH_DB;
-            sigLatchWclk l50(~phi1,fastClk,controlSigs[`DL_DB],DL_DB);
-            sigLatchWclk l51(~phi1,fastClk,controlSigs[`PCL_DB],PCL_DB);
-            sigLatchWclk l52(~phi1,fastClk,controlSigs[`PCH_DB],PCH_DB);
+            sigLatchWclk l50(stop,~phi1,fastClk,controlSigs[`DL_DB],DL_DB);
+            sigLatchWclk l51(stop,~phi1,fastClk,controlSigs[`PCL_DB],PCL_DB);
+            sigLatchWclk l52(stop,~phi1,fastClk,controlSigs[`PCH_DB],PCH_DB);
             
             
             wire nDSA,nDAA;
-            sigLatchWclk l53(phi1,fastClk,controlSigs[`nDSA],nDSA);
-            sigLatchWclk l54(phi1,fastClk,controlSigs[`nDAA],nDAA);
+            sigLatchWclk l53(stop,phi1,fastClk,controlSigs[`nDSA],nDSA);
+            sigLatchWclk l54(stop,phi1,fastClk,controlSigs[`nDAA],nDAA);
             
             
             wire SB_DB, SB_ADH;
 
-            sigLatchWclkDual l55(fastClk,controlSigs[`SB_DB],SB_DB);
-            sigLatchWclkDual l56(fastClk,controlSigs[`SB_ADH],SB_ADH);
+            sigLatchWclkDual l55(stop,fastClk,controlSigs[`SB_DB],SB_DB);
+            sigLatchWclkDual l56(stop,fastClk,controlSigs[`SB_ADH],SB_ADH);
 
             wire nI_PC,DEC_PC;
-            sigLatchWclk l57(phi1,fastClk,controlSigs[`nI_PC],nI_PC);
-            sigLatchWclk l58(phi1,fastClk,controlSigs[`DEC_PC],DEC_PC);
+            sigLatchWclk l57(stop,phi1,fastClk,controlSigs[`nI_PC],nI_PC);
+            sigLatchWclk l58(stop,phi1,fastClk,controlSigs[`DEC_PC],DEC_PC);
             
             wire ADL_PCL,ADH_PCH,PCL_PCL,PCH_PCH;
-            sigLatchWclk l59(phi1,fastClk,controlSigs[`ADL_PCL],ADL_PCL);
-            sigLatchWclk l60(phi1,fastClk,controlSigs[`ADH_PCH],ADH_PCH);
-            sigLatchWclk l61(phi1,fastClk,controlSigs[`PCL_PCL],PCL_PCL);
-            sigLatchWclk l62(phi1,fastClk,controlSigs[`PCH_PCH],PCH_PCH);
+            sigLatchWclk l59(stop,phi1,fastClk,controlSigs[`ADL_PCL],ADL_PCL);
+            sigLatchWclk l60(stop,phi1,fastClk,controlSigs[`ADH_PCH],ADH_PCH);
+            sigLatchWclk l61(stop,phi1,fastClk,controlSigs[`PCL_PCL],PCL_PCL);
+            sigLatchWclk l62(stop,phi1,fastClk,controlSigs[`PCH_PCH],PCH_PCH);
             
             /*
             wire [7:0] OPforDOR;
@@ -390,7 +407,7 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
                         DBforSR,ALUhold_out,storedDB,opcode,DB,
                         SR_contents);
          */               
-           statusReg SR(.phi1_1(phi1_1),.phi1_7(phi1_7),.haltAll(haltAll),.rstAll(rstAll),.phi1(phi1),.DB_P(DB_P),
+           statusReg SR(.haltAll(haltAll),.rstAll(rstAll),.phi1(phi1),.DB_P(DB_P),
            .loadDBZ(FLAG_DBZ),.flagsALU(FLAG_ALU),.flagsDB(FLAG_DB),
                         .P_DB(P_DB), .DBZ(DBZ_latch), .ALUZ(ALUZ), .ACR(aluACR), .AVR(aluAVR), .B(BRKins),
                         .C_set(SET_C), .C_clr(CLR_C),
