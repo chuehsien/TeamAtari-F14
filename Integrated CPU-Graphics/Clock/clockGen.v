@@ -1,22 +1,26 @@
-module clockGen179(RST,clk27,phi0,fphi0,fphi0x2,locked);
+module clockGen179(RST,clk27,phi0,fphi0,fphi0x2,cartclk,locked);
     parameter div = 6;
     input RST,clk27;
-    (* clock_signal = "yes" *)output phi0,fphi0,fphi0x2;
+    (* clock_signal = "yes" *)output phi0,fphi0,fphi0x2,cartclk;
     output locked;
 
-    wire clk576_phi0,clk1052_fphi0;
-    wire clk576_phi0_b,clk1052_fphi0_b,clk2104_fphi0_b;
+    wire clk576_phi0,clk1052_fphi0,clk576_phi0_shift;
+    wire clk576_phi0_b,clk1052_fphi0_b,clk2104_fphi0_b,clk576_phi0_shift_b;
 
 
    //produces 57.6MHz
-    clockDiv try0(.CLKIN1_IN(clk27), .RST_IN(RST), .CLK0_OUT(clk576_phi0),.CLK2X_OUT(clk1052_fphi0), .LOCKED_OUT(locked));
+    clockDiv try0(.CLKIN1_IN(clk27), .RST_IN(RST), .CLK0_OUT(clk576_phi0),.CLK2X_OUT(clk1052_fphi0), .CLK90_OUT(clk576_phi0_shift),.LOCKED_OUT(locked));
 
 
-    
+
+	 clockoneX #(.width(div+1)) phi0shiftmake(clk576_phi0_shift,clk576_phi0_shift_b);
     clockoneX #(.width(div+1)) phi0make(clk576_phi0,clk576_phi0_b);
     clockoneX #(.width(div+1)) fphi0make(clk1052_fphi0,clk1052_fphi0_b); 
     clockoneX #(.width(div)) fphi0x2make(clk1052_fphi0,clk2104_fphi0_b); 
-
+	wire clk576_phi0_shift_b1;
+	not cartclkmod(clk576_phi0_shift_b1,clk576_phi0_shift_b);
+	
+	BUFG cartclkout(cartclk,clk576_phi0_shift_b1);
     BUFG phi0out(phi0,clk576_phi0_b);
     BUFG fphi0out(fphi0,clk1052_fphi0_b);
     BUFG fphi0x2out(fphi0x2,clk2104_fphi0_b);

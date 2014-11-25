@@ -13,7 +13,7 @@ module plaFSM(haltAll,currState,phi1,phi2,RDY,nextT, rst,brkNow,
     //internal
     reg [1:0] currState, nextState = `FSMinit;
     reg [6:0] prevT = `emptyT;
-    reg nextIntHandled;
+    reg nextIntHandled = 1'b0;
     always @ (*) begin
         
          nextState = `FSMinit;

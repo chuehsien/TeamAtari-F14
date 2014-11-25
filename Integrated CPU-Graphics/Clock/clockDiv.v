@@ -23,12 +23,12 @@
 
 module clockDiv(CLKIN1_IN, 
                 RST_IN, 
-                CLK0_OUT,CLK2X_OUT, 
+                CLK0_OUT,CLK2X_OUT,CLK90_OUT,
                 LOCKED_OUT);
 
     input CLKIN1_IN;
     input RST_IN;
-   output CLK0_OUT,CLK2X_OUT;
+   output CLK0_OUT,CLK2X_OUT,CLK90_OUT;
    output LOCKED_OUT;
    
    wire CLKFBDCM_CLKFBIN;
@@ -60,6 +60,9 @@ module clockDiv(CLKIN1_IN,
    BUFG  CLK2X_BUFG_INST (.I(CLK2X_BUF), 
                         .O(CLK2X_OUT));
 
+   BUFG  CLK90_BUFG_INST (.I(CLK90_BUF), 
+                        .O(CLK90_OUT));
+
 
    DCM_ADV #( .CLK_FEEDBACK("1X"), .CLKDV_DIVIDE(2.0), .CLKFX_DIVIDE(1), 
          .CLKFX_MULTIPLY(4), .CLKIN_DIVIDE_BY_2("FALSE"), 
@@ -85,7 +88,7 @@ module clockDiv(CLKIN1_IN,
                          .CLK0(CLK0_BUF), 
                          .CLK2X(CLK2X_BUF), 
                          .CLK2X180(), 
-                         .CLK90(), 
+                         .CLK90(CLK90_BUF), 
                          .CLK180(), 
                          .CLK270(), 
                          .DO(), 

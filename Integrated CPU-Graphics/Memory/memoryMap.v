@@ -27,7 +27,7 @@ module memoryMap(
                  COLPF3, COLBK, PRIOR, VDELAY, GRACTL, HITCLR,
 
                  AUDF1, AUDC1, AUDF2, AUDC2, AUDF3, AUDC3, AUDF4, AUDC4, AUDCTL, 
-                 STIMER, SKREST, POTGO, SEROUT, SERIN, IRQEN, SKCTL,CONSPK_CONSOL,
+                 SKREST, SEROUT, SERIN, IRQEN, SKCTL,CONSPK_CONSOL,
                  
                  NMIRES_NMIST, VCOUNT,
 
@@ -111,7 +111,7 @@ module memoryMap(
   output [7:0] HITCLR;
   
   //outputs to POKEY
-  output [7:0] AUDF1, AUDC1, AUDF2, AUDC2, AUDF3, AUDC3, AUDF4, AUDC4, AUDCTL, STIMER, SKREST, POTGO, SEROUT, SERIN, IRQEN , SKCTL,CONSPK_CONSOL;
+  output [7:0] AUDF1, AUDC1, AUDF2, AUDC2, AUDF3, AUDC3, AUDF4, AUDC4, AUDCTL, SKREST, SEROUT, SERIN, IRQEN , SKCTL,CONSPK_CONSOL;
 
   // Temporary
   output [7:0] NMIRES_NMIST, VCOUNT;
@@ -210,9 +210,10 @@ module memoryMap(
   wire write_RAM, write_reg;
   
   wire write_RAM_latch, write_reg_latch;
-  sigLatchWclk latchRAMwrites(~clk,latchClk,write_RAM_latch,write_RAM);
-  sigLatchWclk latchregwrites(~clk,latchClk,write_reg_latch,write_reg);
-   
+  //sigLatchWclk latchRAMwrites(~clk,latchClk,write_RAM_latch,write_RAM);
+  //sigLatchWclk latchregwrites(~clk,latchClk,write_reg_latch,write_reg);
+  assign write_RAM = write_RAM_latch;
+  assign write_reg = write_reg_latch;
     
 
 
@@ -551,8 +552,8 @@ module memoryMap(
           /* ============================= STROBE DETECTION ========================*/
           wire POTGO_strobe, STIMER_strobe;
 
-          strobeDetect strobePotGo(rst,Fclk,(~rst & (CPU_addr == 16'hE80B) & write_reg),POTGO_strobe);
-          strobeDetect strobeStimer(rst,Fclk,(~rst & (CPU_addr == 16'hE809) & write_reg),STIMER_strobe);
+          strobeDetect strobePotGo(.rst(rst),.clk(Fclk),.writeNow(((~rst) & (CPU_addr == 16'hE80B) & write_reg)),.strobeOut(POTGO_strobe));
+          strobeDetect strobeStimer(.rst(rst),.clk(Fclk),.writeNow(((~rst) & (CPU_addr == 16'hE809) & write_reg)),.strobeOut(STIMER_strobe));
 endmodule
 
 // Tristate driver which splits databus into in/out wires

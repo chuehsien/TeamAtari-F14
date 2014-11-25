@@ -152,7 +152,7 @@ module PLAinterruptControl(haltAll,phi1, nmiPending,resPending,irqPending,intHan
     
     //internal
     reg nmi_latch = 1'b0; 
-    reg res_latch = 1'b0; 
+    reg res_latch = 1'b1; 
     reg irq_latch = 1'b0; 
 
     always @ (negedge phi1) begin

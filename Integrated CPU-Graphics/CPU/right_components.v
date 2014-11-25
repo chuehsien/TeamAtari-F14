@@ -358,7 +358,7 @@ endmodule
 module eDBlatch(phi2, haltAll, extDB, latchRdy,eDB_latch);
     input phi2,haltAll;
     input [7:0] extDB;
-    output reg latchRdy;
+    output reg latchRdy = 1'b0;
     output reg [7:0] eDB_latch = 8'd0;
 
     
@@ -442,7 +442,7 @@ endmodule
 module decOrAddADH(inc,dec,inCarry,inAdd,outAdd);
     input inc,dec,inCarry;
     input [7:0] inAdd;
-    output reg [7:0] outAdd;
+    output reg [7:0] outAdd = 8'd0;
     
     reg carry;
     always @ (*) begin
@@ -464,8 +464,8 @@ endmodule
 module decOrAddADL(inc,dec,inAdd,carry,outAdd);
     input inc,dec;
     input [7:0] inAdd;
-    output reg carry;
-    output reg [7:0] outAdd;
+    output reg carry = 1'b0;
+    output reg [7:0] outAdd = 8'd0;
     
     reg nborrow;
     always @ (*) begin
@@ -558,7 +558,7 @@ module decimalAdjust(haltAll,SBin, DSA, DAA, ACR, HC, phi2,
     input haltAll;
     input [7:0] SBin;
     input DSA, DAA, ACR, HC, phi2;
-    output reg [7:0] data;
+    output reg [7:0] data = 8'd0;
  
     
     //refer to http://imrannazar.com/Binary-Coded-Decimal-Addition-on-Atmel-AVR

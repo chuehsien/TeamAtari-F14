@@ -55,7 +55,8 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
 
                 //LED pin outs
                 GPIO_LED_0,GPIO_LED_1,GPIO_LED_2,GPIO_LED_3,GPIO_LED_4,GPIO_LED_5,GPIO_LED_6,GPIO_LED_7,
-                GPIO_LED_N,GPIO_LED_S,GPIO_LED_E,GPIO_LED_W,GPIO_LED_C);
+                GPIO_LED_N,GPIO_LED_S,GPIO_LED_E,GPIO_LED_W,GPIO_LED_C,
+					 HDR1_58);
 
 	input  CLK_27MHZ_FPGA, USER_CLK;
 	input  GPIO_SW_N, GPIO_SW_S, GPIO_SW_E, GPIO_SW_W, GPIO_SW_C;
@@ -86,7 +87,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
           DVI_XCLK_P, DVI_XCLK_N, DVI_V, DVI_H, DVI_DE, DVI_RESET_B;
    output GPIO_LED_0,GPIO_LED_1,GPIO_LED_2,GPIO_LED_3,GPIO_LED_4,GPIO_LED_5,GPIO_LED_6,GPIO_LED_7,
           GPIO_LED_N,GPIO_LED_S,GPIO_LED_E,GPIO_LED_W,GPIO_LED_C;
-
+	output HDR1_58;
 
     //place holders for switches/leds
    assign {GPIO_LED_2,GPIO_LED_3,GPIO_LED_4,GPIO_LED_N,GPIO_LED_S,GPIO_LED_E,GPIO_LED_W,GPIO_LED_C} = 0;
@@ -103,23 +104,23 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
   
 
     // clock generation
-    (* clock_signal = "yes" *) wire phi0_in, fphi0,fphi0X2;
+    (* clock_signal = "yes" *) wire phi0_in, fphi0,fphi0X2,cartclk;
     clockGen179 #(.div(`DIV)) makeclock(.RST(GPIO_SW_S),.clk27(CLK_27MHZ_FPGA),
-                                        .phi0(phi0_in),.fphi0(fphi0),.fphi0x2(fphi0X2));
+                                        .phi0(phi0_in),.fphi0(fphi0),.cartclk(cartclk),.fphi0x2(fphi0X2));
     
-    (* clock_signal = "yes" *) wire clk64,clk16,clk15,clk60;
+    (* clock_signal = "yes" *) wire clk64,clk16,clk15;
 
     clockDivider #(422) out64(CLK_27MHZ_FPGA,clk64);
     clockDivider #(1688) out16(CLK_27MHZ_FPGA,clk16);
     clockDivider #(1800) out15(CLK_27MHZ_FPGA,clk15);
-    clockDivider #(450000) out60(CLK_27MHZ_FPGA,clk60);
+    clockDivider #(20000) out60(CLK_27MHZ_FPGA,clk60);
 
     // switches
     wire nRES_L;
     assign RES_L = ~nRES_L;
     DeBounce #(.N(8)) resB(fphi0,1'b1,GPIO_SW_W,nRES_L);
 
-
+	assign HDR1_58 = cartclk;
 
     // mem stuff
     wire [15:0] memAdd;
@@ -311,7 +312,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
     wire [3:0] vol1,vol2,vol3,vol4;
     wire timer1_int,timer2_int,timer4_int;
 
-    assign HDR1_50 = clk15;
+    assign HDR1_50 = audio1;
     assign HDR1_52 = audio2;
     assign HDR1_54 = audio3;
     assign HDR1_56 = audio4;
@@ -336,13 +337,20 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
 					.int1(timer1_int),.int2(timer2_int),.int4(timer4_int),.STIMER_strobe(STIMER_strobe));
     
 	 wire [3:0] cIn,cOut,keyscan;
-    POKEY_top_integration pokeyIO( .control_input(cIn),.control_output_8_5(cOut),.key_scan_L(keyscan),
-                                  .rst(~RES_L), .clk15(clk15), .clk179(phi1_out), .HDR2_10(HDR2_10), .HDR2_12(HDR2_12), .HDR2_14(HDR2_14), .HDR2_16(HDR2_16), .HDR2_18(HDR2_18), 
+	 wire POTGO_strobe2;
+	 
+	 DeBounce fakestrobe(phi1_out,1'b1,GPIO_SW_E,POTGO_strobe2);
+	wire [1:0] state;
+	wire [3:0] control_input_pot_scan;
+	wire [7:0] timer;
+	wire rst_latch;
+    POKEY_top_integration pokeyIO(.rst_latch(rst_latch),.kr1_L(kr),.timer(timer),.control_input_pot_scan(control_input_pot_scan),.state(state), .control_input(cIn),.control_output_8_5(cOut),.key_scan_L(keyscan),
+                                  .rst(~RES_L), .clk60(clk60),.clk15(clk15), .clk179(phi1_out),.clk64(clk64), .HDR2_10(HDR2_10), .HDR2_12(HDR2_12), .HDR2_14(HDR2_14), .HDR2_16(HDR2_16), .HDR2_18(HDR2_18), 
                                   .HDR2_20(HDR2_20), .HDR2_22(HDR2_22), .HDR2_24(HDR2_24), .HDR2_26(HDR2_26), .HDR2_28(HDR2_28), .HDR2_30(HDR2_30), .HDR2_32(HDR2_32),
                                   .SKCTL(SKCTL), .GRACTL(GRACTL),.IRQEN(IRQEN),.CONSOL(CONSPK_CONSOL),
                                   .timer4Pending(timer1_int),.timer2Pending(timer2_int),.timer1Pending(timer4_int), .POTGO_strobe(POTGO_strobe),
 
-                                   .IRQ_ST(IRQST_BUS), .POT0_bus(POT0_BUS), .POT1_bus(POT0_BUS), .POT2_bus(POT0_BUS), .POT3_bus(POT0_BUS), .ALLPOT_bus(ALLPOT_BUS), 
+                                   .IRQ_ST(IRQST_BUS), .POT0_bus(POT0_BUS), .POT1_bus(POT1_BUS), .POT2_bus(POT2_BUS), .POT3_bus(POT3_BUS), .ALLPOT_bus(ALLPOT_BUS), 
                                    .KBCODE_bus(KBCODE_BUS), .SKSTAT_bus(SKSTAT_BUS), .TRIG0_bus(TRIG0_BUS), .TRIG1_bus(TRIG1_BUS), .TRIG2_bus(TRIG2_BUS), .TRIG3_bus(TRIG3_BUS), 
 								   .HDR2_2(HDR2_2), .HDR2_4(HDR2_4), .HDR2_6(HDR2_6), .HDR2_8(HDR2_8), .HDR1_60(HDR1_60), .HDR1_62(HDR1_62), .HDR1_64(HDR1_64),.IRQ_L(IRQ_L));
 	 
@@ -354,14 +362,14 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
     assign cartROMadd = (memAdd - 16'h4000);
     
     // Soft Cartridge ROM instantiation
-    //memDefender memD(.clka(fphi0),.addra(cartROMadd[14:0]),.douta(data_CART));
-    memMario    memM(.clka(fphi0),.addra(cartROMadd[14:0]),.douta(data_CART));
+    memDefender memD(.clka(fphi0),.addra(cartROMadd[14:0]),.douta(data_CART));
+   //memMario    memM(.clka(fphi0),.addra(cartROMadd[14:0]),.douta(data_CART));
     
     wire [7:0] NMIRES_NMIST, VCOUNT_val; //
     wire [7:0] data_in_b;
     wire write_RAM;
 
-    memoryMap map(.write_RAM(write_RAM),.data_in_b(data_in_b),
+    memoryMap map(
 
                   .addr_RAM(addr_RAM),.addr_BIOS(addr_BIOS),.addr_CART(addr_CART),
                   .latchClk(fphi0X2), .Fclk(fphi0), .clk(fphi0), .rst(rst), .CPU_writeEn(~RW), .CPU_addr(memAdd), 
@@ -389,6 +397,37 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
                   .COLPF3(COLPF3), .COLBK(COLBK), .PRIOR(PRIOR), .VDELAY(VDELAY), .GRACTL(GRACTL), .HITCLR(HITCLR),
                   .NMIRES_NMIST(NMIRES_NMIST), .VCOUNT(VCOUNT_val),.CONSPK_CONSOL(CONSPK_CONSOL));
 
+
+/*
+  memoryMap map( 
+
+                  .addr_RAM(addr_RAM),.addr_BIOS(addr_BIOS),.addr_CART(addr_CART),
+                  .Fclk(fphi0), .clk(fphi0), .CPU_writeEn(~RW), .CPU_addr(memAdd), 
+                  .data_CART_out(data_CART), .CPU_data(extDB),
+
+                  .AUDF1(AUDF1), .AUDC1(AUDC1), .AUDF2(AUDF2), .AUDC2(AUDC2), 
+                  .AUDF3(AUDF3), .AUDC3(AUDC3), .AUDF4(AUDF4), .AUDC4(AUDC4), .AUDCTL(AUDCTL),.SKCTL(SKCTL),.IRQEN(IRQEN),     
+                  .IRQST_BUS(IRQST_BUS),.POT0_BUS(POT0_BUS), .POT1_BUS(POT1_BUS), .POT2_BUS(POT2_BUS), .POT3_BUS(POT3_BUS),
+                  .ALLPOT_BUS(ALLPOT_BUS), .KBCODE_BUS(KBCODE_BUS), .SKSTAT_BUS(SKSTAT_BUS),
+                 .RANDOM_BUS(RANDOM_BUS),
+     
+
+                  .ANTIC_writeEn(ANTIC_writeEn), .GTIA_writeEn(5'd0),
+                  .VCOUNT_in(VCOUNT), .PENH_in(PENH), .PENV_in(PENV), 
+                  .NMIRES_NMIST_bus(NMIRES_NMIST_bus), .DLISTL_bus(DLISTL_bus), .DLISTH_bus(DLISTH_bus),
+                  .HPOSP0_M0PF_bus(HPOSP0_M0PF_bus), .HPOSP1_M1PF_bus(HPOSP1_M1PF_bus), .HPOSP2_M2PF_bus(HPOSP2_M2PF_bus),
+                  .HPOSP3_M3PF_bus(HPOSP3_M3PF_bus), .HPOSM0_P0PF_bus(HPOSM0_P0PF_bus), .HPOSM1_P1PF_bus(HPOSM1_P1PF_bus),
+                  .HPOSM2_P2PF_bus(HPOSM2_P2PF_bus), .HPOSM3_P3PF_bus(HPOSM3_P3PF_bus), .SIZEP0_M0PL_bus(SIZEP0_M0PL_bus),
+                  .SIZEP1_M1PL_bus(SIZEP1_M1PL_bus), .SIZEP2_M2PL_bus(SIZEP2_M2PL_bus), .SIZEP3_M3PL_bus(SIZEP3_M3PL_bus),
+                  .SIZEM_P0PL_bus(SIZEM_P0PL_bus), .GRAFP0_P1PL_bus(GRAFP0_P1PL_bus), .GRAFP1_P2PL_bus(GRAFP1_P2PL_bus),
+                  .GRAFP2_P3PL_bus(GRAFP2_P3PL_bus), .GRAFP3_TRIG0_bus(GRAFP3_TRIG0_bus), .GRAFPM_TRIG1_bus(GRAFPM_TRIG1_bus),
+                  .COLPM0_TRIG2_bus(COLPM0_TRIG2_bus), .COLPM1_TRIG3_bus(COLPM1_TRIG3_bus), .COLPM2_PAL_bus(COLPM2_PAL_bus),
+                  .CONSPK_CONSOL_bus(CONSPK_CONSOL_bus), .DMACTL(DMACTL), .CHACTL(CHACTL), .HSCROL(HSCROL), .VSCROL(VSCROL), .PMBASE(PMBASE),
+                  .CHBASE(CHBASE), .WSYNC(WSYNC), .NMIEN(NMIEN), .COLPM3(COLPM3), .COLPF0(COLPF0), .COLPF1(COLPF1), .COLPF2(COLPF2),
+                  .COLPF3(COLPF3), .COLBK(COLBK), .PRIOR(PRIOR), .VDELAY(VDELAY), .GRACTL(GRACTL), .HITCLR(HITCLR)
+                 );
+
+*/
 
     /*-------------------------------------------------------------*/
     // cpu stuff
@@ -431,7 +470,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
     
     wire chipClk_b;
 
-    clockoneX #(.width(`DIV-3))  test12(CLK_27MHZ_FPGA,chipClk_b);
+    clockoneX #(.width(`DIV))  test12(CLK_27MHZ_FPGA,chipClk_b);
     
     wire [35:0] CONTROL0, CONTROL1, CONTROL2;
     
@@ -493,11 +532,13 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
     SKCTL,
     GRACTL,
     CONSPK_CONSOL,
-    {7'd0,STIMER_strobe},
-    8'd0,
-    8'd0,
-    8'd0);
+    {POTGO_strobe2,6'd0,STIMER_strobe},
+    {TRIG3_BUS,TRIG2_BUS,TRIG1_BUS,TRIG0_BUS},
+    {rst_latch,5'd0,state},
+    timer);
     
+	
+	
     chipscope_icon3 icon(
       .CONTROL0(CONTROL0),
       .CONTROL1(CONTROL1),
