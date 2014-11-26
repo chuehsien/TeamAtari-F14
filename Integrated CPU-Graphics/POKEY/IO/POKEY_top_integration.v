@@ -12,15 +12,17 @@ output kr1_L;
     output [7:0] timer;
 		  output [3:0] control_input_pot_scan;
 		  output [1:0] state;
+
        output [3:0] control_input,control_output_8_5,key_scan_L;
         input rst, clk60,clk15,clk179,clk64;
-        input HDR2_10, HDR2_12, HDR2_14, HDR2_16, HDR2_18, HDR2_20, HDR2_22, HDR2_24, HDR2_26, HDR2_28, HDR2_30, HDR2_32;
+
+        input  HDR2_2, HDR2_4, HDR2_6, HDR2_8, HDR2_18, HDR2_20, HDR2_22, HDR2_24, HDR2_26, HDR2_28, HDR2_30, HDR2_32;
         input [7:0] SKCTL, GRACTL, IRQEN, CONSOL; //control registers
         input timer4Pending, timer2Pending, timer1Pending;
         
         input POTGO_strobe;
         output [7:0] IRQ_ST,POT0_bus, POT1_bus, POT2_bus, POT3_bus, ALLPOT_bus, KBCODE_bus, SKSTAT_bus, TRIG0_bus, TRIG1_bus, TRIG2_bus, TRIG3_bus;
-        output HDR2_2, HDR2_4, HDR2_6, HDR2_8, HDR1_60, HDR1_62, HDR1_64;
+        output HDR2_10, HDR2_12, HDR2_14, HDR2_16,HDR1_60, HDR1_62, HDR1_64;
         output IRQ_L;
 
     
@@ -44,8 +46,12 @@ output kr1_L;
 
 
 
-    assign {HDR2_2, HDR2_4, HDR2_6, HDR2_8} = control_output_8_5;
-    assign control_input = {HDR2_10, HDR2_12, HDR2_14, HDR2_16};
+   // assign {HDR2_2, HDR2_4, HDR2_6, HDR2_8} = control_output_8_5;
+   // assign control_input = {HDR2_10, HDR2_12, HDR2_14, HDR2_16};
+
+    assign  {HDR2_10, HDR2_12, HDR2_14, HDR2_16} = control_output_8_5;
+    assign  control_input = {HDR2_2, HDR2_4, HDR2_6, HDR2_8};
+
     assign control_input_side_but = {HDR2_24,HDR2_22,HDR2_20,HDR2_18}; // {top0,bot0,top1,bot1}
     assign control_input_pot_scan = {HDR2_32,HDR2_30,HDR2_28,HDR2_26};
     assign HDR1_60 = pot_rel;
@@ -57,9 +63,10 @@ output kr1_L;
     assign SKSTAT_bus = control_input_side_but[3] ? 8'h09 : 8'h01;
 	 
 
-    wire top0,top1;
-    assign top0 = ~control_input_side_but[3];
-    assign top1 = ~control_input_side_but[1];
+    //wire top;
+   // assign top0 = ~control_input_side_but[3];
+    //assign top1 = ~control_input_side_but[1];
+   
     
     wire TRIG0,TRIG1;
     trig_latch trigControl0(.buttonIn(~control_input_side_but[2]), .enLatch(GRACTL[2]), .trigOut(TRIG0));
@@ -74,7 +81,9 @@ output kr1_L;
     wire brkPending;
     reg kbcodePending = 1'b0;
     wire serInPending,serOutPending,timer4Pending,timer2Pending,timer1Pending;
-    
+
+     assign brkPending = (CONSOL[1:0] == 2'b00) ? (~control_input_side_but[3]) : (~control_input_side_but[1]);
+
     wire IRQ_ST7,IRQ_ST6,IRQ_ST5,IRQ_ST4,IRQ_ST2,IRQ_ST1,IRQ_ST0;
     FDCPE #(.INIT(1'b1)) latch7(.Q(IRQ_ST7), .C(brkPending),    .CE(1'b1), .CLR(1'b0), .D(1'b0), .PRE(~IRQEN[7]));
     FDCPE #(.INIT(1'b1)) latch6(.Q(IRQ_ST6), .C(kbcodePending), .CE(1'b1), .CLR(1'b0), .D(1'b0), .PRE(~IRQEN[6]));
@@ -86,13 +95,13 @@ output kr1_L;
     
     assign IRQ_ST = {IRQ_ST7,IRQ_ST6,IRQ_ST5,IRQ_ST4,1'b1,IRQ_ST2,IRQ_ST1,IRQ_ST0};
     assign IRQ_L = ~(IRQ_ST!=8'hff);
-
-    assign brkPending = (top0 | top1);
     
-    reg [7:0] storedKBcode = 1'b0;
+    //FDCPE #(.INIT(1'b1)) latch8(.Q(brkPending), .C(top0|top1),.CE(1'b1),.CLR(~IRQEN[7]), .D(1'b1));
+    //assign brkPending = top;
+    reg [3:0] storedKBcode = 4'd0;
     always @ (posedge clk179) begin
-        if ((KBCODE_bus != 8'd0) & (KBCODE_bus != storedKBcode)) begin
-            storedKBcode <= KBCODE_bus;
+        if ((KBCODE_bus[4:1] != 4'd0) & (KBCODE_bus[4:1] != storedKBcode)) begin
+            storedKBcode <= KBCODE_bus[4:1];
             kbcodePending <= 1'b1;
         end
         else kbcodePending <= 1'b0;

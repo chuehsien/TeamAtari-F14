@@ -1,6 +1,6 @@
 `define pot_IDLE 1'b0
 `define pot_SCAN 1'b1
-`define DELAY 4'd8
+`define DELAY 4'd16
 module potScanFSM(clk,rst,pot_in,POTGO,POTOUT,pot_rdy,pot_state,timer);
  
 	 input clk, rst, pot_in, POTGO;

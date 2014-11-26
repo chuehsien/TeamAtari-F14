@@ -65,7 +65,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
    //Cart pin in
    input  HDR1_34, HDR1_36, HDR1_38, HDR1_40, HDR1_42, HDR1_44, HDR1_46, HDR1_48;
    //pokey io pin in
-	input  HDR2_10, HDR2_12, HDR2_14, HDR2_16, HDR2_18, HDR2_20, HDR2_22, HDR2_24, 
+	input  HDR2_2, HDR2_4, HDR2_6, HDR2_8, HDR2_18, HDR2_20, HDR2_22, HDR2_24, 
           HDR2_26, HDR2_28, HDR2_30, HDR2_32;
     
    inout  IIC_SDA_VIDEO, IIC_SCL_VIDEO;
@@ -79,7 +79,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
           HDR2_50, HDR2_52, HDR2_54,HDR2_56,HDR2_58, HDR2_60, HDR2_62, HDR2_64;
 			 
 	//pokey io pin out
-   output HDR2_2, HDR2_4, HDR2_6, HDR2_8,HDR1_60, HDR1_62, HDR1_64;
+   output HDR2_10, HDR2_12, HDR2_14, HDR2_16,HDR1_60, HDR1_62, HDR1_64;
     
     
    output DVI_D11, DVI_D10, DVI_D9, DVI_D8, DVI_D7, DVI_D6,
@@ -120,7 +120,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
     assign RES_L = ~nRES_L;
     DeBounce #(.N(8)) resB(fphi0,1'b1,GPIO_SW_W,nRES_L);
 
-	assign HDR1_58 = cartclk;
+	assign HDR1_58 = fphi0;
 
     // mem stuff
     wire [15:0] memAdd;
@@ -470,7 +470,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
     
     wire chipClk_b;
 
-    clockoneX #(.width(`DIV))  test12(CLK_27MHZ_FPGA,chipClk_b);
+    clockoneX #(.width(`DIV-2))  test12(CLK_27MHZ_FPGA,chipClk_b);
     
     wire [35:0] CONTROL0, CONTROL1, CONTROL2;
     
@@ -485,14 +485,14 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
     ADH,
     ADL,
     SB,
-    {7'd0,phi1_out},
+    {7'd0,1'd0},
     {RW,activeInt,RDY,IRQ_L,NMI_L,RES_L},
     Accum,
     Xreg,
     SR_contents,
     OP,
     Yreg,
-    data_CART2);
+    data_CART);
 
     
     chipscope_ila_graphics ila2 (
