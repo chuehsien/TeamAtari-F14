@@ -31,7 +31,7 @@ module memoryMap(
                  COLPF3, COLBK, PRIOR, VDELAY, GRACTL, HITCLR,
 
                  AUDF1, AUDC1, AUDF2, AUDC2, AUDF3, AUDC3, AUDF4, AUDC4, AUDCTL, 
-                 SKREST, SEROUT, SERIN, IRQEN, SKCTL,CONSPK_CONSOL,
+                 SKREST, SEROUT, SERIN, IRQEN, SKCTL,CONSPK,
 
                  POTGO_strobe, STIMER_strobe
                  );

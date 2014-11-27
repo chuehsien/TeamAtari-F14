@@ -267,7 +267,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
     wire [7:0] AUDF1, AUDC1, AUDF2, AUDC2, AUDF3, AUDC3, AUDF4, AUDC4, AUDCTL;
     wire [7:0] SKCTL, IRQEN, IRQST_BUS, POT0_BUS, POT1_BUS, POT2_BUS, POT3_BUS, 
                ALLPOT_BUS, KBCODE_BUS, SKSTAT_BUS, TRIG0_BUS, TRIG1_BUS, TRIG2_BUS,
-               TRIG3_BUS, RANDOM_BUS, CONSPK_CONSOL;
+               TRIG3_BUS, RANDOM_BUS, CONSPK;
 	  wire POTGO_strobe, STIMER_strobe;
     wire audio1, audio2, audio3, audio4;
     wire [3:0] vol1, vol2, vol3, vol4;
@@ -278,18 +278,18 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
     wire rst_latch;
     wire [3:0] cIn, cOut, keyscan;
     wire POTGO_strobe2;
-    
+   /* 
     assign HDR1_50 = phi1_out;
     assign HDR1_52 = fphi0;
     assign HDR1_54 = latchClk;
     assign HDR1_56 = 1'B0;
+    */
     
-    /*
     assign HDR1_50 = audio1;
     assign HDR1_52 = audio2;
     assign HDR1_54 = audio3;
     assign HDR1_56 = audio4;
-    */
+    
     
     assign {HDR2_34, HDR2_36, HDR2_38, HDR2_40} = vol1;
     assign {HDR2_48, HDR2_46, HDR2_44, HDR2_42} = vol2;
@@ -314,7 +314,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
                                   .HDR2_18(HDR2_18), .HDR2_20(HDR2_20), .HDR2_22(HDR2_22), 
                                   .HDR2_24(HDR2_24), .HDR2_26(HDR2_26), .HDR2_28(HDR2_28), 
                                   .HDR2_30(HDR2_30), .HDR2_32(HDR2_32), .SKCTL(SKCTL), 
-                                  .GRACTL(GRACTL), .IRQEN(IRQEN), .CONSOL(CONSPK_CONSOL),
+                                  .GRACTL(GRACTL), .IRQEN(IRQEN), .CONSOL(CONSPK),
                                   .timer4Pending(timer1_int), .timer2Pending(timer2_int), 
                                   .timer1Pending(timer4_int), .POTGO_strobe(POTGO_strobe),
                                   .IRQ_ST(IRQST_BUS), .POT0_bus(POT0_BUS), .POT1_bus(POT1_BUS),
@@ -380,7 +380,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
                   .PMBASE(PMBASE), .CHBASE(CHBASE), .WSYNC(WSYNC), .NMIEN(NMIEN), 
                   .COLPM3(COLPM3), .COLPF0(COLPF0), .COLPF1(COLPF1), .COLPF2(COLPF2),
                   .COLPF3(COLPF3), .COLBK(COLBK), .PRIOR(PRIOR), .VDELAY(VDELAY), 
-                  .GRACTL(GRACTL), .HITCLR(HITCLR), .CONSPK_CONSOL(CONSPK_CONSOL));
+                  .GRACTL(GRACTL), .HITCLR(HITCLR), .CONSPK(CONSPK));
 
     /*-------------------------------------------------------------*/
     // CPU
