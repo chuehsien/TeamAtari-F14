@@ -1,15 +1,14 @@
 /*
- * Top module for CPU-Graphics integrated testing
+ * Top module for Atari 5200 console
  *
  * Button description:
  *   - West: Reset entire system
- *   - North: Trigger (test) NMI
- *   - East: Trigger (test) DMA
  */
 
 `include "CPU/top_6502C.v"
 `include "Clock/clockDiv.v"
 `include "Clock/clockGen.v"
+`include "Clock/clock25.v"
 `include "Memory/memoryMap.v"
 `include "POKEY/Audio/pokeyaudio.v"
 `include "POKEY/IO/POKEY_top_integration.v"
@@ -30,8 +29,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
                  
                  //pokey io pin in
                  
-                 HDR2_10, HDR2_12, HDR2_14, HDR2_16, HDR2_18, HDR2_20, HDR2_22, HDR2_24, HDR2_26, HDR2_28, HDR2_30, HDR2_32,
-
+                HDR2_2, HDR2_4, HDR2_6, HDR2_8,HDR2_18, HDR2_20, HDR2_22, HDR2_24, HDR2_26, HDR2_28, HDR2_30, HDR2_32,
                  IIC_SDA_VIDEO, IIC_SCL_VIDEO, 
                  
                  //Cart pin out
@@ -45,8 +43,8 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
                  HDR2_50, HDR2_52, HDR2_54,HDR2_56,HDR2_58, HDR2_60, HDR2_62, HDR2_64,
 
                  //pokey io pin out
-                 HDR2_2, HDR2_4, HDR2_6, HDR2_8,HDR1_60, HDR1_62, HDR1_64,
-
+                 HDR1_60, HDR1_62, HDR1_64,
+                HDR2_10, HDR2_12, HDR2_14, HDR2_16,
 
 
                  DVI_D11, DVI_D10, DVI_D9, DVI_D8, DVI_D7, DVI_D6, DVI_D5,
@@ -56,7 +54,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
                 //LED pin outs
                 GPIO_LED_0,GPIO_LED_1,GPIO_LED_2,GPIO_LED_3,GPIO_LED_4,GPIO_LED_5,GPIO_LED_6,GPIO_LED_7,
                 GPIO_LED_N,GPIO_LED_S,GPIO_LED_E,GPIO_LED_W,GPIO_LED_C,
-					);
+                );
 
 	input  CLK_27MHZ_FPGA, USER_CLK;
 	input  GPIO_SW_N, GPIO_SW_S, GPIO_SW_E, GPIO_SW_W, GPIO_SW_C;
@@ -65,7 +63,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
    //Cart pin in
    input  HDR1_34, HDR1_36, HDR1_38, HDR1_40, HDR1_42, HDR1_44, HDR1_46, HDR1_48;
    //pokey io pin in
-	input  HDR2_2, HDR2_4, HDR2_6, HDR2_8, HDR2_18, HDR2_20, HDR2_22, HDR2_24, 
+	input   HDR2_2, HDR2_4, HDR2_6, HDR2_8,HDR2_18, HDR2_20, HDR2_22, HDR2_24, 
           HDR2_26, HDR2_28, HDR2_30, HDR2_32;
     
    inout  IIC_SDA_VIDEO, IIC_SCL_VIDEO;
@@ -88,60 +86,46 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
    output GPIO_LED_0,GPIO_LED_1,GPIO_LED_2,GPIO_LED_3,GPIO_LED_4,GPIO_LED_5,GPIO_LED_6,GPIO_LED_7,
           GPIO_LED_N,GPIO_LED_S,GPIO_LED_E,GPIO_LED_W,GPIO_LED_C;
 
-
-    //place holders for switches/leds
-   assign {GPIO_LED_2,GPIO_LED_3,GPIO_LED_4,GPIO_LED_N,GPIO_LED_S,GPIO_LED_E,GPIO_LED_W,GPIO_LED_C} = 0;
+    /*-------------------------------------------------------------*/
+    // FPGA I/O + Clock
     
-	wire writeStart;
-	wire writeDone;
-	wire initDone;
-	wire clearAll;
-	wire resetFSM;
+    assign {GPIO_LED_2, GPIO_LED_3, GPIO_LED_4, GPIO_LED_N,
+            GPIO_LED_S, GPIO_LED_E, GPIO_LED_W, GPIO_LED_C} = 0;
+    
+    wire writeStart;
+    wire writeDone;
+    wire initDone;
+    wire clearAll;
+    wire resetFSM;
     wire HALT, RDY, IRQ_L, NMI_L, RES_L, SO;
-    wire phi1_out,phi2_out,SYNC,RW;
-    wire [7:0] extABH,extABL,extDB; 
-    wire [7:0] extABH_b,extABL_b,extDB_b;
-  
+    wire phi1_out, phi2_out, SYNC,RW;
+    wire [7:0] extABH, extABL, extDB;
+    wire [7:0] extABH_b, extABL_b, extDB_b;
 
-    // clock generation
+    // Clock Generation
     (* clock_signal = "yes" *) wire phi0_in, fphi0, latchClk;
-    clockGen179 #(.div(`DIV)) makeclock(.RST(GPIO_SW_S),.clk27(CLK_27MHZ_FPGA),
-                                        .phi0(phi0_in),.fphi0(fphi0),.latchClk(latchClk));
-    
-    (* clock_signal = "yes" *) wire clk64,clk16,clk15;
+    clockGen179 #(.div(`DIV)) makeclock(.RST(GPIO_SW_S), .clk27(CLK_27MHZ_FPGA),
+                                        .phi0(phi0_in), .fphi0(fphi0), .latchClk(latchClk));
+    (* clock_signal = "yes" *) wire clk64, clk16, clk15;
 
     clockDivider #(422) out64(CLK_27MHZ_FPGA,clk64);
     clockDivider #(1688) out16(CLK_27MHZ_FPGA,clk16);
     clockDivider #(1800) out15(CLK_27MHZ_FPGA,clk15);
     //clockDivider #(20000) out60(CLK_27MHZ_FPGA,clk60);
-	
 
-    // switches
+    // Switches
     wire nRES_L;
     assign RES_L = ~nRES_L;
-    DeBounce #(.N(8)) resB(fphi0,1'b1,GPIO_SW_W,nRES_L);
+    DeBounce #(.N(8)) resB(fphi0, 1'b1, GPIO_SW_W, nRES_L);
 
-
-    // mem stuff
+    // Memory
     wire [15:0] memAdd;
-   
-    wire [7:0] memOut,memOut_b,memDBin;
-    assign memAdd = {extABH,extABL};
-  
-    /*
-    triState8 busDriver(extDB,memOut_b,RW);
-  
-    memTestFull2 mem( 
-      .clka(fphi0), // input clka
-      .wea(~RW), // input [0 : 0] wea
-      .addra(memAdd), // input [15 : 0] addra
-      .dina(extDB), // input [7 : 0] dina
-      .douta(memOut_b) // output [7 : 0] douta
-    );
-    */
-    
+    wire [7:0] memOut, memOut_b, memDBin;
+    assign memAdd = {extABH, extABL};
 
-    // Graphics components
+    /*-------------------------------------------------------------*/
+    // Graphics (ANTIC + GTIA + DVI)
+    
     wire Fphi0;
     wire phi2;
     wire clk_DVI;
@@ -165,42 +149,26 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
     assign DVI_D2 = DVI_D[2];
     assign DVI_D1 = DVI_D[1];
     assign DVI_D0 = DVI_D[0];
-    
-    //BUFG  bufGraphics(Fphi0, ~fphi0);
-    //BUFG  bufDVI(clk_DVI, clk_half);
-    //clockHalf dviclk(USER_CLK, clk_half);
-    
     assign Fphi0 = ~fphi0;
     
-      
-    reg [1:0] clkdiv = 2'd0;
-    assign clk_DVI = clkdiv[1];
-    
-    always @(posedge USER_CLK) begin
-      if (clkdiv == 2'd3)
-        clkdiv <= 2'd0;
-      else
-        clkdiv <= clkdiv + 2'd1;
-    end
+    clock25 DVIclkdiv(.CLKIN_IN(USER_CLK), .CLKDV_OUT(clk_DVI), .CLK0_OUT());
     
     // GTIA to memory map wires
     wire [7:0] COLPM3, COLPF0, COLPF1, COLPF2, COLPF3, COLBK, PRIOR, VDELAY,
-               GRACTL, HITCLR, HPOSP0_M0PF_bus, HPOSP1_M1PF_bus, HPOSP2_M2PF_bus, 
-               HPOSP3_M3PF_bus, HPOSM0_P0PF_bus, HPOSM1_P1PF_bus, HPOSM2_P2PF_bus, 
-               HPOSM3_P3PF_bus, SIZEP0_M0PL_bus, SIZEP1_M1PL_bus, SIZEP2_M2PL_bus, 
-               SIZEP3_M3PL_bus, SIZEM_P0PL_bus, GRAFP0_P1PL_bus, GRAFP1_P2PL_bus, 
-               GRAFP2_P3PL_bus, GRAFP3_TRIG0_bus, GRAFPM_TRIG1_bus, COLPM0_TRIG2_bus, 
-               COLPM1_TRIG3_bus, COLPM2_PAL_bus, CONSPK_CONSOL_bus;
+               GRACTL, HITCLR, HPOSP0, HPOSP1, HPOSP2, HPOSP3, HPOSM0, HPOSM1, 
+               HPOSM2, HPOSM3, SIZEP0, SIZEP1, SIZEP2, SIZEP3, SIZEM, GRAFP0,
+               GRAFP1, GRAFP2, GRAFP3, GRAFM, COLPM0, COLPM1, COLPM2, CONSPK,
+               M0PF, M1PF, M2PF, M3PF, P0PF, P1PF, P2PF, P3PF, M0PL, M1PL, 
+               M2PL, M3PL, P0PL, P1PL, P2PL, P3PL, TRIG0, TRIG1, TRIG2, TRIG3, 
+               PAL, CONSOL;
     
     // ANTIC to memory map wires
     wire [7:0] DMACTL, CHACTL, HSCROL, VSCROL, PMBASE, CHBASE, WSYNC, NMIEN, 
                NMIRES_NMIST_bus, DLISTL_bus, DLISTH_bus, VCOUNT, PENH, PENV;
     wire [2:0] ANTIC_writeEn;
-    
     wire [31:0] dBuf_data;
     wire [16:0] dBuf_addr; 
     wire dBuf_writeEn;
-    
     wire [3:0] AN;
     wire [15:0] address = {extABH, extABL};
     wire [2:0] charMode;
@@ -209,7 +177,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
     wire [8:0] width;
     wire [7:0] height;
     
-     //TEMP
+    // TEMP
     wire [7:0] IR;
     wire [1:0] currStateANTIC;
     wire [3:0] mode;
@@ -232,47 +200,53 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
     wire ANTIC_writeNMI;
     wire incrY;
     wire saveY;
+    wire loadIR;
 
     // Module instantiation
-    ANTIC antic(.Fphi0(Fphi0), .LP_L(), .RW(), .rst(rst), .vblank(vblank), .hblank(hblank), .DMACTL(DMACTL), .CHACTL(CHACTL),
-                .HSCROL(HSCROL), .VSCROL(VSCROL), .PMBASE(PMBASE), .CHBASE(CHBASE), .WSYNC(WSYNC), .NMIEN(NMIEN), 
-                .DB(extDB), .NMIRES_NMIST_bus(NMIRES_NMIST_bus), .DLISTL_bus(DLISTL_bus), .DLISTH_bus(DLISTH_bus),
-                .address(address), .AN(AN), .halt(HALT), .NMI_L(NMI_L), .RDY(RDY), .REF_L(), .RNMI_L(), .phi0(), 
-                .IR_out(IR), .loadIR(), .VCOUNT(VCOUNT), .PENH(PENH), .PENV(PENV), .ANTIC_writeEn(ANTIC_writeEn), 
-                .charMode(charMode), .numLines(numLines), .width(width), .height(height), .incrY(incrY), .saveY(saveY),
+    ANTIC antic(.Fphi0(Fphi0), .LP_L(), .RW(), .rst(rst), .vblank(vblank), .hblank(hblank),
+                .DMACTL(DMACTL), .CHACTL(CHACTL), .HSCROL(HSCROL), .VSCROL(VSCROL), 
+                .PMBASE(PMBASE), .CHBASE(CHBASE), .WSYNC(WSYNC), .NMIEN(NMIEN), 
+                .DB(extDB), .NMIRES_NMIST_bus(NMIRES_NMIST_bus), .DLISTL_bus(DLISTL_bus), 
+                .DLISTH_bus(DLISTH_bus), .address(address), .AN(AN), .halt(HALT), 
+                .NMI_L(NMI_L), .RDY(RDY), .REF_L(), .RNMI_L(), .phi0(), .IR_out(IR), 
+                .loadIR(loadIR), .VCOUNT(VCOUNT), .PENH(PENH), .PENV(PENV), 
+                .ANTIC_writeEn(ANTIC_writeEn), .charMode(charMode), .numLines(numLines), 
+                .width(width), .height(height), .incrY(incrY), .saveY(saveY),
                 .printDLIST(dlist), .currState(currStateANTIC), .MSR(MSR), .loadDLIST_both(), 
                 .loadMSR_both(), .IR_rdy(IR_rdy), .mode(mode), .numBytes(), .MSRdata(MSRdata), 
-                .DLISTL(DLISTL), .blankCount(), .addressIn(), .loadMSRdata(),
-                .charData(), .newDLISTptr(), .loadDLIST(), .DLISTend(DLISTend), 
-                .idle(idle), .loadMSRstate(loadMSRstate), .addressOut(addressOut), .haltANTIC(haltANTIC), .rdyANTIC(rdyANTIC),
-                .colorSel4(colorSel4), .ANTIC_writeNMI(ANTIC_writeNMI));
+                .DLISTL(DLISTL), .addressIn(), .loadMSRdata(), .charData(), .newDLISTptr(), 
+                .loadDLIST(), .DLISTend(DLISTend), .idle(idle), .loadMSRstate(loadMSRstate), 
+                .addressOut(addressOut), .haltANTIC(haltANTIC), .rdyANTIC(rdyANTIC),
+                .colorSel4(colorSel4), .ANTIC_writeNMI(ANTIC_writeNMI), .GRAFP0(GRAFP0), 
+                .GRAFP1(GRAFP1), .GRAFP2(GRAFP2), .GRAFP3(GRAFP3), .GRAFM(GRAFM));
     
-    GTIA gtia(.address(), .AN(AN), .CS(), .DEL(), .OSC(), .RW(), .trigger(), .Fphi0(Fphi0), .rst(rst), .charMode(charMode),
-              .DLISTend(DLISTend), .numLines(numLines), .width(width), .height(height), .incrY(incrY), .saveY(saveY),
-              .COLPM3(COLPM3), .COLPF0(COLPF0), .COLPF1(COLPF1), .COLPF2(COLPF2), .COLPF3(COLPF3), .COLBK(COLBK),
-              .PRIOR(PRIOR), .VDELAY(VDELAY), .GRACTL(GRACTL), .HITCLR(HITCLR),
-              .DB(extDB), .switch(),
-              .HPOSP0_M0PF_bus(HPOSP0_M0PF_bus), .HPOSP1_M1PF_bus(HPOSP1_M1PF_bus), .HPOSP2_M2PF_bus(HPOSP2_M2PF_bus),
-              .HPOSP3_M3PF_bus(HPOSP3_M3PF_bus), .HPOSM0_P0PF_bus(HPOSM0_P0PF_bus), .HPOSM1_P1PF_bus(HPOSM1_P1PF_bus),
-              .HPOSM2_P2PF_bus(HPOSM2_P2PF_bus), .HPOSM3_P3PF_bus(HPOSM3_P3PF_bus), .SIZEP0_M0PL_bus(SIZEP0_M0PL_bus),
-              .SIZEP1_M1PL_bus(SIZEP1_M1PL_bus), .SIZEP2_M2PL_bus(SIZEP2_M2PL_bus), .SIZEP3_M3PL_bus(SIZEP3_M3PL_bus),
-              .SIZEM_P0PL_bus(SIZEM_P0PL_bus), .GRAFP0_P1PL_bus(GRAFP0_P1PL_bus), .GRAFP1_P2PL_bus(GRAFP1_P2PL_bus), 
-              .GRAFP2_P3PL_bus(GRAFP2_P3PL_bus), .GRAFP3_TRIG0_bus(GRAFP3_TRIG0_bus), .GRAFPM_TRIG1_bus(GRAFPM_TRIG1_bus),
-              .COLPM0_TRIG2_bus(COLPM0_TRIG2_bus), .COLPM1_TRIG3_bus(COLPM1_TRIG3_bus), .COLPM2_PAL_bus(COLPM2_PAL_bus), 
-              .CONSPK_CONSOL_bus(CONSPK_CONSOL_bus),
-              .COL(), .CSYNC(), .phi2(phi2), .HALT(), .L(),
-              .dBuf_data(dBuf_data), .dBuf_addr(dBuf_addr), .dBuf_writeEn(dBuf_writeEn),
-              .vblank(vblank), .hblank(hblank), .x(x), .y(y),
+    GTIA gtia(.address(), .AN(AN), .CS(), .DEL(), .OSC(), .RW(), .trigger(), 
+              .Fphi0(Fphi0), .rst(rst), .charMode(charMode), .DLISTend(DLISTend), 
+              .numLines(numLines), .width(width), .height(height), .incrY(incrY), 
+              .saveY(saveY), .COLPM3(COLPM3), .COLPF0(COLPF0), .COLPF1(COLPF1), 
+              .COLPF2(COLPF2), .COLPF3(COLPF3), .COLBK(COLBK), .PRIOR(PRIOR), 
+              .VDELAY(VDELAY), .GRACTL(GRACTL), .HITCLR(HITCLR), .HPOSP0(HPOSP0), 
+              .HPOSP1(HPOSP1), .HPOSP2(HPOSP2), .HPOSP3(HPOSP3), .HPOSM0(HPOSM0), 
+              .HPOSM1(HPOSM1), .HPOSM2(HPOSM2), .HPOSM3(HPOSM3), .SIZEP0(SIZEP0),
+              .SIZEP1(SIZEP1), .SIZEP2(SIZEP2), .SIZEP3(SIZEP3), .SIZEM(SIZEM), 
+              .GRAFP0(GRAFP0), .GRAFP1(GRAFP1), .GRAFP2(GRAFP2), .GRAFP3(GRAFP3), 
+              .GRAFM(GRAFM), .COLPM0(COLPM0), .COLPM1(COLPM1), .COLPM2(COLPM2), 
+              .CONSPK(CONSPK), .DB(extDB), .switch(), .M0PF(M0PF), .M1PF(M1PF), 
+              .M2PF(M2PF), .M3PF(M3PF), .P0PF(P0PF), .P1PF(P1PF), .P2PF(P2PF), 
+              .P3PF(P3PF), .M0PL(M0PL), .M1PL(M1PL), .M2PL(M2PL), .M3PL(M3PL),
+              .P0PL(P0PL), .P1PL(P1PL), .P2PL(P2PL), .P3PL(P3PL), .TRIG0(TRIG0), 
+              .TRIG1(TRIG1), .TRIG2(TRIG2), .TRIG3(TRIG3), .PAL(PAL), .CONSOL(CONSOL),
+              .COL(), .CSYNC(), .HALT(), .L(), .dBuf_data(dBuf_data), .dBuf_addr(dBuf_addr), 
+              .dBuf_writeEn(dBuf_writeEn), .vblank(vblank), .hblank(hblank), .x(x), .y(y),
               .colorData(colorData), .RGB(RGB));
-                 
 
-    displayBlockMem dbm(.clka(Fphi0), .wea(dBuf_writeEn), .addra(dBuf_addr), .dina(dBuf_data), .clkb(clk_DVI),
-                        .addrb(addrB), .doutb(doutB));
+    displayBlockMem dbm(.clka(Fphi0), .wea(dBuf_writeEn), .addra(dBuf_addr),
+                        .dina(dBuf_data), .clkb(clk_DVI), .addrb(addrB), .doutb(doutB));
     
-    DVI dvi(.clock(clk_DVI), .reset(rst), .data(doutB), .SDA(IIC_SDA_VIDEO), .SCL(IIC_SCL_VIDEO),
-            .DVI_V(DVI_V), .DVI_H(DVI_H), .DVI_D(DVI_D), .DVI_XCLK_P(DVI_XCLK_P), 
-            .DVI_XCLK_N(DVI_XCLK_N), .DVI_DE(DVI_DE), .DVI_RESET_B(DVI_RESET_B),
-            .request(request));
+    DVI dvi(.clock(clk_DVI), .reset(rst), .data(doutB), .SDA(IIC_SDA_VIDEO),
+            .SCL(IIC_SCL_VIDEO), .DVI_V(DVI_V), .DVI_H(DVI_H), .DVI_D(DVI_D),
+            .DVI_XCLK_P(DVI_XCLK_P), .DVI_XCLK_N(DVI_XCLK_N), .DVI_DE(DVI_DE),
+            .DVI_RESET_B(DVI_RESET_B), .request(request));
     
     // FSM to control DVI reads from port B
     always @(posedge request or posedge nRES_L) begin
@@ -286,158 +260,134 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
           addrB <= addrB + 16'd1;
       end
     end
-
-
    
-    wire addr_RAM,addr_BIOS,addr_CART; 
+    /*-------------------------------------------------------------*/
+    // I/O (POKEY)
+
+    wire [7:0] AUDF1, AUDC1, AUDF2, AUDC2, AUDF3, AUDC3, AUDF4, AUDC4, AUDCTL;
+    wire [7:0] SKCTL, IRQEN, IRQST_BUS, POT0_BUS, POT1_BUS, POT2_BUS, POT3_BUS, 
+               ALLPOT_BUS, KBCODE_BUS, SKSTAT_BUS, TRIG0_BUS, TRIG1_BUS, TRIG2_BUS,
+               TRIG3_BUS, RANDOM_BUS, CONSPK_CONSOL;
+	  wire POTGO_strobe, STIMER_strobe;
+    wire audio1, audio2, audio3, audio4;
+    wire [3:0] vol1, vol2, vol3, vol4;
+    wire timer1_int, timer2_int, timer4_int;
+    wire [1:0] state;
+    wire [3:0] control_input_pot_scan;
+    wire [7:0] timer;
+    wire rst_latch;
+    wire [3:0] cIn, cOut, keyscan;
+    wire POTGO_strobe2;
     
-    wire [7:0] data_CART;
-    wire [7:0] data_CART2;
-
-    assign data_CART = {HDR1_34,HDR1_36,HDR1_38,HDR1_40,HDR1_42,HDR1_44,HDR1_46,HDR1_48};
-    assign {HDR1_28,HDR1_26,HDR1_24,HDR1_22,HDR1_20,HDR1_18,HDR1_16,HDR1_14,HDR1_12,HDR1_10,HDR1_8,HDR1_6,HDR1_4,HDR1_2} = memAdd[13:0];
-   
-    assign HDR1_30 = ~((~memAdd[15]) & (memAdd[14]));
-    assign HDR1_32 = ~((memAdd[15]) & (~memAdd[14]));
-   
-   
-	/*  =============== POKEY stuff ============ */
-
-    wire [7:0] AUDF1,AUDC1,AUDF2,AUDC2,AUDF3,AUDC3,AUDF4,AUDC4,AUDCTL;
-    wire [7:0] SKCTL, IRQEN,IRQST_BUS,POT0_BUS, POT1_BUS, POT2_BUS, POT3_BUS, ALLPOT_BUS, KBCODE_BUS, SKSTAT_BUS,
-               TRIG0_BUS,TRIG1_BUS,TRIG2_BUS,TRIG3_BUS,RANDOM_BUS,CONSPK_CONSOL;
-	wire POTGO_strobe,STIMER_strobe;
-
-    wire audio1,audio2,audio3,audio4;
-    wire [3:0] vol1,vol2,vol3,vol4;
-    wire timer1_int,timer2_int,timer4_int;
-
     assign HDR1_50 = phi1_out;
     assign HDR1_52 = fphi0;
     assign HDR1_54 = latchClk;
     assign HDR1_56 = 1'B0;
-   
-	/*
+    
+    /*
     assign HDR1_50 = audio1;
     assign HDR1_52 = audio2;
     assign HDR1_54 = audio3;
     assign HDR1_56 = audio4;
-   */
-	
+    */
+    
     assign {HDR2_34, HDR2_36, HDR2_38, HDR2_40} = vol1;
     assign {HDR2_48, HDR2_46, HDR2_44, HDR2_42} = vol2;
     assign {HDR2_50, HDR2_52, HDR2_54, HDR2_56} = vol3;
     assign {HDR2_64, HDR2_62, HDR2_60, HDR2_58} = vol4;
 	 
-    pokeyaudio pokeyAudio(.init_L(RES_L),.clk179(phi1_out),.clk64(clk64),.clk16(clk16),
-                    .AUDF1(AUDF1),.AUDF2(AUDF2),.AUDF3(AUDF3),.AUDF4(AUDF4),
-                    .AUDC1(AUDC1),.AUDC2(AUDC2),.AUDC3(AUDC3),.AUDC4(AUDC4),.AUDCTL(AUDCTL),
-                    .audio1(audio1),.audio2(audio2),.audio3(audio3),.audio4(audio4),
-                    .vol1(vol1),.vol2(vol2),.vol3(vol3),.vol4(vol4),.RANDOM(RANDOM_BUS),
-					.int1(timer1_int),.int2(timer2_int),.int4(timer4_int),.STIMER_strobe(STIMER_strobe));
+    DeBounce fakestrobe(phi1_out, 1'b1, GPIO_SW_E, POTGO_strobe2);
+   
+    pokeyaudio pokeyAudio(.init_L(RES_L), .clk179(phi1_out), .clk64(clk64), .clk16(clk16),
+                          .AUDF1(AUDF1), .AUDF2(AUDF2), .AUDF3(AUDF3), .AUDF4(AUDF4),
+                          .AUDC1(AUDC1), .AUDC2(AUDC2), .AUDC3(AUDC3), .AUDC4(AUDC4), .AUDCTL(AUDCTL),
+                          .audio1(audio1), .audio2(audio2), .audio3(audio3), .audio4(audio4),
+                          .vol1(vol1), .vol2(vol2), .vol3(vol3), .vol4(vol4), .RANDOM(RANDOM_BUS),
+                          .int1(timer1_int), .int2(timer2_int), .int4(timer4_int), .STIMER_strobe(STIMER_strobe));
     
-	 wire [3:0] cIn,cOut,keyscan;
-	 wire POTGO_strobe2;
-	 
-	 DeBounce fakestrobe(phi1_out,1'b1,GPIO_SW_E,POTGO_strobe2);
-	wire [1:0] state;
-	wire [3:0] control_input_pot_scan;
-	wire [7:0] timer;
-	wire rst_latch;
-    POKEY_top_integration pokeyIO(.rst_latch(rst_latch),.kr1_L(kr),.timer(timer),.control_input_pot_scan(control_input_pot_scan),.state(state), .control_input(cIn),.control_output_8_5(cOut),.key_scan_L(keyscan),
-                                  .rst(~RES_L),.clk15(clk15), .clk179(phi1_out),.clk64(clk64), .HDR2_10(HDR2_10), .HDR2_12(HDR2_12), .HDR2_14(HDR2_14), .HDR2_16(HDR2_16), .HDR2_18(HDR2_18), 
-                                  .HDR2_20(HDR2_20), .HDR2_22(HDR2_22), .HDR2_24(HDR2_24), .HDR2_26(HDR2_26), .HDR2_28(HDR2_28), .HDR2_30(HDR2_30), .HDR2_32(HDR2_32),
-                                  .SKCTL(SKCTL), .GRACTL(GRACTL),.IRQEN(IRQEN),.CONSOL(CONSPK_CONSOL),
-                                  .timer4Pending(timer1_int),.timer2Pending(timer2_int),.timer1Pending(timer4_int), .POTGO_strobe(POTGO_strobe),
-
-                                   .IRQ_ST(IRQST_BUS), .POT0_bus(POT0_BUS), .POT1_bus(POT1_BUS), .POT2_bus(POT2_BUS), .POT3_bus(POT3_BUS), .ALLPOT_bus(ALLPOT_BUS), 
-                                   .KBCODE_bus(KBCODE_BUS), .SKSTAT_bus(SKSTAT_BUS), .TRIG0_bus(TRIG0_BUS), .TRIG1_bus(TRIG1_BUS), .TRIG2_bus(TRIG2_BUS), .TRIG3_bus(TRIG3_BUS), 
-								   .HDR2_2(HDR2_2), .HDR2_4(HDR2_4), .HDR2_6(HDR2_6), .HDR2_8(HDR2_8), .HDR1_60(HDR1_60), .HDR1_62(HDR1_62), .HDR1_64(HDR1_64),.IRQ_L(IRQ_L));
-	 
-	assign GPIO_LED_0 = TRIG0_BUS;
-    assign GPIO_LED_1 = TRIG1_BUS;
-    assign {GPIO_LED_5,GPIO_LED_6,GPIO_LED_7,GPIO_LED_8} = KBCODE_BUS[4:1];
-
-    wire [15:0] cartROMadd;
-    assign cartROMadd = (memAdd - 16'h4000);
-    
-    // Soft Cartridge ROM instantiation
-    //memDefender memD(.clka(fphi0),.addra(cartROMadd[14:0]),.douta(data_CART));
-   //memMario    memM(.clka(fphi0),.addra(cartROMadd[14:0]),.douta(data_CART));
-    
-    wire [7:0] NMIRES_NMIST, VCOUNT_val; //
-    wire [7:0] data_in_b;
-    wire write_RAM;
-
-    memoryMap map(
-
-                  .addr_RAM(addr_RAM),.addr_BIOS(addr_BIOS),.addr_CART(addr_CART),
-                  .Fclk(fphi0), .clk(fphi0), .rst(rst), .CPU_writeEn(~RW), .CPU_addr(memAdd), 
-                  .data_CART_out(data_CART), .CPU_data(extDB),
-
-                  .AUDF1(AUDF1), .AUDC1(AUDC1), .AUDF2(AUDF2), .AUDC2(AUDC2), 
-                  .AUDF3(AUDF3), .AUDC3(AUDC3), .AUDF4(AUDF4), .AUDC4(AUDC4), .AUDCTL(AUDCTL),.SKCTL(SKCTL),.IRQEN(IRQEN),     
-                  .IRQST_BUS(IRQST_BUS),.POT0_BUS(POT0_BUS), .POT1_BUS(POT1_BUS), .POT2_BUS(POT2_BUS), .POT3_BUS(POT3_BUS),
-                  .ALLPOT_BUS(ALLPOT_BUS), .KBCODE_BUS(KBCODE_BUS), .SKSTAT_BUS(SKSTAT_BUS),
-                  .TRIG0_BUS(TRIG0_BUS),.TRIG1_BUS(TRIG1_BUS),.TRIG2_BUS(TRIG2_BUS),.TRIG3_BUS(TRIG3_BUS),.RANDOM_BUS(RANDOM_BUS),
-                  .STIMER_strobe(STIMER_strobe),.POTGO_strobe(POTGO_strobe),
-
-                  .ANTIC_writeEn(ANTIC_writeEn), .GTIA_writeEn(5'd0),
-                  .VCOUNT_in(VCOUNT), .PENH_in(PENH), .PENV_in(PENV), 
-                  .NMIRES_NMIST_bus(NMIRES_NMIST_bus), .DLISTL_bus(DLISTL_bus), .DLISTH_bus(DLISTH_bus),
-                  .HPOSP0_M0PF_bus(HPOSP0_M0PF_bus), .HPOSP1_M1PF_bus(HPOSP1_M1PF_bus), .HPOSP2_M2PF_bus(HPOSP2_M2PF_bus),
-                  .HPOSP3_M3PF_bus(HPOSP3_M3PF_bus), .HPOSM0_P0PF_bus(HPOSM0_P0PF_bus), .HPOSM1_P1PF_bus(HPOSM1_P1PF_bus),
-                  .HPOSM2_P2PF_bus(HPOSM2_P2PF_bus), .HPOSM3_P3PF_bus(HPOSM3_P3PF_bus), .SIZEP0_M0PL_bus(SIZEP0_M0PL_bus),
-                  .SIZEP1_M1PL_bus(SIZEP1_M1PL_bus), .SIZEP2_M2PL_bus(SIZEP2_M2PL_bus), .SIZEP3_M3PL_bus(SIZEP3_M3PL_bus),
-                  .SIZEM_P0PL_bus(SIZEM_P0PL_bus), .GRAFP0_P1PL_bus(GRAFP0_P1PL_bus), .GRAFP1_P2PL_bus(GRAFP1_P2PL_bus),
-                  .GRAFP2_P3PL_bus(GRAFP2_P3PL_bus), .GRAFP3_TRIG0_bus(GRAFP3_TRIG0_bus), .GRAFPM_TRIG1_bus(GRAFPM_TRIG1_bus),
-                  .COLPM0_TRIG2_bus(COLPM0_TRIG2_bus), .COLPM1_TRIG3_bus(COLPM1_TRIG3_bus), .COLPM2_PAL_bus(COLPM2_PAL_bus),
-                  .CONSPK_CONSOL_bus(CONSPK_CONSOL_bus), .DMACTL(DMACTL), .CHACTL(CHACTL), .HSCROL(HSCROL), .VSCROL(VSCROL), .PMBASE(PMBASE),
-                  .CHBASE(CHBASE), .WSYNC(WSYNC), .NMIEN(NMIEN), .COLPM3(COLPM3), .COLPF0(COLPF0), .COLPF1(COLPF1), .COLPF2(COLPF2),
-                  .COLPF3(COLPF3), .COLBK(COLBK), .PRIOR(PRIOR), .VDELAY(VDELAY), .GRACTL(GRACTL), .HITCLR(HITCLR),
-                  .NMIRES_NMIST(NMIRES_NMIST), .VCOUNT(VCOUNT_val),.CONSPK_CONSOL(CONSPK_CONSOL));
-
-
-/*
-  memoryMap map( 
-
-                  .addr_RAM(addr_RAM),.addr_BIOS(addr_BIOS),.addr_CART(addr_CART),
-                  .Fclk(fphi0), .clk(fphi0), .CPU_writeEn(~RW), .CPU_addr(memAdd), 
-                  .data_CART_out(data_CART), .CPU_data(extDB),
-
-                  .AUDF1(AUDF1), .AUDC1(AUDC1), .AUDF2(AUDF2), .AUDC2(AUDC2), 
-                  .AUDF3(AUDF3), .AUDC3(AUDC3), .AUDF4(AUDF4), .AUDC4(AUDC4), .AUDCTL(AUDCTL),.SKCTL(SKCTL),.IRQEN(IRQEN),     
-                  .IRQST_BUS(IRQST_BUS),.POT0_BUS(POT0_BUS), .POT1_BUS(POT1_BUS), .POT2_BUS(POT2_BUS), .POT3_BUS(POT3_BUS),
-                  .ALLPOT_BUS(ALLPOT_BUS), .KBCODE_BUS(KBCODE_BUS), .SKSTAT_BUS(SKSTAT_BUS),
-                 .RANDOM_BUS(RANDOM_BUS),
-     
-
-                  .ANTIC_writeEn(ANTIC_writeEn), .GTIA_writeEn(5'd0),
-                  .VCOUNT_in(VCOUNT), .PENH_in(PENH), .PENV_in(PENV), 
-                  .NMIRES_NMIST_bus(NMIRES_NMIST_bus), .DLISTL_bus(DLISTL_bus), .DLISTH_bus(DLISTH_bus),
-                  .HPOSP0_M0PF_bus(HPOSP0_M0PF_bus), .HPOSP1_M1PF_bus(HPOSP1_M1PF_bus), .HPOSP2_M2PF_bus(HPOSP2_M2PF_bus),
-                  .HPOSP3_M3PF_bus(HPOSP3_M3PF_bus), .HPOSM0_P0PF_bus(HPOSM0_P0PF_bus), .HPOSM1_P1PF_bus(HPOSM1_P1PF_bus),
-                  .HPOSM2_P2PF_bus(HPOSM2_P2PF_bus), .HPOSM3_P3PF_bus(HPOSM3_P3PF_bus), .SIZEP0_M0PL_bus(SIZEP0_M0PL_bus),
-                  .SIZEP1_M1PL_bus(SIZEP1_M1PL_bus), .SIZEP2_M2PL_bus(SIZEP2_M2PL_bus), .SIZEP3_M3PL_bus(SIZEP3_M3PL_bus),
-                  .SIZEM_P0PL_bus(SIZEM_P0PL_bus), .GRAFP0_P1PL_bus(GRAFP0_P1PL_bus), .GRAFP1_P2PL_bus(GRAFP1_P2PL_bus),
-                  .GRAFP2_P3PL_bus(GRAFP2_P3PL_bus), .GRAFP3_TRIG0_bus(GRAFP3_TRIG0_bus), .GRAFPM_TRIG1_bus(GRAFPM_TRIG1_bus),
-                  .COLPM0_TRIG2_bus(COLPM0_TRIG2_bus), .COLPM1_TRIG3_bus(COLPM1_TRIG3_bus), .COLPM2_PAL_bus(COLPM2_PAL_bus),
-                  .CONSPK_CONSOL_bus(CONSPK_CONSOL_bus), .DMACTL(DMACTL), .CHACTL(CHACTL), .HSCROL(HSCROL), .VSCROL(VSCROL), .PMBASE(PMBASE),
-                  .CHBASE(CHBASE), .WSYNC(WSYNC), .NMIEN(NMIEN), .COLPM3(COLPM3), .COLPF0(COLPF0), .COLPF1(COLPF1), .COLPF2(COLPF2),
-                  .COLPF3(COLPF3), .COLBK(COLBK), .PRIOR(PRIOR), .VDELAY(VDELAY), .GRACTL(GRACTL), .HITCLR(HITCLR)
-                 );
-
-*/
+    POKEY_top_integration pokeyIO(.rst_latch(rst_latch), .kr1_L(kr), .timer(timer),
+                                  .control_input_pot_scan(control_input_pot_scan), 
+                                  .state(state), .control_input(cIn), .control_output_8_5(cOut),
+                                  .key_scan_L(keyscan), .rst(~RES_L),.clk15(clk15), 
+                                  .clk179(phi1_out), .clk64(clk64), .HDR2_10(HDR2_10), 
+                                  .HDR2_12(HDR2_12), .HDR2_14(HDR2_14), .HDR2_16(HDR2_16), 
+                                  .HDR2_18(HDR2_18), .HDR2_20(HDR2_20), .HDR2_22(HDR2_22), 
+                                  .HDR2_24(HDR2_24), .HDR2_26(HDR2_26), .HDR2_28(HDR2_28), 
+                                  .HDR2_30(HDR2_30), .HDR2_32(HDR2_32), .SKCTL(SKCTL), 
+                                  .GRACTL(GRACTL), .IRQEN(IRQEN), .CONSOL(CONSPK_CONSOL),
+                                  .timer4Pending(timer1_int), .timer2Pending(timer2_int), 
+                                  .timer1Pending(timer4_int), .POTGO_strobe(POTGO_strobe),
+                                  .IRQ_ST(IRQST_BUS), .POT0_bus(POT0_BUS), .POT1_bus(POT1_BUS),
+                                  .POT2_bus(POT2_BUS), .POT3_bus(POT3_BUS), .ALLPOT_bus(ALLPOT_BUS), 
+                                  .KBCODE_bus(KBCODE_BUS), .SKSTAT_bus(SKSTAT_BUS), .TRIG0_bus(TRIG0_BUS), 
+                                  .TRIG1_bus(TRIG1_BUS), .TRIG2_bus(TRIG2_BUS), .TRIG3_bus(TRIG3_BUS), 
+                                  .HDR2_2(HDR2_2), .HDR2_4(HDR2_4), .HDR2_6(HDR2_6), .HDR2_8(HDR2_8), 
+                                  .HDR1_60(HDR1_60), .HDR1_62(HDR1_62), .HDR1_64(HDR1_64), .IRQ_L(IRQ_L));
 
     /*-------------------------------------------------------------*/
-    // cpu stuff
+    // Memory
+
+    wire [7:0] data_in_b;
+    wire write_RAM;
+    wire [15:0] cartROMadd;
+    wire addr_RAM,addr_BIOS,addr_CART;
+    wire [7:0] data_CART;
+    wire [7:0] data_CART2;
+    
+    assign cartROMadd = (memAdd - 16'h4000);
+    assign GPIO_LED_0 = TRIG0_BUS;
+    assign GPIO_LED_1 = TRIG1_BUS;
+    assign {GPIO_LED_5,GPIO_LED_6,GPIO_LED_7,GPIO_LED_8} = KBCODE_BUS[4:1];
+    
+    assign data_CART = {HDR1_34,HDR1_36,HDR1_38,HDR1_40,HDR1_42,HDR1_44,HDR1_46,HDR1_48};
+    assign {HDR1_28,HDR1_26,HDR1_24,HDR1_22,HDR1_20,HDR1_18,HDR1_16,HDR1_14,HDR1_12,HDR1_10,HDR1_8,HDR1_6,HDR1_4,HDR1_2} = memAdd[13:0];
+    
+    assign HDR1_30 = ~((~memAdd[15]) & (memAdd[14]));
+    assign HDR1_32 = ~((memAdd[15]) & (~memAdd[14]));
+    
+    // Soft cartridge ROM instantiations
+    //memDefender memD(.clka(fphi0),.addra(cartROMadd[14:0]),.douta(data_CART));
+    //memMario    memM(.clka(fphi0),.addra(cartROMadd[14:0]),.douta(data_CART));
+
+    memoryMap map(.addr_RAM(addr_RAM), .addr_BIOS(addr_BIOS), .addr_CART(addr_CART),
+                  .Fclk(fphi0), .clk(fphi0), .rst(rst), .CPU_writeEn(~RW), 
+                  .CPU_addr(memAdd), .data_CART_out(data_CART), .CPU_data(extDB),
+
+                  .AUDF1(AUDF1), .AUDC1(AUDC1), .AUDF2(AUDF2), .AUDC2(AUDC2), 
+                  .AUDF3(AUDF3), .AUDC3(AUDC3), .AUDF4(AUDF4), .AUDC4(AUDC4), 
+                  .AUDCTL(AUDCTL), .SKCTL(SKCTL), .IRQEN(IRQEN), .IRQST_BUS(IRQST_BUS),
+                  .POT0_BUS(POT0_BUS), .POT1_BUS(POT1_BUS), .POT2_BUS(POT2_BUS), 
+                  .POT3_BUS(POT3_BUS), .ALLPOT_BUS(ALLPOT_BUS), .KBCODE_BUS(KBCODE_BUS), 
+                  .SKSTAT_BUS(SKSTAT_BUS), .TRIG0_BUS(TRIG0_BUS), .TRIG1_BUS(TRIG1_BUS),
+                  .TRIG2_BUS(TRIG2_BUS), .TRIG3_BUS(TRIG3_BUS), .RANDOM_BUS(RANDOM_BUS),
+                  .STIMER_strobe(STIMER_strobe), .POTGO_strobe(POTGO_strobe),
+
+                  .ANTIC_writeEn(ANTIC_writeEn), .GTIA_writeEn(5'd0), .VCOUNT_in(VCOUNT),
+                  .PENH_in(PENH), .PENV_in(PENV), .NMIRES_NMIST_bus(NMIRES_NMIST_bus),
+                  .DLISTL_bus(DLISTL_bus), .DLISTH_bus(DLISTH_bus),
+                  
+                  .HPOSP0(HPOSP0), .HPOSP1(HPOSP1), .HPOSP2(HPOSP2), .HPOSP3(HPOSP3), 
+                  .HPOSM0(HPOSM0), .HPOSM1(HPOSM1), .HPOSM2(HPOSM2), .HPOSM3(HPOSM3),
+                  .SIZEP0(SIZEP0), .SIZEP1(SIZEP1), .SIZEP2(SIZEP2), .SIZEP3(SIZEP3), 
+                  .SIZEM(SIZEM), .COLPM0(COLPM0), .COLPM1(COLPM1), .COLPM2(COLPM2), 
+                  .CONSPK(CONSPK), .M0PF(M0PF), .M1PF(M1PF), .M2PF(M2PF), .M3PF(M3PF), 
+                  .P0PF(P0PF), .P1PF(P1PF), .P2PF(P2PF), .P3PF(P3PF), .M0PL(M0PL), 
+                  .M1PL(M1PL), .M2PL(M2PL), .M3PL(M3PL), .P0PL(P0PL), .P1PL(P1PL), 
+                  .P2PL(P2PL), .P3PL(P3PL), .TRIG0(TRIG0), .TRIG1(TRIG1),
+                  .TRIG2(TRIG2), .TRIG3(TRIG3), .PAL(PAL), .CONSOL(CONSOL),
+                  
+                  .DMACTL(DMACTL), .CHACTL(CHACTL), .HSCROL(HSCROL), .VSCROL(VSCROL),
+                  .PMBASE(PMBASE), .CHBASE(CHBASE), .WSYNC(WSYNC), .NMIEN(NMIEN), 
+                  .COLPM3(COLPM3), .COLPF0(COLPF0), .COLPF1(COLPF1), .COLPF2(COLPF2),
+                  .COLPF3(COLPF3), .COLBK(COLBK), .PRIOR(PRIOR), .VDELAY(VDELAY), 
+                  .GRACTL(GRACTL), .HITCLR(HITCLR), .CONSPK_CONSOL(CONSPK_CONSOL));
+
+    /*-------------------------------------------------------------*/
+    // CPU
    
     wire [6:0] currT, currT_b;
-
     wire [7:0] DB, ADH, ADL, SB;
-    
     wire [2:0] activeInt;
-
     wire [7:0] ALUhold_out;
     wire rstAll,nmiPending,resPending,irqPending;
     wire [7:0] idlContents,A,B,outToPCL,outToPCH,accumVal;
@@ -447,104 +397,95 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
     wire [7:0] Accum,Xreg,Yreg;
     wire [7:0] DBforSR,extAB_b1,SRflags,holdAB,SR_contents;
     wire haltAll;
-	top_6502C cpu(.DBforSR(DBforSR),.prevOpcode(prevOpcode),.extAB_b1(extAB_b1),.SR_contents(SR_contents),.holdAB(holdAB),
-                .SRflags(SRflags),.opcode(OP),.opcodeToIR(opcodeToIR),.second_first_int(second_first_int),.nmiPending(nmiPending),
-                .resPending(resPending),.irqPending(irqPending),.currState(currState),.accumVal(accumVal),
-                .outToPCL(outToPCL),.outToPCH(outToPCH),.A(A),.B(B),.idlContents(idlContents),.rstAll(rstAll),.ALUhold_out(ALUhold_out),
-                .activeInt(activeInt),.currT(currT),
-                
-                .DB(DB),.SB(SB),.ADH(ADH),.ADL(ADL),
-                .HALT(HALT),.IRQ_L(IRQ_L), .NMI_L(NMI_L), .RES_L(RES_L), .phi0_in(phi0_in),.fastClk(fphi0),.latchClk(latchClk),
-                .RDY(RDY),.extDB(extDB), .phi1_out(phi1_out), .phi2_out(phi2_out),.SYNC(SYNC), .extABH(extABH),.extABL(extABL),  .RW(RW),
-                .Accum(Accum),.Xreg(Xreg),.Yreg(Yreg));
+    
+    top_6502C cpu(.DBforSR(DBforSR), .prevOpcode(prevOpcode), .extAB_b1(extAB_b1),
+                  .SR_contents(SR_contents), .holdAB(holdAB), .SRflags(SRflags),
+                  .opcode(OP), .opcodeToIR(opcodeToIR), .second_first_int(second_first_int),
+                  .nmiPending(nmiPending), .resPending(resPending), .irqPending(irqPending),
+                  .currState(currState), .accumVal(accumVal), .outToPCL(outToPCL), 
+                  .outToPCH(outToPCH), .A(A), .B(B), .idlContents(idlContents),
+                  .rstAll(rstAll), .ALUhold_out(ALUhold_out), .activeInt(activeInt),
+                  .currT(currT), .DB(DB), .SB(SB), .ADH(ADH), .ADL(ADL), .HALT(HALT), 
+                  .IRQ_L(IRQ_L), .NMI_L(NMI_L), .RES_L(RES_L), .phi0_in(phi0_in),
+                  .fastClk(fphi0), .latchClk(latchClk), .RDY(RDY),.extDB(extDB), 
+                  .phi1_out(phi1_out), .phi2_out(phi2_out), .SYNC(SYNC), .extABH(extABH),
+                  .extABL(extABL), .RW(RW), .Accum(Accum), .Xreg(Xreg), .Yreg(Yreg));
            
- /*-------------------------------------------------------------*/
-    // chipscope stuff
-
-    
-    //need counter to check how many types it's been at an address!
-    //sense outToPCH and outToPCL
-    
-    // wire [7:0] TRIG0,TRIG1,TRIG2,TRIG3,TRIG4,TRIG5,TRIG6,TRIG7,TRIG8,TRIG9,TRIG10,TRIG11,TRIG12,TRIG13,TRIG14,TRIG15;
-    
+    /*-------------------------------------------------------------*/
+    // Chipscope
     
     wire chipClk_b;
-
-    clockoneX #(.width(`DIV-2))  test12(CLK_27MHZ_FPGA,chipClk_b);
-    
     wire [35:0] CONTROL0, CONTROL1, CONTROL2;
+
+    clockoneX #(.width(`DIV-2)) chipClock(CLK_27MHZ_FPGA, chipClk_b);
     
+    // CPU ILA
     chipscope_ila ila0(
-    CONTROL0,
-    chipClk_b,
-    memAdd[15:8],
-    memAdd[7:0],
-    extDB,
-    {1'b0,currT},
-    DB,
-    ADH,
-    ADL,
-    SB,
-    {7'd0,phi1_out},
-    {RW,activeInt,RDY,IRQ_L,NMI_L,RES_L},
-    Accum,
-    Xreg,
-    SR_contents,
-    OP,
-    latchClk,
-    DBforSR);
+      CONTROL0,
+      chipClk_b,
+      memAdd[15:8],
+      memAdd[7:0],
+      extDB,
+      {1'b0,currT},
+      DB,
+      ADH,
+      ADL,
+      SB,
+      {7'd0,phi1_out},
+      {RW,activeInt,RDY,IRQ_L,NMI_L,RES_L},
+      Accum,
+      Xreg,
+      SR_contents,
+      OP,
+      latchClk,
+      DBforSR);
 
-    
+    // Graphics ILA
     chipscope_ila_graphics ila2 (
-      .CONTROL(CONTROL2), // INOUT BUS [35:0]
-      .CLK(chipClk_b), // IN
-      .TRIG0(AN), // IN BUS [3:0]
-      .TRIG1(IR), // IN BUS [7:0]
-      .TRIG2(currStateANTIC), // IN BUS [1:0]
-      .TRIG3({1'b0, ANTIC_writeEn}), // IN BUS [3:0]
-      .TRIG4(dlist), // IN BUS [15:0]
-      .TRIG5(MSR), // IN BUS [15:0]
-      .TRIG6(dBuf_data), // IN BUS [31:0]
-      .TRIG7(dBuf_writeEn), // IN BUS [0:0]
-      .TRIG8(x), // IN BUS [8:0]
-      .TRIG9(y), // IN BUS [7:0]
-      .TRIG10(Fphi0), // IN BUS [0:0]
-      .TRIG11(IR_rdy), // IN BUS [0:0]
-      .TRIG12(MSRdata),
-      .TRIG13(address),
-      .TRIG14(extDB),
-      .TRIG15(ANTIC_writeNMI)
-    );
+      .CONTROL(CONTROL2),
+      .CLK(chipClk_b),
+      .TRIG0(AN),               // [3:0]
+      .TRIG1(IR),               // [7:0]
+      .TRIG2(currStateANTIC),   // [1:0]
+      .TRIG3(mode),             // [3:0]
+      .TRIG4(dlist),            // [15:0]
+      .TRIG5({GRAFP0,COLPM0}),  // [15:0]
+      .TRIG6(dBuf_data),        // [31:0]
+      .TRIG7(dBuf_writeEn),     // [0:0]
+      .TRIG8(x),                // [8:0]
+      .TRIG9(y),                // [7:0]
+      .TRIG10(loadIR),          // [0:0]
+      .TRIG11(IR_rdy),          // [0:0]
+      .TRIG12(HPOSP0),          // [7:0]
+      .TRIG13(address),         // [15:0]
+      .TRIG14(extDB),           // [7:0]
+      .TRIG15(idle));           // [0:0]
 
-    // extra ila for use...
+    // Extra ILA
     chipscope_ila ila1(
-    CONTROL1,
-    chipClk_b,
-    KBCODE_BUS,
-    ALLPOT_BUS,
-    POT0_BUS,
-    POT1_BUS,
-    {cIn,cOut},
-    {4'd0,keyscan},
-    IRQST_BUS,
-    IRQEN,
-    SKSTAT_BUS,
-    SKCTL,
-    GRACTL,
-    CONSPK_CONSOL,
-    {POTGO_strobe2,6'd0,STIMER_strobe},
-    {TRIG3_BUS,TRIG2_BUS,TRIG1_BUS,TRIG0_BUS},
-    {rst_latch,5'd0,state},
-    timer);
-    
-	
+      CONTROL1,
+      chipClk_b,
+      KBCODE_BUS,
+      ALLPOT_BUS,
+      POT0_BUS,
+      POT1_BUS,
+      {cIn,cOut},
+      {4'd0,keyscan},
+      IRQST_BUS,
+      IRQEN,
+      SKSTAT_BUS,
+      SKCTL,
+      GRACTL,
+      CONSPK_CONSOL,
+      {POTGO_strobe2,6'd0,STIMER_strobe},
+      {TRIG3_BUS,TRIG2_BUS,TRIG1_BUS,TRIG0_BUS},
+      {rst_latch,5'd0,state},
+      timer);
 	
     chipscope_icon3 icon(
       .CONTROL0(CONTROL0),
       .CONTROL1(CONTROL1),
-      .CONTROL2(CONTROL2)
-    );
-    
+      .CONTROL2(CONTROL2));
 
 endmodule
 

@@ -7,13 +7,14 @@
 module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTend, numLines,
             width, height, incrY, saveY,
             COLPM3, COLPF0, COLPF1, COLPF2, COLPF3, COLBK, PRIOR, VDELAY, GRACTL, HITCLR,
+            HPOSP0, HPOSP1, HPOSP2, HPOSP3, HPOSM0, HPOSM1, HPOSM2, HPOSM3,
+            SIZEP0, SIZEP1, SIZEP2, SIZEP3, SIZEM, GRAFP0, GRAFP1, GRAFP2,
+            GRAFP3, GRAFM, COLPM0, COLPM1, COLPM2, CONSPK,
             DB, switch,
-            HPOSP0_M0PF_bus, HPOSP1_M1PF_bus, HPOSP2_M2PF_bus, HPOSP3_M3PF_bus, HPOSM0_P0PF_bus, 
-            HPOSM1_P1PF_bus, HPOSM2_P2PF_bus, HPOSM3_P3PF_bus, SIZEP0_M0PL_bus, SIZEP1_M1PL_bus, 
-            SIZEP2_M2PL_bus, SIZEP3_M3PL_bus, SIZEM_P0PL_bus, GRAFP0_P1PL_bus, GRAFP1_P2PL_bus, 
-            GRAFP2_P3PL_bus, GRAFP3_TRIG0_bus, GRAFPM_TRIG1_bus, COLPM0_TRIG2_bus, COLPM1_TRIG3_bus, 
-            COLPM2_PAL_bus, CONSPK_CONSOL_bus,
-            COL, CSYNC, phi2, HALT, L,
+            M0PF, M1PF, M2PF, M3PF, P0PF, P1PF, P2PF, P3PF, M0PL, M1PL, 
+            M2PL, M3PL, P0PL, P1PL, P2PL, P3PL, TRIG0, TRIG1, TRIG2, TRIG3, 
+            PAL, CONSOL,
+            COL, CSYNC, HALT, L,
             dBuf_data, dBuf_addr, dBuf_writeEn,
             vblank, hblank, x, y, colorData, RGB);
 
@@ -47,38 +48,40 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
       input [7:0] GRACTL;
       input [7:0] HITCLR;
       
+      input [7:0] HPOSP0, HPOSP1, HPOSP2, HPOSP3, HPOSM0, HPOSM1, HPOSM2, HPOSM3,
+                  SIZEP0, SIZEP1, SIZEP2, SIZEP3, SIZEM, GRAFP0, GRAFP1, GRAFP2,
+                  GRAFP3, GRAFM, COLPM0, COLPM1, COLPM2, CONSPK;
+      
       // Control inouts
       inout [7:0] DB;
       inout [3:0] switch;
       
-      // Memory-mapped register inouts
-      inout [7:0] HPOSP0_M0PF_bus;
-      inout [7:0] HPOSP1_M1PF_bus;
-      inout [7:0] HPOSP2_M2PF_bus;
-      inout [7:0] HPOSP3_M3PF_bus;
-      inout [7:0] HPOSM0_P0PF_bus;
-      inout [7:0] HPOSM1_P1PF_bus;
-      inout [7:0] HPOSM2_P2PF_bus;
-      inout [7:0] HPOSM3_P3PF_bus;
-      inout [7:0] SIZEP0_M0PL_bus;
-      inout [7:0] SIZEP1_M1PL_bus;
-      inout [7:0] SIZEP2_M2PL_bus;
-      inout [7:0] SIZEP3_M3PL_bus;
-      inout [7:0] SIZEM_P0PL_bus;
-      inout [7:0] GRAFP0_P1PL_bus;
-      inout [7:0] GRAFP1_P2PL_bus;
-      inout [7:0] GRAFP2_P3PL_bus;
-      inout [7:0] GRAFP3_TRIG0_bus;
-      inout [7:0] GRAFPM_TRIG1_bus;
-      inout [7:0] COLPM0_TRIG2_bus;
-      inout [7:0] COLPM1_TRIG3_bus;
-      inout [7:0] COLPM2_PAL_bus;
-      inout [7:0] CONSPK_CONSOL_bus;
+      output reg [7:0] M0PF = 8'h00;
+      output reg [7:0] M1PF = 8'h00;
+      output reg [7:0] M2PF = 8'h00;
+      output reg [7:0] M3PF = 8'h00;
+      output reg [7:0] P0PF = 8'h00;
+      output reg [7:0] P1PF = 8'h00;
+      output reg [7:0] P2PF = 8'h00;
+      output reg [7:0] P3PF = 8'h00;
+      output reg [7:0] M0PL = 8'h00;
+      output reg [7:0] M1PL = 8'h00;
+      output reg [7:0] M2PL = 8'h00;
+      output reg [7:0] M3PL = 8'h00;
+      output reg [7:0] P0PL = 8'h00;
+      output reg [7:0] P1PL = 8'h00;
+      output reg [7:0] P2PL = 8'h00;
+      output reg [7:0] P3PL = 8'h00;
+      output reg [7:0] TRIG0 = 8'h00;
+      output reg [7:0] TRIG1 = 8'h00;
+      output reg [7:0] TRIG2 = 8'h00;
+      output reg [7:0] TRIG3 = 8'h00;
+      output reg [7:0] PAL = 8'h00;
+      output reg [7:0] CONSOL = 8'h00;
       
       // Control output signals
       output COL;
       output CSYNC;
-      output phi2;
       output HALT;
       output [3:0] L;
       
@@ -98,45 +101,28 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
       reg [1:0] clkdiv = 2'd0;
       reg [8:0] x = 9'd0; // 320 pixels
       reg [7:0] y = 8'd0; // 192(216) pixels
-      reg [7:0] colorData = 8'd0;
+      reg [7:0] baseColor = 8'd0;
+      reg [3:0] baseType = 4'd0;
       reg incrXY = 1'b0;
       reg incrXY_nextcycle = 1'b0;
       reg [7:0] savedY = 8'd0;
       
       wire [23:0] RGB;
       wire [1:0] mode;
+      wire P0set, P1set, P2set, P3set, M0set, M1set, M2set, M3set;
+      wire [7:0] colorData;
       
       assign mode = PRIOR[7:6];
       assign dBuf_data = {8'd0, RGB};
       assign dBuf_addr = (y*9'd320)+x; // * TODO: Change to parameters for variable screen size
       
-      // * TODO: Replace with 'x ? (a : b)' when writing to mapped registers 
-      // Register read/write control
-      assign HPOSP0_M0PF_bus = 8'hzz;
-      assign HPOSP1_M1PF_bus = 8'hzz;
-      assign HPOSP2_M2PF_bus = 8'hzz;
-      assign HPOSP3_M3PF_bus = 8'hzz;
-      assign HPOSM0_P0PF_bus = 8'hzz;
-      assign HPOSM1_P1PF_bus = 8'hzz;
-      assign HPOSM2_P2PF_bus = 8'hzz;
-      assign HPOSM3_P3PF_bus = 8'hzz;
-      assign SIZEP0_M0PL_bus = 8'hzz;
-      assign SIZEP1_M1PL_bus = 8'hzz;
-      assign SIZEP2_M2PL_bus = 8'hzz;
-      assign SIZEP3_M3PL_bus = 8'hzz;
-      assign SIZEM_P0PL_bus = 8'hzz;
-      assign GRAFP0_P1PL_bus = 8'hzz;
-      assign GRAFP1_P2PL_bus = 8'hzz;
-      assign GRAFP2_P3PL_bus = 8'hzz;
-      assign GRAFP3_TRIG0_bus = 8'hzz;
-      assign GRAFPM_TRIG1_bus = 8'hzz;
-      assign COLPM0_TRIG2_bus = 8'hzz;
-      assign COLPM1_TRIG3_bus = 8'hzz;
-      assign COLPM2_PAL_bus = 8'hzz;
-      assign CONSPK_CONSOL_bus = 8'hzz;
-      
 			// Module instantiations here
       colorTable ct(.colorData(colorData), .RGB(RGB));
+      prioritySel pr(PRIOR[5:0], baseColor, COLPM0, COLPM1, COLPM2, COLPM3, baseType,
+                     P0set, P1set, P2set, P3set, M0set, M1set, M2set, M3set, colorData);
+      spriteDisplay sd(x, HPOSP0, HPOSP1, HPOSP2, HPOSP3, HPOSM0, HPOSM1, HPOSM2, HPOSM3,
+                       GRAFP0, GRAFP1, GRAFP2, GRAFP3, GRAFM, P0set, P1set, P2set, P3set,
+                       M0set, M1set, M2set, M3set);
       
       always @(posedge Fphi0 or posedge rst) begin
       
@@ -144,7 +130,8 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
           incrXY <= 1'b0;
           incrXY_nextcycle <= 1'b0;
           dBuf_writeEn <= 1'b0;
-          colorData <= 8'd0;
+          baseColor <= 8'd0;
+          baseType <= 4'd0;
         end
         
         else begin
@@ -164,27 +151,28 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
             if (AN != `noTransmission) begin
               case (AN)
                 `modeNorm_bgColor:
-                  colorData <= COLBK;
+                  baseColor <= COLBK;
                 `modeNorm_vSync:
                   ;
                 `modeNorm_hBlank_c40:
                   ;
                 `modeNorm_lum1col2:
-                  colorData <= {COLPF2[7:4], COLPF1[3:0]};
+                  baseColor <= {COLPF2[7:4], COLPF1[3:0]};
                 `modeNorm_playfield0:
-                  colorData <= COLPF0;
+                  baseColor <= COLPF0;
                 `modeNorm_playfield1:
-                  colorData <= COLPF1;
+                  baseColor <= COLPF1;
                 `modeNorm_playfield2:
-                  colorData <= COLPF2;
+                  baseColor <= COLPF2;
                 `modeNorm_playfield3:
-                  colorData <= COLPF3;
+                  baseColor <= COLPF3;
               endcase
+              baseType <= AN;
               dBuf_writeEn <= 1'b1;
               incrXY_nextcycle <= 1'b1;
             end
             else begin
-              colorData <= 8'd0;
+              baseColor <= 8'd0;
               dBuf_writeEn <= 1'b0;
               incrXY_nextcycle <= 1'b0;
             end
@@ -492,16 +480,129 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
         end
       end
       
-      // Clock divider
-      assign phi2 = clkdiv[1];
-      always @(posedge Fphi0) begin
-        if (clkdiv == 2'b11) 
-          clkdiv <= 2'b00;
-        else
-          clkdiv <= clkdiv + 2'd1;
-      end
-      
 endmodule
 
 
+module prioritySel(PRIOR, baseColor, PM0color, PM1color, PM2color, PM3color, baseType,
+                   P0set, P1set, P2set, P3set, M0set, M1set, M2set, M3set, colorData);
+  
+  input [5:0] PRIOR;
+  input [7:0] baseColor;
+  input [7:0] PM0color, PM1color, PM2color, PM3color;
+  input [3:0] baseType;
+  input P0set, P1set, P2set, P3set, M0set, M1set, M2set, M3set;
+  output reg [7:0] colorData;
+  
+  wire [3:0] priority = PRIOR[3:0];
+  
+  always @(*) begin
+    
+    case (priority)
+          
+      4'd0:
+        begin
+          if (P0set|M0set) begin
+            if (P0set&&((baseType == `modeNorm_playfield0)||(baseType == `modeNorm_playfield1)))
+              colorData <= PM0color|baseColor;
+            else
+              colorData <= PM0color;
+          end
+          else if (P1set|M1set) begin
+            if (P1set&&((baseType == `modeNorm_playfield0)||(baseType == `modeNorm_playfield1)))
+              colorData <= PM1color|baseColor;
+            else
+              colorData <= PM1color;
+          end
+          else if ((baseType == `modeNorm_playfield0)||(baseType == `modeNorm_playfield1))
+            colorData <= baseColor;
+          else if (P2set|M2set) begin
+            if (P2set&&((baseType == `modeNorm_playfield2)||(baseType == `modeNorm_playfield3)))
+              colorData <= PM2color|baseColor;
+            else
+              colorData <= PM2color;
+          end
+          else if (P3set|M3set) begin
+            if (P3set&&((baseType == `modeNorm_playfield2)||(baseType == `modeNorm_playfield3)))
+              colorData <= PM3color|baseColor;
+            else
+              colorData <= PM3color;
+          end
+          else
+            colorData <= baseColor;
+        end
+        
+      4'd1:
+        begin
+          if (P0set|M0set)
+            colorData <= PM0color;
+          else if (P1set|M1set)
+            colorData <= PM1color;
+          else if (P2set|M2set)
+            colorData <= PM2color;
+          else if (P3set|M3set)
+            colorData <= PM3color;
+          else
+            colorData <= baseColor;
+        end
+      
+    endcase
+  end
+  
+endmodule
 
+
+module spriteDisplay(x, HPOSP0, HPOSP1, HPOSP2, HPOSP3, HPOSM0, HPOSM1, HPOSM2, HPOSM3,
+                     GRAFP0, GRAFP1, GRAFP2, GRAFP3, GRAFM, P0set, P1set, P2set, P3set,
+                     M0set, M1set, M2set, M3set);
+
+  input [8:0] x;
+  input [7:0] HPOSP0, HPOSP1, HPOSP2, HPOSP3;
+  input [7:0] HPOSM0, HPOSM1, HPOSM2, HPOSM3;
+  input [7:0] GRAFP0, GRAFP1, GRAFP2, GRAFP3, GRAFM;
+  output P0set, P1set, P2set, P3set, M0set, M1set, M2set, M3set;
+  
+  wire [7:0] HPOS = x[8:1] + 8'h30;
+  
+  playerInRange  p0(HPOS, HPOSP0, GRAFP0, P0set);
+  playerInRange  p1(HPOS, HPOSP1, GRAFP1, P1set);
+  playerInRange  p2(HPOS, HPOSP2, GRAFP2, P2set);
+  playerInRange  p3(HPOS, HPOSP3, GRAFP3, P3set);
+  missileInRange m0(HPOS, HPOSM0, GRAFM[1:0], M0set);
+  missileInRange m1(HPOS, HPOSM1, GRAFM[3:2], M1set);
+  missileInRange m2(HPOS, HPOSM2, GRAFM[5:4], M2set);
+  missileInRange m3(HPOS, HPOSM3, GRAFM[7:6], M3set);
+
+endmodule
+
+
+module playerInRange(HPOS, HPOSX, GRAF, bitSet);
+
+  input [7:0] HPOS;
+  input [7:0] HPOSX;
+  input [7:0] GRAF;
+  output reg bitSet;
+  
+  always @(*) begin
+    if ((HPOS >= HPOSX)&&(HPOS < (HPOSX + 8'd8)))
+      bitSet <= GRAF[7-(HPOS-HPOSX)];
+    else
+      bitSet <= 1'b0;
+  end
+  
+endmodule
+
+module missileInRange(HPOS, HPOSX, GRAF, bitSet);
+
+  input [7:0] HPOS;
+  input [7:0] HPOSX;
+  input [1:0] GRAF;
+  output reg bitSet;
+  
+  always @(*) begin
+    if ((HPOS >= HPOSX)&&(HPOS < (HPOSX + 8'd2)))
+      bitSet <= GRAF[1-(HPOS-HPOSX)];
+    else
+      bitSet <= 1'b0;
+  end
+  
+endmodule

@@ -17,20 +17,21 @@ module memoryMap(
                  TRIG0_BUS,TRIG1_BUS,TRIG2_BUS,TRIG3_BUS,
                  data_CART_out,
 
+                 M0PF, M1PF, M2PF, M3PF, P0PF, P1PF, P2PF, P3PF, M0PL, M1PL, 
+                 M2PL, M3PL, P0PL, P1PL, P2PL, P3PL, TRIG0, TRIG1, TRIG2, TRIG3, 
+                 PAL, CONSOL,
 
-                 CPU_data, NMIRES_NMIST_bus, DLISTL_bus, DLISTH_bus, HPOSP0_M0PF_bus, HPOSP1_M1PF_bus,
-                 HPOSP2_M2PF_bus, HPOSP3_M3PF_bus, HPOSM0_P0PF_bus, HPOSM1_P1PF_bus, HPOSM2_P2PF_bus,
-                 HPOSM3_P3PF_bus, SIZEP0_M0PL_bus, SIZEP1_M1PL_bus, SIZEP2_M2PL_bus, SIZEP3_M3PL_bus,
-                 SIZEM_P0PL_bus, GRAFP0_P1PL_bus, GRAFP1_P2PL_bus, GRAFP2_P3PL_bus, GRAFP3_TRIG0_bus,
-                 GRAFPM_TRIG1_bus, COLPM0_TRIG2_bus, COLPM1_TRIG3_bus, COLPM2_PAL_bus, CONSPK_CONSOL_bus,
+                 CPU_data, NMIRES_NMIST_bus, DLISTL_bus, DLISTH_bus, 
+                 
+                 COLPM3, COLPF0, COLPF1, COLPF2, COLPF3, COLBK, PRIOR, VDELAY, GRACTL, HITCLR,
+                 HPOSP0, HPOSP1, HPOSP2, HPOSP3, HPOSM0, HPOSM1, HPOSM2, HPOSM3,
+                 SIZEP0, SIZEP1, SIZEP2, SIZEP3, SIZEM, COLPM0, COLPM1, COLPM2, CONSPK,
+                 
                  DMACTL, CHACTL, HSCROL, VSCROL, PMBASE, CHBASE, WSYNC, NMIEN, COLPM3, COLPF0, COLPF1, COLPF2, 
                  COLPF3, COLBK, PRIOR, VDELAY, GRACTL, HITCLR,
 
                  AUDF1, AUDC1, AUDF2, AUDC2, AUDF3, AUDC3, AUDF4, AUDC4, AUDCTL, 
                  SKREST, SEROUT, SERIN, IRQEN, SKCTL,CONSPK_CONSOL,
-                 
-                 NMIRES_NMIST, VCOUNT,
-
 
                  POTGO_strobe, STIMER_strobe
                  );
@@ -58,35 +59,21 @@ module memoryMap(
   input [7:0] PENH_in;
   input [7:0] PENV_in;
   
+  // GTIA inputs
+  input [7:0] M0PF, M1PF, M2PF, M3PF, P0PF, P1PF, P2PF, P3PF, M0PL, M1PL, 
+              M2PL, M3PL, P0PL, P1PL, P2PL, P3PL, TRIG0, TRIG1, TRIG2, TRIG3, 
+              PAL, CONSOL;
+  
   // ANTIC inouts
   inout [7:0] CPU_data;
   inout [7:0] NMIRES_NMIST_bus;
   inout [7:0] DLISTL_bus;
   inout [7:0] DLISTH_bus;
   
-  // GTIA inouts
-  inout [7:0] HPOSP0_M0PF_bus;
-  inout [7:0] HPOSP1_M1PF_bus;
-  inout [7:0] HPOSP2_M2PF_bus;
-  inout [7:0] HPOSP3_M3PF_bus;
-  inout [7:0] HPOSM0_P0PF_bus;
-  inout [7:0] HPOSM1_P1PF_bus;
-  inout [7:0] HPOSM2_P2PF_bus;
-  inout [7:0] HPOSM3_P3PF_bus;
-  inout [7:0] SIZEP0_M0PL_bus;
-  inout [7:0] SIZEP1_M1PL_bus;
-  inout [7:0] SIZEP2_M2PL_bus;
-  inout [7:0] SIZEP3_M3PL_bus;
-  inout [7:0] SIZEM_P0PL_bus;
-  inout [7:0] GRAFP0_P1PL_bus;
-  inout [7:0] GRAFP1_P2PL_bus;
-  inout [7:0] GRAFP2_P3PL_bus;
-  inout [7:0] GRAFP3_TRIG0_bus;
-  inout [7:0] GRAFPM_TRIG1_bus;
-  inout [7:0] COLPM0_TRIG2_bus;
-  inout [7:0] COLPM1_TRIG3_bus;
-  inout [7:0] COLPM2_PAL_bus;
-  inout [7:0] CONSPK_CONSOL_bus;
+  // GTIA outputs
+  output [7:0] COLPM3, COLPF0, COLPF1, COLPF2, COLPF3, COLBK, PRIOR, VDELAY, GRACTL, HITCLR,
+               HPOSP0, HPOSP1, HPOSP2, HPOSP3, HPOSM0, HPOSM1, HPOSM2, HPOSM3,
+               SIZEP0, SIZEP1, SIZEP2, SIZEP3, SIZEM, COLPM0, COLPM1, COLPM2, CONSPK;
   
   // ANTIC outputs
   output [7:0] DMACTL;
@@ -98,23 +85,8 @@ module memoryMap(
   output [7:0] WSYNC;
   output [7:0] NMIEN;
   
-  // GTIA outputs
-  output [7:0] COLPM3;
-  output [7:0] COLPF0;
-  output [7:0] COLPF1;
-  output [7:0] COLPF2;
-  output [7:0] COLPF3;
-  output [7:0] COLBK;
-  output [7:0] PRIOR;
-  output [7:0] VDELAY;
-  output [7:0] GRACTL;
-  output [7:0] HITCLR;
-  
   //outputs to POKEY
   output [7:0] AUDF1, AUDC1, AUDF2, AUDC2, AUDF3, AUDC3, AUDF4, AUDC4, AUDCTL, SKREST, SEROUT, SERIN, IRQEN , SKCTL,CONSPK_CONSOL;
-
-  // Temporary
-  output [7:0] NMIRES_NMIST, VCOUNT;
 
   //STROBE SIGNALS
   output POTGO_strobe, STIMER_strobe;
@@ -135,39 +107,39 @@ module memoryMap(
   reg [7:0] NMIEN;        // | $D40E | Write      |                   |
   reg [7:0] NMIRES_NMIST; // | $D40F | Write/Read | ANTIC_writeEn 6   | 
   
-  // GTIA hardware registers
-  reg [7:0] HPOSP0_M0PF;  // | $C000 | Write/Read | GTIA_writeEn 1  | 
-  reg [7:0] HPOSP1_M1PF;  // | $C001 | Write/Read | GTIA_writeEn 2  |
-  reg [7:0] HPOSP2_M2PF;  // | $C002 | Write/Read | GTIA_writeEn 3  |
-  reg [7:0] HPOSP3_M3PF;  // | $C003 | Write/Read | GTIA_writeEn 4  |
-  reg [7:0] HPOSM0_P0PF;  // | $C004 | Write/Read | GTIA_writeEn 5  |
-  reg [7:0] HPOSM1_P1PF;  // | $C005 | Write/Read | GTIA_writeEn 6  |
-  reg [7:0] HPOSM2_P2PF;  // | $C006 | Write/Read | GTIA_writeEn 7  |
-  reg [7:0] HPOSM3_P3PF;  // | $C007 | Write/Read | GTIA_writeEn 8  |
-  reg [7:0] SIZEP0_M0PL;  // | $C008 | Write/Read | GTIA_writeEn 9  |
-  reg [7:0] SIZEP1_M1PL;  // | $C009 | Write/Read | GTIA_writeEn 10 |
-  reg [7:0] SIZEP2_M2PL;  // | $C00A | Write/Read | GTIA_writeEn 11 |
-  reg [7:0] SIZEP3_M3PL;  // | $C00B | Write/Read | GTIA_writeEn 12 |
-  reg [7:0] SIZEM_P0PL;   // | $C00C | Write/Read | GTIA_writeEn 13 |
-  reg [7:0] GRAFP0_P1PL;  // | $C00D | Write/Read | GTIA_writeEn 14 |
-  reg [7:0] GRAFP1_P2PL;  // | $C00E | Write/Read | GTIA_writeEn 15 |
-  reg [7:0] GRAFP2_P3PL;  // | $C00F | Write/Read | GTIA_writeEn 16 |
-  reg [7:0] GRAFP3_TRIG0; // | $C010 | Write/Read | GTIA_writeEn 17 |
-  reg [7:0] GRAFPM_TRIG1; // | $C011 | Write/Read | GTIA_writeEn 18 |
-  reg [7:0] COLPM0_TRIG2; // | $C012 | Write/Read | GTIA_writeEn 19 |
-  reg [7:0] COLPM1_TRIG3; // | $C013 | Write/Read | GTIA_writeEn 20 |
-  reg [7:0] COLPM2_PAL;   // | $C014 | Write/Read | GTIA_writeEn 21 |
-  reg [7:0] COLPM3;       // | $C015 | Write      |                 |
-  reg [7:0] COLPF0;       // | $C016 | Write      |                 |   // Pre-initialized for testing, initialize via CPU writes in the future
-  reg [7:0] COLPF1;       // | $C017 | Write      |                 |
-  reg [7:0] COLPF2;       // | $C018 | Write      |                 |
-  reg [7:0] COLPF3;       // | $C019 | Write      |                 |
-  reg [7:0] COLBK;        // | $C01A | Write      |                 |
-  reg [7:0] PRIOR;        // | $C01B | Write      |                 |
-  reg [7:0] VDELAY;       // | $C01C | Write      |                 |
-  reg [7:0] GRACTL;       // | $C01D | Write      |                 |
-  reg [7:0] HITCLR;       // | $C01E | Write      |                 |
-  reg [7:0] CONSPK_CONSOL;// | $C01F | Write/Read | GTIA_writeEn 22 |  
+  // GTIA hardware registers (WRITE)
+  reg [7:0] HPOSP0;  // | $C000 |
+  reg [7:0] HPOSP1;  // | $C001 |
+  reg [7:0] HPOSP2;  // | $C002 |
+  reg [7:0] HPOSP3;  // | $C003 |
+  reg [7:0] HPOSM0;  // | $C004 |
+  reg [7:0] HPOSM1;  // | $C005 |
+  reg [7:0] HPOSM2;  // | $C006 |
+  reg [7:0] HPOSM3;  // | $C007 |
+  reg [7:0] SIZEP0;  // | $C008 |
+  reg [7:0] SIZEP1;  // | $C009 |
+  reg [7:0] SIZEP2;  // | $C00A |
+  reg [7:0] SIZEP3;  // | $C00B |
+  reg [7:0] SIZEM;   // | $C00C |
+  reg [7:0] GRAFP0;  // | $C00D |
+  reg [7:0] GRAFP1;  // | $C00E |
+  reg [7:0] GRAFP2;  // | $C00F |
+  reg [7:0] GRAFP3;  // | $C010 |
+  reg [7:0] GRAFPM;  // | $C011 |
+  reg [7:0] COLPM0;  // | $C012 |
+  reg [7:0] COLPM1;  // | $C013 |
+  reg [7:0] COLPM2;  // | $C014 |
+  reg [7:0] COLPM3;  // | $C015 |
+  reg [7:0] COLPF0;  // | $C016 |
+  reg [7:0] COLPF1;  // | $C017 |
+  reg [7:0] COLPF2;  // | $C018 |
+  reg [7:0] COLPF3;  // | $C019 |
+  reg [7:0] COLBK;   // | $C01A |
+  reg [7:0] PRIOR;   // | $C01B |
+  reg [7:0] VDELAY;  // | $C01C |
+  reg [7:0] GRACTL;  // | $C01D |
+  reg [7:0] HITCLR;  // | $C01E |
+  reg [7:0] CONSPK;  // | $C01F |
   
   //POKEY hardware registers
 
@@ -265,27 +237,27 @@ module memoryMap(
       WSYNC <= 8'd0;
       NMIEN <= 8'd0;
       NMIRES_NMIST <= 8'd0;
-      HPOSP0_M0PF <= 8'd0;
-      HPOSP1_M1PF <= 8'd0;
-      HPOSP2_M2PF <= 8'd0;
-      HPOSP3_M3PF <= 8'd0;
-      HPOSM0_P0PF <= 8'd0;
-      HPOSM1_P1PF <= 8'd0;
-      HPOSM2_P2PF <= 8'd0;
-      HPOSM3_P3PF <= 8'd0;
-      SIZEP0_M0PL <= 8'd0;
-      SIZEP1_M1PL <= 8'd0;
-      SIZEP2_M2PL <= 8'd0;
-      SIZEP3_M3PL <= 8'd0;
-      SIZEM_P0PL <= 8'd0;
-      GRAFP0_P1PL <= 8'd0;
-      GRAFP1_P2PL <= 8'd0;
-      GRAFP2_P3PL <= 8'd0;
-      GRAFP3_TRIG0 <= 8'd0;
-      GRAFPM_TRIG1 <= 8'd0;
-      COLPM0_TRIG2 <= 8'd0;
-      COLPM1_TRIG3 <= 8'd0;
-      COLPM2_PAL <= 8'd0;
+      HPOSP0 <= 8'd0;
+      HPOSP1 <= 8'd0;
+      HPOSP2 <= 8'd0;
+      HPOSP3 <= 8'd0;
+      HPOSM0 <= 8'd0;
+      HPOSM1 <= 8'd0;
+      HPOSM2 <= 8'd0;
+      HPOSM3 <= 8'd0;
+      SIZEP0 <= 8'd0;
+      SIZEP1 <= 8'd0;
+      SIZEP2 <= 8'd0;
+      SIZEP3 <= 8'd0;
+      SIZEM <= 8'd0;
+      GRAFP0 <= 8'd0;
+      GRAFP1 <= 8'd0;
+      GRAFP2 <= 8'd0;
+      GRAFP3 <= 8'd0;
+      GRAFPM <= 8'd0;
+      COLPM0 <= 8'd0;
+      COLPM1 <= 8'd0;
+      COLPM2 <= 8'd0;
       COLPM3 <= 8'd0;
       COLPF0 <= 8'd0;
       COLPF1 <= 8'd0;
@@ -296,7 +268,7 @@ module memoryMap(
       VDELAY <= 8'd0;
       GRACTL <= 8'd0;
       HITCLR <= 8'd0;
-      CONSPK_CONSOL <= 8'd0;
+      CONSPK <= 8'd0;
 
       AUDF1   <= 8'd0;
       AUDC1   <= 8'd0;
@@ -353,7 +325,7 @@ module memoryMap(
                     
         
         
-      // CPU writes to ANTIC registers
+          // CPU writes to ANTIC registers
           16'hD400: DMACTL <= data_in;
           16'hD401: CHACTL <= data_in;
           16'hD402: DLISTL <= data_in;
@@ -365,27 +337,27 @@ module memoryMap(
           16'hD40A: WSYNC <= data_in;
           16'hD40E: NMIEN <= data_in;
           16'hD40F: NMIRES_NMIST <= data_in;
-          16'hC000: HPOSP0_M0PF <= data_in;
-          16'hC001: HPOSP1_M1PF <= data_in;
-          16'hC002: HPOSP2_M2PF <= data_in;
-          16'hC003: HPOSP3_M3PF <= data_in;
-          16'hC004: HPOSM0_P0PF <= data_in;
-          16'hC005: HPOSM1_P1PF <= data_in;
-          16'hC006: HPOSM2_P2PF <= data_in;
-          16'hC007: HPOSM3_P3PF <= data_in;
-          16'hC008: SIZEP0_M0PL <= data_in;
-          16'hC009: SIZEP1_M1PL <= data_in;
-          16'hC00A: SIZEP2_M2PL <= data_in;
-          16'hC00B: SIZEP3_M3PL <= data_in;
-          16'hC00C: SIZEM_P0PL <= data_in;
-          16'hC00D: GRAFP0_P1PL <= data_in;
-          16'hC00E: GRAFP1_P2PL <= data_in;
-          16'hC00F: GRAFP2_P3PL <= data_in;
-          16'hC010: GRAFP3_TRIG0 <= data_in;
-          16'hC011: GRAFPM_TRIG1 <= data_in;
-          16'hC012: COLPM0_TRIG2 <= data_in;
-          16'hC013: COLPM1_TRIG3 <= data_in;
-          16'hC014: COLPM2_PAL <= data_in;
+          16'hC000: HPOSP0 <= data_in;
+          16'hC001: HPOSP1 <= data_in;
+          16'hC002: HPOSP2 <= data_in;
+          16'hC003: HPOSP3 <= data_in;
+          16'hC004: HPOSM0 <= data_in;
+          16'hC005: HPOSM1 <= data_in;
+          16'hC006: HPOSM2 <= data_in;
+          16'hC007: HPOSM3 <= data_in;
+          16'hC008: SIZEP0 <= data_in;
+          16'hC009: SIZEP1 <= data_in;
+          16'hC00A: SIZEP2 <= data_in;
+          16'hC00B: SIZEP3 <= data_in;
+          16'hC00C: SIZEM <= data_in;
+          16'hC00D: GRAFP0 <= data_in;
+          16'hC00E: GRAFP1 <= data_in;
+          16'hC00F: GRAFP2 <= data_in;
+          16'hC010: GRAFP3 <= data_in;
+          16'hC011: GRAFPM <= data_in;
+          16'hC012: COLPM0 <= data_in;
+          16'hC013: COLPM1 <= data_in;
+          16'hC014: COLPM2 <= data_in;
           16'hC015: COLPM3 <= data_in;
           16'hC016: COLPF0 <= data_in;
           16'hC017: COLPF1 <= data_in;
@@ -396,7 +368,7 @@ module memoryMap(
           16'hC01C: VDELAY <= data_in;
           16'hC01D: GRACTL <= data_in;
           16'hC01E: HITCLR <= data_in;
-          16'hC01F: CONSPK_CONSOL <= data_in;
+          16'hC01F: CONSPK <= data_in;
         endcase
       end
       
@@ -423,55 +395,6 @@ module memoryMap(
                 end
           3'd6: if (~((write_reg)&&(CPU_addr == 16'hD40F)))
                   NMIRES_NMIST <= NMIRES_NMIST_bus;
-        endcase
-      end
-      
-      if (GTIA_writeEn != 3'd0) begin
-        case (GTIA_writeEn)
-          5'd1:  if (~((write_reg)&(CPU_addr != 16'hC000)))
-                   HPOSP0_M0PF <= HPOSP0_M0PF_bus;
-          5'd2:  if (~((write_reg)&(CPU_addr != 16'hC001)))
-                   HPOSP1_M1PF <= HPOSP1_M1PF_bus;
-          5'd3:  if (~((write_reg)&(CPU_addr != 16'hC002)))
-                   HPOSP2_M2PF <= HPOSP2_M2PF_bus;
-          5'd4:  if (~((write_reg)&(CPU_addr != 16'hC003)))
-                   HPOSP3_M3PF <= HPOSP3_M3PF_bus;
-          5'd5:  if (~((write_reg)&(CPU_addr != 16'hC004)))
-                   HPOSM0_P0PF <= HPOSM0_P0PF_bus;
-          5'd6:  if (~((write_reg)&(CPU_addr != 16'hC005)))
-                   HPOSM1_P1PF <= HPOSM1_P1PF_bus;
-          5'd7:  if (~((write_reg)&(CPU_addr != 16'hC006)))
-                   HPOSM2_P2PF <= HPOSM2_P2PF_bus;
-          5'd8:  if (~((write_reg)&(CPU_addr != 16'hC007)))
-                   HPOSM3_P3PF <= HPOSM3_P3PF_bus;
-          5'd9:  if (~((write_reg)&(CPU_addr != 16'hC008)))
-                   SIZEP0_M0PL <= SIZEP0_M0PL_bus;
-          5'd10: if (~((write_reg)&(CPU_addr != 16'hC009)))
-                   SIZEP1_M1PL <= SIZEP1_M1PL_bus;
-          5'd11: if (~((write_reg)&(CPU_addr != 16'hC00A)))
-                   SIZEP2_M2PL <= SIZEP2_M2PL_bus;
-          5'd12: if (~((write_reg)&(CPU_addr != 16'hC00B)))
-                   SIZEP3_M3PL <= SIZEP3_M3PL_bus;
-          5'd13: if (~((write_reg)&(CPU_addr != 16'hC00C)))
-                   SIZEM_P0PL <= SIZEM_P0PL_bus;
-          5'd14: if (~((write_reg)&(CPU_addr != 16'hC00D)))
-                   GRAFP0_P1PL <= GRAFP0_P1PL_bus;
-          5'd15: if (~((write_reg)&(CPU_addr != 16'hC00E)))
-                   GRAFP1_P2PL <= GRAFP1_P2PL_bus;
-          5'd16: if (~((write_reg)&(CPU_addr != 16'hC00F)))
-                   GRAFP2_P3PL <= GRAFP2_P3PL_bus;
-          5'd17: if (~((write_reg)&(CPU_addr != 16'hC010)))
-                   GRAFP3_TRIG0 <= GRAFP3_TRIG0_bus;
-          5'd18: if (~((write_reg)&(CPU_addr != 16'hC011)))
-                   GRAFPM_TRIG1 <= GRAFPM_TRIG1_bus;
-          5'd19: if (~((write_reg)&(CPU_addr != 16'hC012)))
-                   COLPM0_TRIG2 <= COLPM0_TRIG2_bus;
-          5'd20: if (~((write_reg)&(CPU_addr != 16'hC013)))
-                   COLPM1_TRIG3 <= COLPM1_TRIG3_bus;
-          5'd21: if (~((write_reg)&(CPU_addr != 16'hC014)))
-                   COLPM2_PAL <= COLPM2_PAL_bus;
-          5'd22: if (~((write_reg)&(CPU_addr != 16'hC01F)))
-                   CONSPK_CONSOL <= CONSPK_CONSOL_bus;
         endcase
       end
     end
@@ -513,27 +436,27 @@ module memoryMap(
                         (CPU_addr == 16'hD40D) ? PENV :
                         (CPU_addr == 16'hD40E) ? NMIEN :
                         (CPU_addr == 16'hD40F) ? NMIRES_NMIST : 
-                        (CPU_addr == 16'hC000) ? HPOSP0_M0PF : 
-                        (CPU_addr == 16'hC001) ? HPOSP1_M1PF : 
-                        (CPU_addr == 16'hC002) ? HPOSP2_M2PF : 
-                        (CPU_addr == 16'hC003) ? HPOSP3_M3PF : 
-                        (CPU_addr == 16'hC004) ? HPOSM0_P0PF : 
-                        (CPU_addr == 16'hC005) ? HPOSM1_P1PF : 
-                        (CPU_addr == 16'hC006) ? HPOSM2_P2PF : 
-                        (CPU_addr == 16'hC007) ? HPOSM3_P3PF : 
-                        (CPU_addr == 16'hC008) ? SIZEP0_M0PL : 
-                        (CPU_addr == 16'hC009) ? SIZEP1_M1PL : 
-                        (CPU_addr == 16'hC00A) ? SIZEP2_M2PL : 
-                        (CPU_addr == 16'hC00B) ? SIZEP3_M3PL : 
-                        (CPU_addr == 16'hC00C) ? SIZEM_P0PL : 
-                        (CPU_addr == 16'hC00D) ? GRAFP0_P1PL : 
-                        (CPU_addr == 16'hC00E) ? GRAFP1_P2PL : 
-                        (CPU_addr == 16'hC00F) ? GRAFP2_P3PL : 
-                        (CPU_addr == 16'hC010) ? TRIG0_BUS : 
-                        (CPU_addr == 16'hC011) ? TRIG1_BUS : 
-                        (CPU_addr == 16'hC012) ? TRIG2_BUS : 
-                        (CPU_addr == 16'hC013) ? TRIG3_BUS : 
-                        (CPU_addr == 16'hC014) ? COLPM2_PAL : 
+                        (CPU_addr == 16'hC000) ? M0PF : 
+                        (CPU_addr == 16'hC001) ? M1PF : 
+                        (CPU_addr == 16'hC002) ? M2PF : 
+                        (CPU_addr == 16'hC003) ? M3PF : 
+                        (CPU_addr == 16'hC004) ? P0PF : 
+                        (CPU_addr == 16'hC005) ? P1PF : 
+                        (CPU_addr == 16'hC006) ? P2PF : 
+                        (CPU_addr == 16'hC007) ? P3PF : 
+                        (CPU_addr == 16'hC008) ? M0PL : 
+                        (CPU_addr == 16'hC009) ? M1PL : 
+                        (CPU_addr == 16'hC00A) ? M2PL : 
+                        (CPU_addr == 16'hC00B) ? M3PL : 
+                        (CPU_addr == 16'hC00C) ? P0PL : 
+                        (CPU_addr == 16'hC00D) ? P1PL : 
+                        (CPU_addr == 16'hC00E) ? P2PL : 
+                        (CPU_addr == 16'hC00F) ? P3PL : 
+                        (CPU_addr == 16'hC010) ? TRIG0 : 
+                        (CPU_addr == 16'hC011) ? TRIG1 : 
+                        (CPU_addr == 16'hC012) ? TRIG2 : 
+                        (CPU_addr == 16'hC013) ? TRIG3 : 
+                        (CPU_addr == 16'hC014) ? PAL : 
                         (CPU_addr == 16'hC015) ? COLPM3 : 
                         (CPU_addr == 16'hC016) ? COLPF0 : 
                         (CPU_addr == 16'hC017) ? COLPF1 : 
@@ -544,7 +467,7 @@ module memoryMap(
                         (CPU_addr == 16'hC01C) ? VDELAY : 
                         (CPU_addr == 16'hC01D) ? GRACTL : 
                         (CPU_addr == 16'hC01E) ? HITCLR : 
-                        (CPU_addr == 16'hC01F) ? CONSPK_CONSOL : 8'hzz;
+                        (CPU_addr == 16'hC01F) ? CONSOL : 8'hzz;
 
 
 

@@ -12,12 +12,13 @@
 
 module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, VSCROL, PMBASE, CHBASE, 
              WSYNC, NMIEN, DB, NMIRES_NMIST_bus, DLISTL_bus, DLISTH_bus, address, AN, 
-             halt, NMI_L, RDY, REF_L, RNMI_L, phi0, IR_out, loadIR, VCOUNT, PENH, PENV, 
+             halt, NMI_L, REF_L, RNMI_L, phi0, IR_out, loadIR, VCOUNT, PENH, PENV, 
              ANTIC_writeEn, charMode, numLines, width, height,
              printDLIST, currState, MSR, loadMSR_both, loadDLIST_both,
-             IR_rdy, mode, numBytes, MSRdata, DLISTL, blankCount, addressIn, loadMSRdata, 
+             IR_rdy, mode, numBytes, MSRdata, DLISTL, addressIn, loadMSRdata, 
              charData, newDLISTptr, loadDLIST, DLISTend, idle, loadMSRstate,
-             addressOut, haltANTIC, rdyANTIC, colorSel4, ANTIC_writeNMI, incrY, saveY);
+             addressOut, haltANTIC, rdyANTIC, colorSel4, ANTIC_writeNMI, incrY, saveY,
+             GRAFP0, GRAFP1, GRAFP2, GRAFP3, GRAFM);
 
       input Fphi0;
       input LP_L;
@@ -71,7 +72,6 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
       output [6:0] numBytes;
       output [7:0] MSRdata;
       output [7:0] DLISTL;
-      output [3:0] blankCount;
       output [15:0] addressIn;
       output loadMSRdata;
       output [63:0] charData;
@@ -92,6 +92,12 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
       output incrY;
       output saveY;
       
+      output reg [7:0] GRAFP0 = 8'd0;
+      output reg [7:0] GRAFP1 = 8'd0;
+      output reg [7:0] GRAFP2 = 8'd0;
+      output reg [7:0] GRAFP3 = 8'd0;
+      output reg [7:0] GRAFM = 8'd0;
+      
       assign haltANTIC = halt;
       assign rdyANTIC = RDY;
       
@@ -109,7 +115,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
       reg charLoaded = 1'b0;
       reg [63:0] charData;
       reg [7:0] charByte = 8'd0;
-      reg [7:0] DLISTL;
+      reg [7:0] DLISTL, DLISTH;
       reg incrDLIST = 1'b0;
       reg loadMSRdata_hold = 1'b0;
       reg [15:0] newDLISTptr= 16'd0;
@@ -122,6 +128,11 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
       reg WSYNC_halt = 1'b0;
       reg reqBlank = 1'b0;
       reg [15:0] savedMSR = 16'd0;
+      reg loadM_hold = 1'b0;
+      reg loadP0_hold = 1'b0;
+      reg loadP1_hold = 1'b0;
+      reg loadP2_hold = 1'b0;
+      reg loadP3_hold = 1'b0;
       
       wire [15:0] addressOut;
       wire [7:0] data;
@@ -147,6 +158,8 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
       wire update_WSYNC;
       wire blankScreen;
       wire saveMSR, resetMSR;
+      wire loadM, loadP0, loadP1, loadP2, loadP3;
+      wire [7:0] sprite_addr;
       
       // * Temp:
       assign printDLIST = {DLISTH_bus, DLISTL_bus};
@@ -158,6 +171,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
       
       assign address = (DMA & RDY) ? addressOut : 16'hzzzz;
       assign colorSel = MSRdata[7:6];
+      assign sprite_addr = (VCOUNT + 8'h20) ;
 
       // Module instantiations
       AddressBusRegANTIC addr(.clk(Fphi0), .load(loadAddr), .incr(incrDLIST), .addressIn(addressIn), .addressOut(addressOut));
@@ -167,16 +181,17 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
                        .loadDLISTL(loadDLISTL), .loadDLISTH(loadDLISTH),
                        .loadPtr(loadPtr), .loadMSRL(loadMSRL), .loadMSRH(loadMSRH), .incrMSR(incrMSR), .loadMSRdata(loadMSRdata),
                        .mode(mode), .numBytes(numBytes), .charMode(charMode), .loadChar(loadChar),
-                       .blankCount(blankCount), .loadDLIST(loadDLIST), .ANTIC_writeDLIST(ANTIC_writeDLIST), .numLines(numLines),
+                       .loadDLIST(loadDLIST), .ANTIC_writeDLIST(ANTIC_writeDLIST), .numLines(numLines),
                        .width(width), .height(height), .ANTIC_writeDLI(ANTIC_writeDLI), .ANTIC_writeVBI(ANTIC_writeVBI),
                        .ANTIC_writeNMI(ANTIC_writeNMI),
                        .idle(idle), .loadMSRstate(loadMSRstate), .DLISTend(DLISTend), .charSingleColor(charSingleColor),
                        .colorSel4(colorSel4), .update_WSYNC(update_WSYNC), .VCOUNT(VCOUNT), .blankScreen(blankScreen),
-                       .saveMSR(saveMSR), .resetMSR(resetMSR), .incrY(incrY), .saveY(saveY));
+                       .saveMSR(saveMSR), .resetMSR(resetMSR), .incrY(incrY), .saveY(saveY),
+                       .loadM(loadM), .loadP0(loadP0), .loadP1(loadP1), .loadP2(loadP2), .loadP3(loadP3));
       
       // Update DLISTPTR (JUMP instruction)
       assign DLISTL_bus = loadDLIST ? newDLISTptr[7:0] : (incrDLIST ? DLISTL : 8'hzz);
-      assign DLISTH_bus = loadDLIST ? newDLISTptr[15:8] : 8'hzz;
+      assign DLISTH_bus = loadDLIST ? newDLISTptr[15:8] : (incrDLIST ? DLISTH : 8'hzz);
       
       assign NMIRES_NMIST_bus = (ANTIC_writeDLI&(NMIEN[7])) ? 8'h80 : (((ANTIC_writeVBI|ANTIC_initVBI)&(NMIEN[6])) ? 8'h40 : 8'hzz);
       
@@ -214,6 +229,16 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
           WSYNC_halt <= 1'b0;
           reqBlank <= 1'b0;
           savedMSR <= 16'd0;
+          loadM_hold <= 1'b0;
+          loadP0_hold <= 1'b0;
+          loadP1_hold <= 1'b0;
+          loadP2_hold <= 1'b0;
+          loadP3_hold <= 1'b0;
+          GRAFP0 <= 8'd0;
+          GRAFP1 <= 8'd0;
+          GRAFP2 <= 8'd0;
+          GRAFP3 <= 8'd0;
+          GRAFM <= 8'd0;
         end
         
         // Wait for CPU initialization to complete
@@ -294,6 +319,16 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
               WSYNC_prev <= WSYNC;
               WSYNC_halt <= 1'b0;
               reqBlank <= 1'b0;
+              loadM_hold <= 1'b0;
+              loadP0_hold <= 1'b0;
+              loadP1_hold <= 1'b0;
+              loadP2_hold <= 1'b0;
+              loadP3_hold <= 1'b0;
+              GRAFP0 <= 8'd0;
+              GRAFP1 <= 8'd0;
+              GRAFP2 <= 8'd0;
+              GRAFP3 <= 8'd0;
+              GRAFM <= 8'd0;
             end
             
             else if (~(DMA&(~RDY))) begin
@@ -358,6 +393,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
                     nextState <= `FSMload1;
                     addressIn <= {DLISTH_bus, DLISTL_bus};
                     DLISTL <=  DLISTL_bus;
+                    DLISTH <=  DLISTH_bus;
                     loadAddr <= 1'b1;
                     DMA <= `DMA_on;
                   end
@@ -411,16 +447,54 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
                         charLoaded <= 1'b1;
                     end
                     
+                    else if (loadM_hold) begin
+                      GRAFM <= DB;
+                      loadM_hold <= 1'b0;
+                      IR_rdy <= 1'b1;
+                    end
+                    
+                    else if (loadP0_hold) begin
+                      GRAFP0 <= DB;
+                      loadP0_hold <= 1'b0;
+                      IR_rdy <= 1'b1;
+                    end
+                    
+                    else if (loadP1_hold) begin
+                      GRAFP1 <= DB;
+                      loadP1_hold <= 1'b0;
+                      IR_rdy <= 1'b1;
+                    end
+                    
+                    else if (loadP2_hold) begin
+                      GRAFP2 <= DB;
+                      loadP2_hold <= 1'b0;
+                      IR_rdy <= 1'b1;
+                    end
+                    
+                    else if (loadP3_hold) begin
+                      GRAFP3 <= DB;
+                      loadP3_hold <= 1'b0;
+                      IR_rdy <= 1'b1;
+                    end
+                    
                     else begin
                       if (~loadPtr) begin
+                      
                         incrDLIST <= 1'b1;
-                        DLISTL <= DLISTL + 8'd1;
+                        if (DLISTL == 8'hFF) begin
+                          DLISTL <= 8'h00;
+                          DLISTH <= DLISTH + 8'd1;
+                        end
+                        else
+                          DLISTL <= DLISTL + 8'd1;
+                          
                         if (ANTIC_writeNMI) begin
                           ANTIC_writeEn <= 3'd4;
                           VBI_hold <= 1'b1;
                         end
                         else
-                        ANTIC_writeEn <= 3'd1;
+                        ANTIC_writeEn <= 3'd2;
+                        
                       end
                       IR <= DB;
                       IR_rdy <= 1'b1;
@@ -440,6 +514,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
                       DMA <= `DMA_on;
                       addressIn <= {DLISTH_bus, DLISTL_bus};
                       DLISTL <= DLISTL_bus;
+                      DLISTH <= DLISTH_bus;
                       loadAddr <= 1'b1;
                     end
                     
@@ -468,6 +543,46 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
                         nextState <= `FSMidle;
                         charByte <= 8'd0;
                       end
+                    end
+                    
+                    else if (loadM) begin
+                      nextState <= `FSMload1;
+                      DMA <= `DMA_on;
+                      addressIn <= {PMBASE + 8'h03, sprite_addr};
+                      loadAddr <= 1'b1;
+                      loadM_hold <= 1'b1;
+                    end
+                    
+                    else if (loadP0) begin
+                      nextState <= `FSMload1;
+                      DMA <= `DMA_on;
+                      addressIn <= {PMBASE + 8'h04, sprite_addr};
+                      loadAddr <= 1'b1;
+                      loadP0_hold <= 1'b1;
+                    end
+                    
+                    else if (loadP1) begin
+                      nextState <= `FSMload1;
+                      DMA <= `DMA_on;
+                      addressIn <= {PMBASE + 8'h05, sprite_addr};
+                      loadAddr <= 1'b1;
+                      loadP1_hold <= 1'b1;
+                    end
+                    
+                    else if (loadP2) begin
+                      nextState <= `FSMload1;
+                      DMA <= `DMA_on;
+                      addressIn <= {PMBASE + 8'h06, sprite_addr};
+                      loadAddr <= 1'b1;
+                      loadP2_hold <= 1'b1;
+                    end
+                    
+                    else if (loadP3) begin
+                      nextState <= `FSMload1;
+                      DMA <= `DMA_on;
+                      addressIn <= {PMBASE + 8'h07, sprite_addr};
+                      loadAddr <= 1'b1;
+                      loadP3_hold <= 1'b1;
                     end
                     
                     // Continue to idle state

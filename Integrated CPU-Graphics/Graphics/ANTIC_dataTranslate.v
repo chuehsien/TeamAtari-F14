@@ -17,6 +17,12 @@
 `define loadMSR2        2'b01
 `define loadMSR3        2'b10
 `define loadMSR4        2'b11
+`define sprite1         3'd0
+`define sprite2         3'd1
+`define sprite3         3'd2
+`define sprite4         3'd3
+`define sprite5         3'd4
+`define sprite6         3'd5
 
 `define noPlayfield       2'b00
 `define narrowPlayfield   2'b01
@@ -30,11 +36,11 @@
 module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charData, colorSel, 
                      charLoaded, MSRdata_reverse, DMA, RDY, reqBlank, AN, loadIR, loadDLISTL, loadDLISTH, 
                      loadPtr, loadMSRL, loadMSRH, incrMSR, loadMSRdata,
-                     mode, numBytes, charMode, loadChar, blankCount, loadDLIST, 
+                     mode, numBytes, charMode, loadChar, loadDLIST, 
                      ANTIC_writeDLIST, numLines, width, height, ANTIC_writeDLI, ANTIC_writeVBI,
                      ANTIC_writeNMI,
                      idle, loadMSRstate, DLISTend, charSingleColor, colorSel4, update_WSYNC, VCOUNT,
-                     blankScreen, saveMSR, resetMSR, incrY, saveY);
+                     blankScreen, saveMSR, resetMSR, incrY, saveY, loadM, loadP0, loadP1, loadP2, loadP3);
   
   input [7:0] IR;
   input IR_rdy;
@@ -64,7 +70,6 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
   output [6:0] numBytes; //
   output reg [2:0] charMode = 3'd0;
   output reg loadChar = 1'b0;
-  output [3:0] blankCount; //
   output reg loadDLIST = 1'b0;
   output reg ANTIC_writeDLIST = 1'b0;
   output reg [1:0] numLines = `one;
@@ -85,12 +90,17 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
   output reg resetMSR = 1'b0;
   output reg incrY = 1'b0;
   output reg saveY = 1'b0;
+  output reg loadM = 1'b0;
+  output reg loadP0 = 1'b0;
+  output reg loadP1 = 1'b0;
+  output reg loadP2 = 1'b0;
+  output reg loadP3 = 1'b0;
   
   reg idle = 1'b1;
   reg [3:0] mode = 4'd0;
   reg holdMode = 1'b0;
   reg newBlank = 1'b1;
-  reg [3:0] blankCount = 4'd0;
+  reg [14:0] blankCount = 15'd0;
   reg jumpType = 1'b0;
   reg [2:0] jumpState = `jumpStart;
   reg [1:0] loadMSRstate = `loadMSR1;
@@ -102,7 +112,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
   reg charLoadHold = 1'b0;
   reg MSRdata_rdy_hold = 1'b0;
   reg waitvblank = 1'b0;
-  reg [2:0] numPixel = 3'd0;
+  reg [3:0] numPixel = 4'd0;
   reg DLI = 1'b0;
   reg VBI = 1'b0;
   reg clearDLI = 1'b0;
@@ -112,10 +122,13 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
   reg [12:0] vblankcount = 13'd0;
   reg [16:0] pixNum = 17'd0;
   reg sentTwice = 1'b0;
+  reg loadSpritesDone = 1'b0;
+  reg [2:0] loadSpriteState = 3'd0;
   
   wire DLIST_DMA_en = DMACTL[5];
   wire [1:0] playfieldWidth = DMACTL[1:0];
   wire [1:0] colorSel4 = {MSRdata_reverse[2*numPixel], MSRdata_reverse[(2*numPixel)+1]};
+  wire colorSel8 = MSRdata_reverse[numPixel];
   
   // 1. Retrieve data from RAM via DMA
   // 2. Evaluate retrieved data
@@ -127,7 +140,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
       AN <= `noTransmission;
       holdMode <= 1'b0;
       newBlank <= 1'b1;
-      blankCount <= 4'd0;
+      blankCount <= 15'd0;
       loadIR <= 1'b0;
       loadDLISTL <= 1'b0;
       loadDLISTH <= 1'b0;
@@ -151,7 +164,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
       ANTIC_writeDLIST <= 1'b0;
       loadChar <= 1'b0;
       numBytes <= 7'd0;
-      numPixel <= 3'd0;
+      numPixel <= 4'd0;
       DLISTend <= 1'b0;
       numLines <= `one;
       width <= `width;
@@ -176,6 +189,13 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
       incrY <= 1'b0;
       sentTwice <= 1'b0;
       saveY <= 1'b0;
+      loadSpritesDone <= 1'b0;
+      loadSpriteState <= 3'd0;
+      loadM <= 1'b0;
+      loadP0 <= 1'b0;
+      loadP1 <= 1'b0;
+      loadP2 <= 1'b0;
+      loadP3 <= 1'b0;
     end
     
     else begin
@@ -223,6 +243,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
             // Clear control signals from terminated instructions
             loadIR <= 1'b0;
             update_WSYNC <= 1'b0;
+            loadSpritesDone <= 1'b0;
             
             if (DLI) begin
               DLI <= 1'b0;
@@ -290,7 +311,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
               idle <= 1'b1;
             end
             */
-            
+            /*
             if (mode == 4'h0) begin
               charMode <= 3'd0;
               
@@ -316,6 +337,37 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                   idle <= 1'b1;
                 end
                 
+              end
+            end
+            */
+            if (mode == 4'h0) begin
+              charMode <= 3'd0;
+              width <= `width;
+              height <= `height;
+              numLines <= `one;
+              
+              // Start of blank lines instruction:
+              // Place number of blank lines in 'blankCount'
+              // (Number of blank mode lines * 320 pixels per TV scan line)
+              if (newBlank == 1'b1) begin
+                blankCount <= ((IR[6:4]+1)*320);
+                AN <= `modeNorm_bgColor;  // Send first blank pixel
+                newBlank <= 1'b0;
+                loadIR <= 1'b0;
+              end
+              
+              else if (newBlank == 1'b0) begin
+                
+                // Normal operation, send blank pixel to GTIA and decrement blankCount
+                AN <= `modeNorm_bgColor;
+                blankCount <= blankCount - 15'd1;
+                
+                // One last blank line to display, trigger next IR load
+                if (blankCount == 15'd2) begin
+                  newBlank <= 1'b1;
+                  loadIR <= 1'b1;
+                  idle <= 1'b1;
+                end
               end
             end
             
@@ -433,6 +485,64 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
               // * TODO: Add routine for HS modifier bit = IR[4]
               // * TODO: Add routine for VS modifier bit = IR[5]
               
+              // Load sprite data
+              else if (~loadSpritesDone) begin
+                
+                case (loadSpriteState)
+                  
+                  `sprite1:
+                    begin
+                      loadSpriteState <= `sprite2;
+                      loadM <= 1'b1;
+                    end
+                  
+                  `sprite2:
+                    begin
+                      loadM <= 1'b0;
+                      if (IR_rdy) begin
+                        loadSpriteState <= `sprite3;
+                        loadP0 <= 1'b1;
+                      end
+                    end
+                    
+                  `sprite3:
+                    begin
+                      loadP0 <= 1'b0;
+                      if (IR_rdy) begin
+                        loadSpriteState <= `sprite4;
+                        loadP1 <= 1'b1;
+                      end
+                    end
+                    
+                  `sprite4:
+                    begin
+                      loadP1 <= 1'b0;
+                      if (IR_rdy) begin
+                        loadSpriteState <= `sprite5;
+                        loadP2 <= 1'b1;
+                      end
+                    end
+                  
+                  `sprite5:
+                    begin
+                      loadP2 <= 1'b0;
+                      if (IR_rdy) begin
+                        loadSpriteState <= `sprite6;
+                        loadP3 <= 1'b1;
+                      end
+                    end
+                    
+                  `sprite6:
+                    begin
+                      loadP3 <= 1'b0;
+                      if (IR_rdy) begin
+                        loadSpriteState <= `sprite1;                      
+                        loadSpritesDone <= 1'b1;
+                      end
+                    end
+                endcase
+              end
+              
               else begin
                 
                 case (mode)
@@ -544,7 +654,8 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                   // Mode 4: Character, 32/40/48 bytes per mode line, 8 TV scan lines per mode line, 5 color      
                   4'h4:
                     begin
-                    
+                      loadIR <= 1'b1;
+                      idle <= 1'b1;
                     end
                   
                   // Mode 5: Character, 32/40/48 bytes per mode line, 16 TV scan lines per mode line, 5 color
@@ -771,7 +882,83 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                   // Mode 12: Map, 16/20/24 bytes per mode line, 1 TV scan lines per mode line, 2 color
                   4'hC:
                     begin
+                      loadIR <= 1'b0;
                     
+                      // Set the byte-width of the mode line
+                      if (~loadedNumBytes) begin
+                        loadedNumBytes <= 1'b1;
+                        if (playfieldWidth == `narrowPlayfield)
+                          numBytes <= 7'd16;
+                        else if (playfieldWidth == `standardPlayfield)
+                          numBytes <= 7'd20;
+                        else if (playfieldWidth == `widePlayfield)
+                          numBytes <= 7'd24;
+                        else
+                          numBytes <= 7'd0;
+                        loadMSRdata <= 1'b1;
+                        incrMSR <= 1'b1;
+                        numPixel <= 4'd0;
+                        width <= `width;
+                        height <= `height;
+                        numLines <= `one;
+                        saveMSR <= 1'b1;
+                      end
+                      
+                      else begin
+                        charMode <= 3'd0;
+                        loadChar <= 1'b0;
+                        loadMSRdata <= 1'b0;
+                        incrMSR <= 1'b0;
+                        saveMSR <= 1'b0;
+
+                        // Repeat for the number of bytes in the mode line
+                        if (numBytes != 7'd0) begin
+                          
+                          // Display next 8 pixels from 1 MSR data byte
+                          if (MSRdata_rdy|MSRdata_rdy_hold) begin
+                            if (MSRdata_rdy)
+                              MSRdata_rdy_hold <= 1'b1;
+                            
+                            if (numPixel != 4'd8) begin
+                        
+                              case (colorSel8)
+                                1'd0: AN <= `modeNorm_bgColor;
+                                1'd1: AN <= `modeNorm_playfield0;
+                              endcase
+                              
+                              if (sentTwice) begin
+                                numPixel <= numPixel + 4'd1;
+                                sentTwice <= 1'b0;
+                              end
+                              else
+                                sentTwice <= 1'b1;
+                            end
+                                                                              
+                            // Load next MSR data byte
+                            else begin
+                              MSRdata_rdy_hold <= 1'b0;
+                              numBytes <= numBytes - 7'd1;
+                              numPixel <= 4'd0;
+                              if (numBytes != 7'd1) begin
+                                loadMSRdata <= 1'b1;
+                                incrMSR <= 1'b1;
+                              end
+                            end
+                            
+                          end
+                        end
+                          
+                        // Mode line complete
+                        else begin
+                          loadIR <= 1'b1;
+                          loadMSRdone <= 1'b0;
+                          holdMode <= 1'b0;
+                          loadedNumBytes <= 1'b0;
+                          idle <= 1'b1;
+                          update_WSYNC <= 1'b1;
+                          VCOUNT <= VCOUNT + 8'd1;
+                        end
+                      end
                     end
                 
                   // Mode 13: Map, 32/40/48 bytes per mode line, 2 TV scan lines per mode line, 4 color
@@ -792,7 +979,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                           numBytes <= 7'd0;
                         loadMSRdata <= 1'b1;
                         incrMSR <= 1'b1;
-                        numPixel <= 3'd0;
+                        numPixel <= 4'd0;
                         numRepeat <= 3'd1;
                         width <= `width;
                         height <= `height;
@@ -815,7 +1002,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                             if (MSRdata_rdy)
                               MSRdata_rdy_hold <= 1'b1;
                             
-                            if (numPixel != 3'd4) begin
+                            if (numPixel != 4'd4) begin
                         
                               case (colorSel4)
                                 2'd0: AN <= `modeNorm_bgColor;
@@ -825,7 +1012,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                               endcase
                               
                               if (sentTwice) begin
-                                numPixel <= numPixel + 3'd1;
+                                numPixel <= numPixel + 4'd1;
                                 sentTwice <= 1'b0;
                               end
                               else
@@ -837,7 +1024,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                             else begin
                               MSRdata_rdy_hold <= 1'b0;
                               numBytes <= numBytes - 7'd1;
-                              numPixel <= 3'd0;
+                              numPixel <= 4'd0;
                               if (numBytes != 7'd1) begin
                                 loadMSRdata <= 1'b1;
                                 incrMSR <= 1'b1;
@@ -911,7 +1098,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                             if (MSRdata_rdy)
                               MSRdata_rdy_hold <= 1'b1;
                             
-                            if (numPixel != 3'd4) begin
+                            if (numPixel != 4'd4) begin
                         
                               case (colorSel4)
                                 2'd0: AN <= `modeNorm_bgColor;
@@ -921,7 +1108,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                               endcase
                               
                               if (sentTwice) begin
-                                numPixel <= numPixel + 3'd1;
+                                numPixel <= numPixel + 4'd1;
                                 sentTwice <= 1'b0;
                               end
                               else
@@ -933,7 +1120,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                             else begin
                               MSRdata_rdy_hold <= 1'b0;
                               numBytes <= numBytes - 7'd1;
-                              numPixel <= 3'd0;
+                              numPixel <= 4'd0;
                               if (numBytes != 7'd1) begin
                                 loadMSRdata <= 1'b1;
                                 incrMSR <= 1'b1;
