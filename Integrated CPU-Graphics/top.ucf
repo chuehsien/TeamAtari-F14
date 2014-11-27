@@ -64,7 +64,7 @@ NET  HDR1_50              LOC="AK32";  # Bank 13, Vcco=2.5V or 3.3V user selecta
 NET  HDR1_52              LOC="AL34";  # Bank 13, Vcco=2.5V or 3.3V user selectable by J20
 NET  HDR1_54              LOC="AL33";  # Bank 13, Vcco=2.5V or 3.3V user selectable by J20
 NET  HDR1_56              LOC="AM33";  # Bank 13, Vcco=2.5V or 3.3V user selectable by J20
-NET  HDR1_58              LOC="AJ34";  # Bank 13, Vcco=2.5V or 3.3V user selectable by J20
+//NET  HDR1_58              LOC="AJ34";  # Bank 13, Vcco=2.5V or 3.3V user selectable by J20
 NET  HDR1_60              LOC="AM32";  # Bank 13, Vcco=2.5V or 3.3V user selectable by J20
 NET  HDR1_62              LOC="AN34";  # Bank 13, Vcco=2.5V or 3.3V user selectable by J20
 NET  HDR1_64              LOC="AN33";  # Bank 13, Vcco=2.5V or 3.3V user selectable by J20
@@ -125,7 +125,5 @@ NET  DVI_XCLK_P           LOC="AL11";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm 
 NET  IIC_SCL_VIDEO        LOC="U27";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
 NET  IIC_SDA_VIDEO        LOC="T29";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
 
-
-NET  "HDR1_58"               SLEW = "FAST";   # Bank 11, Vcco=2.5V or 3.3V user selectable by J20
 
 

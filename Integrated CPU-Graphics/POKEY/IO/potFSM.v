@@ -6,7 +6,7 @@ module potScanFSM(clk,rst,pot_in,POTGO,POTOUT,pot_rdy,pot_state,timer);
 	 input clk, rst, pot_in, POTGO;
     output reg [7:0] POTOUT = 8'd0;
     output pot_rdy;
-	 output [1:0] pot_state;
+	 output pot_state;
    	output [7:0] timer;
 
 	reg pot_state,next_pot_state = `pot_IDLE;
@@ -84,6 +84,13 @@ module potScanFSM(clk,rst,pot_in,POTGO,POTOUT,pot_rdy,pot_state,timer);
                 rst_timer = 1'b0;  
                 pot_rdy = 1'b0;
             end
+        end
+            
+        default : begin
+                next_pot_state = `pot_IDLE;
+                run_timer = 1'b0;
+                rst_timer = 1'b1;  
+                pot_rdy = 1'b0;
         end
 
         endcase

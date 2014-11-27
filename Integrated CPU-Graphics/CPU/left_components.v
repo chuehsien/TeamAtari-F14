@@ -66,30 +66,7 @@ module predecodeLogic(irIn, interrupt,
     assign OPout = (~interrupt) ? irIn : 8'd00;
 
 endmodule
-                 
-/*
-module inoutLatch3(rstAll, phi1,data1,data2,data3,done1,done2,done3,
-                    out1,out2,out3);
-    input rstAll, phi1,data1,data2,data3,done1,done2,done3;
-    output out1,out2,out3;
-    
-    reg out1,out2,out3 = 1'b0;
-    
-    wire done;
-    assign done = done1|done2|done3;
-    
-    wire rstOrDone;
-    assign rstOrDone = rstAll | done;
-    always @ (posedge phi1 or posedge rstOrDone) begin
-            
-        out1 <= (rstOrDone) ? 1'b0 : data1;
-        out2 <= (rstOrDone) ? 1'b0 : data2;
-        out3 <= (rstOrDone) ? 1'b0 : data3;
-
-    end
-
-endmodule
-*/
+              
 
 module interruptLatch(haltAll,phi1,NMI_L,IRQ_Lfiltered,RES_L,outNMI_L,outIRQ_L,outRES_L);
     input haltAll,phi1,NMI_L,IRQ_Lfiltered,RES_L;
@@ -189,21 +166,6 @@ module PLAinterruptControl(haltAll,phi1, nmiPending,resPending,irqPending,intHan
 
 endmodule
 
-//nRW - reading, ~nRW - writing
-module readyControl(phi2, RDY,nRW,
-                    RDYout);
-    input phi2;
-    input RDY, nRW;
-    output RDYout;
-    
-    wire phi2;
-    wire RDY,nRW;
-    reg RDYout = 1'b1;
-    
-    always @ (posedge phi2) begin
-        RDYout = ~nRW | RDY; //processor is RDY (running) when writing, or when RDY assert.
-    end
-endmodule
 
 
 
@@ -262,19 +224,6 @@ module logicControl(updateOthers,currT,opcode,prevOpcode,phi1,phi2,activeInt,alu
 endmodule
 
 
-module controlLatch(fastClk,inControl,outControl);
-    input fastClk;
-    input [65:0] inControl;
-    output [65:0] outControl;
-    
-    reg [65:0] outControl_b = `emptyControl;
-    always @ (posedge fastClk) begin
-        outControl_b <= inControl;
-        
-    end
-    
-    buf t[65:0](outControl,outControl_b);
-endmodule
 
 module instructionRegister(haltAll,rstAll,currT,phi1,phi2,OPin,OPout,prevOP);
 

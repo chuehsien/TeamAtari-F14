@@ -10,7 +10,7 @@ module memoryMap(
                 write_RAM,data_in_b,
                              
                 addr_RAM,addr_BIOS,addr_CART,
-                latchClk,Fclk, clk, rst, CPU_writeEn, ANTIC_writeEn, GTIA_writeEn, CPU_addr, 
+                Fclk, clk, rst, CPU_writeEn, ANTIC_writeEn, GTIA_writeEn, CPU_addr, 
 
                  VCOUNT_in, PENH_in, PENV_in,
                  POT0_BUS, POT1_BUS, POT2_BUS, POT3_BUS, POT4_BUS, POT5_BUS, POT6_BUS, POT7_BUS, ALLPOT_BUS, KBCODE_BUS, RANDOM_BUS, SERIN_BUS, IRQST_BUS, SKSTAT_BUS,
@@ -39,7 +39,7 @@ module memoryMap(
   
   output addr_RAM,addr_BIOS,addr_CART;
   // Control signals
-  input latchClk,Fclk;
+  input Fclk;
   input clk;
   input rst;
   input CPU_writeEn;
@@ -577,17 +577,24 @@ module addrCheck(addr, addr_RAM,addr_BIOS,addr_CART);
   output addr_BIOS;
   output addr_CART;
   
+  //high bits 00
    assign addr_RAM = ({1'b0,16'h4000} > {1'b0,addr}) ? 1'b1 : 1'b0; //ensure unsigned comparison 
  
+ // high bits 1111_1xxx
  //bios runs from F800 to FFFF
   assign addr_BIOS = ({1'b0,addr} > {1'b0,16'hF7FF}) ? 1'b1 : 1'b0;
   
-  //cart runs from 4000 to BFFF
+  //cart runs from 4000 to BFFF high bits 01 and 10
   assign addr_CART = (({1'b0,addr} > {1'b0,16'h3FFF}) & ( {1'b0,16'hC000} > {1'b0,addr})) ? 1'b1 : 1'b0;
   
   
+/*
+  assign addr_RAM = ~addr[15] & ~addr[14];
   
+  assign addr_BIOS = addr[15] & addr[14] & addr[13] & addr[12] & addr[11];
   
+  assign addr_CART = (~addr[15] & addr[14]) | (addr[15] & ~addr[14]);
+  */
 endmodule
 
 // Mux to select sending output data from RAM / registers

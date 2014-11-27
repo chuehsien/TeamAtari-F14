@@ -15,6 +15,25 @@
 
 */
 
+
+module sigLatchWclk8_2(refclk,clk,in,out);
+  input refclk,clk;
+  input [7:0] in;
+  output [7:0] out;
+  
+	reg [7:0] latch = 8'd0;
+	
+	always @ (posedge clk) begin
+        if (refclk) latch <= in;
+		else latch <= latch;
+	end
+	
+
+   assign out = (clk) ? (latch) : 8'd0;
+endmodule
+
+
+
 module sigLatchWclkDual(haltAll,clk,in,out);
   input haltAll,clk;
   input in;
@@ -31,44 +50,9 @@ module sigLatchWclkDual(haltAll,clk,in,out);
 		else ffout <= (seen) ? 1'b0 : in;
   end
 
-  assign out = ffout | in;
+  assign out = (clk) ? (ffout | in) : in;
   
 endmodule
-
-
-module sigLatchWclk8nohold(haltAll,refclk,clk,in,out);
-  input haltAll,refclk,clk;
-  input [7:0] in;
-  output [7:0] out;
-  
-  reg [7:0] ffout = 8'd0;
- // assign ffin = (ffout) ? 1'b0 : in;
-  always @ (posedge clk) begin
-    if (haltAll) ffout <= ffout;
-	 else ffout <= (refclk) ? in : 8'd0;
-  end
-  
-  assign out = ffout;
-  
-endmodule
-//only latch if ref clock is high.
-module sigLatchWclknohold(haltAll,refclk,clk,in,out);
-  input haltAll,refclk,clk, in;
-  output out;
-  
-  reg ffout = 1'b0;
- // assign ffin = (ffout) ? 1'b0 : in;
-  always @ (posedge clk) begin
-	 if (haltAll) ffout <= ffout;
-    else ffout <= (refclk) ? in : 1'b0;
-  end
-  
-  //FDCPE #(.INIT(1'b0)) FF0(.Q(ffout),.C(clk),.CE(refclk),.CLR(1'b0),.D(ffin),.PRE(1'b0));
-
-  assign out = ffout;
-  
-endmodule
-
 
 
 module sigLatchWclk8(haltAll,refclk,clk,in,out);
@@ -76,14 +60,19 @@ module sigLatchWclk8(haltAll,refclk,clk,in,out);
   input [7:0] in;
   output [7:0] out;
   
-  reg [7:0] ffout = 8'd0;
- // assign ffin = (ffout) ? 1'b0 : in;
-  always @ (posedge clk) begin
-    if (haltAll) ffout <= ffout;
-    else ffout <= (refclk) ? in : 8'd0;
-  end
+	reg latch = 1'b0;
+    
+	always @ (posedge clk) begin
+        if (haltAll) latch <= latch;
+        else begin
+            if (refclk) latch <= in;
+		    else latch <= latch;
+        end
+        
+	end
+	
   
-  assign out = ffout | in;
+  assign out = (clk) ? (latch | in) : (in);
   
 endmodule
 
@@ -92,28 +81,21 @@ module sigLatchWclk(haltAll,refclk,clk,in,out);
   input haltAll,refclk,clk, in;
   output out;
   
-  reg ffout = 1'b0;
- // assign ffin = (ffout) ? 1'b0 : in;
-  always @ (posedge clk) begin
-    if (haltAll) ffout <= ffout;
-    else ffout <= (refclk) ? in : 1'b0;
-  end
+	reg latch = 1'b0;
+    
+	always @ (posedge clk) begin
+        if (haltAll) latch <= latch;
+        else begin
+            if (refclk) latch <= in;
+		    else latch <= latch;
+        end
+        
+	end
+	
   
-  //FDCPE #(.INIT(1'b0)) FF0(.Q(ffout),.C(clk),.CE(refclk),.CLR(1'b0),.D(ffin),.PRE(1'b0));
+  assign out = (clk) ? (latch | in) : (in);
 
-  assign out = ffout | in;
-  
-endmodule
 
-module sigLatch(clk,in,out);
-  input clk, in;
-  output out;
-  
-  wire ffout;
-  assign ffin = (ffout) ? 1'b0 : in;
-  FDCPE #(.INIT(1'b0)) FF0(.Q(ffout),.C(clk),.CE(1'b1),.CLR(1'b0),.D(ffin),.PRE(1'b0));
-
-  assign out = ffout | in;
 endmodule
 
   
@@ -285,19 +267,19 @@ module Areg(O_ADD, SB_ADD, SB,
 endmodule
 
 // is this sync or async - async for now
-module Breg(DB_L_AD, DB_ADD, ADL_ADD, dataIn, INVdataIn, ADL,
+module Breg(DB_L_ADD, DB_ADD, ADL_ADD, dataIn, INVdataIn, ADL,
             outToALU);
             
-    input DB_L_AD, DB_ADD, ADL_ADD;
+    input DB_L_ADD, DB_ADD, ADL_ADD;
     input [7:0] dataIn, INVdataIn;
     input [7:0] ADL;
     output [7:0] outToALU;
     
-    wire DB_L_AD, DB_ADD, ADL_ADD;
+    wire DB_L_ADD, DB_ADD, ADL_ADD;
     wire [7:0] dataIn, INVdataIn, ADL;
     wire [7:0] outToALU;
   
-    assign outToALU = DB_L_AD ? INVdataIn :
+    assign outToALU = DB_L_ADD ? INVdataIn :
                         (DB_ADD ? dataIn :
                             (ADL_ADD ? ADL : 8'h00));
     
@@ -552,12 +534,12 @@ endmodule
 
 //DSA - Decimal subtract adjust
 //DAA - Decimal add adjust
-module decimalAdjust(haltAll,SBin, DSA, DAA, ACR, HC, phi2,
+module decimalAdjust(haltAll,SBin, DSA, DAA, ACR, HC,
                     data);
     
     input haltAll;
     input [7:0] SBin;
-    input DSA, DAA, ACR, HC, phi2;
+    input DSA, DAA, ACR, HC;
     output reg [7:0] data = 8'd0;
  
     
@@ -680,7 +662,7 @@ endmodule
 //the x_set and x_clr are edge triggered.
 //everything else is ticked in when 'update' is asserted.
 module statusReg(haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
-                        P_DB, DBZ, ALUZ, ACR, AVR, B,
+                        P_DB, ACR, AVR, B,
                         C_set, C_clr,
                         I_set,I_clr, 
                         V_clr,
@@ -688,7 +670,7 @@ module statusReg(haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
                         DB,ALU,storedDB,opcode,DBout,
                         status);
     input haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
-                        P_DB, DBZ,ALUZ, ACR, AVR,B,
+                        P_DB, ACR, AVR,B,
                         C_set, C_clr,
                         I_set,I_clr, 
                         V_clr,
@@ -699,7 +681,7 @@ module statusReg(haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
     output [7:0] status; //used by the FSM
     
     wire rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
-                    P_DB, DBZ,ALUZ,ACR, AVR,B,
+                    P_DB, ACR, AVR,B,
                     C_set, C_clr,
                     I_set,I_clr, 
                     V_clr,
@@ -787,13 +769,13 @@ module statusReg(haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
           else if (I_clr) currVal2 <= 1'b0;
           
           //Z bit
-          if (loadDBZ) currVal1 <= DBZ;
+          if (loadDBZ) currVal1 <= (DB==8'd0);
           else if (flagsDB) begin
             if (class4) currVal1 <= (storedDB == 8'd0);
             else if (class3) currVal1 <= currVal1;
-            else currVal1 <= DBZ;
+            else currVal1 <= (DB==8'd0);
           end
-          else if (flagsALU) currVal1 <= ALUZ;
+          else if (flagsALU) currVal1 <= (ALU==8'd0);
           else if (DB_P) currVal1 <= DB[1];
           
           //C bit
@@ -951,93 +933,4 @@ module statusReg(haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
 endmodule
 
 */
-
-module prechargeMos(rstAll,phi2,
-                    bus);
-    input rstAll;
-    input phi2;
-    output [7:0] bus;
-    
-    wire rstAll;
-    wire phi2;
-    wire [7:0] bus;
-    
-    wire [7:0] pull;
-    PULLUP inst[7:0](.O(pull));
-    
-/*
-    reg [7:0] pullupReg = 8'h00;
-    always @ (posedge rstAll) begin
-        pullupReg = 8'hff;
-    end
-   
-    bufif1 (weak1, highz0) a[7:0](bus,pullupReg,1'b1);
- */
-    bufif1 a[7:0](bus,pull,phi2); 
-endmodule
-
-module opendrainMosADL(rstAll,O_ADL0, O_ADL1, O_ADL2,
-                    bus);
-    input rstAll;
-    input O_ADL0, O_ADL1, O_ADL2;
-    output [7:0] bus;
-                 
-    wire rstAll;
-    wire O_ADL0, O_ADL1, O_ADL2;
-    wire [7:0] bus;
-  /*  
-   reg pulldownReg0,pulldownReg1,pulldownReg2 = 1'b0;
-    always @ (posedge rstAll) begin
-        pulldownReg0 = 1'b0;
-        pulldownReg1 = 1'b0;
-        pulldownReg2 = 1'b0;
-    end
-    
-    
-    bufif1 (highz1, supply0) a(bus[0],pulldownReg0,O_ADL0);
-    bufif1 (highz1, supply0) b(bus[1],pulldownReg1,O_ADL1);
-    bufif1 (highz1, supply0) c(bus[2],pulldownReg2,O_ADL2);
-    */
-
-    wire pull;
-    assign pull = 1'b0;
-    
-    bufif1 a(bus[0],pull,O_ADL0);
-    bufif1 b(bus[1],pull,O_ADL1);
-    bufif1 c(bus[2],pull,O_ADL2);
-
-
-endmodule
-
-
-module opendrainMosADH(rstAll,O_ADH0, O_ADH17,
-                    bus);
-    input rstAll;
-    input O_ADH0, O_ADH17;
-    output [7:0] bus;
-    
-    wire rstAll;
-    wire O_ADH0, O_ADH17;
-    wire [7:0] bus;
-   /* 
-    reg pulldownReg0 = 1'b0;
-    reg [6:0] pulldownReg17 = 7'b0000000;
-    
-    always @ (posedge rstAll) begin
-        pulldownReg0 = 1'b0;
-        pulldownReg17 = 7'b000_0000;
-    end
-    
-    bufif1 (highz1, supply0) a(bus[0],pulldownReg0,O_ADH0);
-    bufif1 (highz1, supply0) b[6:0](bus[7:1],pulldownReg17,O_ADH17);
-    */
-
-    wire pull;
-    //bufif1 d(pull,1'b0,1'b1);
-    assign pull = 1'b0;
-    bufif1 a(bus[0],pull,O_ADH0);
-    bufif1 b[6:0](bus[7:1],pull,O_ADH17);
-
-    
-endmodule
 

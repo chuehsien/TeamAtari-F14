@@ -1,7 +1,7 @@
 `include "POKEY/IO/IOControl.v"
 `include "POKEY/IO/potFSM.v"
 
-module POKEY_top_integration(rst_latch,state,kr1_L,timer,control_input_pot_scan,state,control_input,control_output_8_5,key_scan_L,rst,clk60,clk15, clk179,clk64, HDR2_10, HDR2_12, HDR2_14, HDR2_16, HDR2_18, HDR2_20, HDR2_22, HDR2_24, HDR2_26, HDR2_28, HDR2_30, HDR2_32,
+module POKEY_top_integration(rst_latch,kr1_L,timer,control_input_pot_scan,state,control_input,control_output_8_5,key_scan_L,rst,clk15, clk179,clk64, HDR2_10, HDR2_12, HDR2_14, HDR2_16, HDR2_18, HDR2_20, HDR2_22, HDR2_24, HDR2_26, HDR2_28, HDR2_30, HDR2_32,
                                      SKCTL, GRACTL, POTGO_strobe,IRQEN,CONSOL,
                                      timer4Pending,timer2Pending,timer1Pending,
 
@@ -14,7 +14,7 @@ output kr1_L;
 		  output [1:0] state;
 
        output [3:0] control_input,control_output_8_5,key_scan_L;
-        input rst, clk60,clk15,clk179,clk64;
+        input rst, clk15,clk179,clk64;
 
         input  HDR2_2, HDR2_4, HDR2_6, HDR2_8, HDR2_18, HDR2_20, HDR2_22, HDR2_24, HDR2_26, HDR2_28, HDR2_30, HDR2_32;
         input [7:0] SKCTL, GRACTL, IRQEN, CONSOL; //control registers
@@ -82,10 +82,17 @@ output kr1_L;
     reg kbcodePending = 1'b0;
     wire serInPending,serOutPending,timer4Pending,timer2Pending,timer1Pending;
 
-     assign brkPending = (CONSOL[1:0] == 2'b00) ? (~control_input_side_but[3]) : (~control_input_side_but[1]);
+    wire topTrigIn;
+    assign topTrigIn = (CONSOL[1:0] == 2'b00) ? (~control_input_side_but[3]) : (~control_input_side_but[1]);
+
+    wire brkNow;
+    //debounce direct trigger, so we dont get an IRQ spam.
+    DeBounce #(4) trigdebounce(clk179,1'b1,topTrigIn,brkNow);
+
+
 
     wire IRQ_ST7,IRQ_ST6,IRQ_ST5,IRQ_ST4,IRQ_ST2,IRQ_ST1,IRQ_ST0;
-    FDCPE #(.INIT(1'b1)) latch7(.Q(IRQ_ST7), .C(brkPending),    .CE(1'b1), .CLR(1'b0), .D(1'b0), .PRE(~IRQEN[7]));
+    FDCPE #(.INIT(1'b1)) latch7(.Q(IRQ_ST7), .C(brkNow),    .CE(1'b1), .CLR(1'b0), .D(1'b0), .PRE(~IRQEN[7]));
     FDCPE #(.INIT(1'b1)) latch6(.Q(IRQ_ST6), .C(kbcodePending), .CE(1'b1), .CLR(1'b0), .D(1'b0), .PRE(~IRQEN[6]));
     FDCPE #(.INIT(1'b1)) latch5(.Q(IRQ_ST5), .C(serInPending),  .CE(1'b1), .CLR(1'b0), .D(1'b0), .PRE(~IRQEN[5]));
     FDCPE #(.INIT(1'b1)) latch4(.Q(IRQ_ST4), .C(serOutPending), .CE(1'b1), .CLR(1'b0), .D(1'b0), .PRE(~IRQEN[4]));
@@ -121,7 +128,7 @@ output kr1_L;
     demux pin_8_5(key_scan_L[3:2], control_output_8_5);
 	
     //main control logic
-    IOControl iocontrol_mod(.rst_latch(rst_latch), .state(state),.rst(rst),.SKCTL(SKCTL),.clk60(clk60),.clk15(clk15),.clk179(clk179),.clk64(clk64), 
+    IOControl iocontrol_mod(.rst_latch(rst_latch), .state(state),.rst(rst),.SKCTL(SKCTL),.clk15(clk15),.clk179(clk179),.clk64(clk64), 
                             .POTGO_strobe(POTGO_strobe), .kr1_L(kr1_L), .pot_scan_in(control_input_pot_scan),.key_scan_L(key_scan_L),
                             .keycode_latch(keycode_latch),.POT0(POT0_bus), .POT1(POT1_bus), .POT2(POT2_bus), .POT3(POT3_bus), .ALLPOT(ALLPOT_bus),
                             .pot_rel(pot_rel));

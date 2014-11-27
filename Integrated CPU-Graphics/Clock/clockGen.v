@@ -1,95 +1,60 @@
-module clockGen179(RST,clk27,phi0,fphi0,fphi0x2,cartclk,locked);
-    parameter div = 6;
+module clockGen179(RST,clk27,phi0,fphi0,latchClk,locked);
+    parameter div = 4;
     input RST,clk27;
-    (* clock_signal = "yes" *)output phi0,fphi0,fphi0x2,cartclk;
+    (* clock_signal = "yes" *)output phi0,fphi0,latchClk;
     output locked;
 
-    wire clk576_phi0,clk1052_fphi0,clk576_phi0_shift;
-    wire clk576_phi0_b,clk1052_fphi0_b,clk2104_fphi0_b,clk576_phi0_shift_b;
+    wire clk576_phi0,clk1052_fphi0;
+    wire clk576_phi0_b,clk1052_fphi0_b,latchClk_b;
 
 
    //produces 57.6MHz
-    clockDiv try0(.CLKIN1_IN(clk27), .RST_IN(RST), .CLK0_OUT(clk576_phi0),.CLK2X_OUT(clk1052_fphi0), .CLK90_OUT(clk576_phi0_shift),.LOCKED_OUT(locked));
+    clockDiv try0(.CLKIN1_IN(clk27), .RST_IN(RST), .CLK0_OUT(clk576_phi0),.CLK2X_OUT(clk1052_fphi0),.LOCKED_OUT(locked));
 
-
-
-	 clockoneX #(.width(div+1)) phi0shiftmake(clk576_phi0_shift,clk576_phi0_shift_b);
     clockoneX #(.width(div+1)) phi0make(clk576_phi0,clk576_phi0_b);
     clockoneX #(.width(div+1)) fphi0make(clk1052_fphi0,clk1052_fphi0_b); 
-    clockoneX #(.width(div)) fphi0x2make(clk1052_fphi0,clk2104_fphi0_b); 
-	wire clk576_phi0_shift_b1;
-	not cartclkmod(clk576_phi0_shift_b1,clk576_phi0_shift_b);
-	
-	BUFG cartclkout(cartclk,clk576_phi0_shift_b1);
+    hackishClock downto1_8Mhz(RST,clk576_phi0,latchClk_b);
+ 
     BUFG phi0out(phi0,clk576_phi0_b);
     BUFG fphi0out(fphi0,clk1052_fphi0_b);
-    BUFG fphi0x2out(fphi0x2,clk2104_fphi0_b);
- 
-endmodule
+	 BUFG latchclkout(latchClk,latchClk_b);
 
-module clockGen179_single(RST,clk27,phi0,locked);
-    parameter div = 6;
-    input RST,clk27;
-    (* clock_signal = "yes" *)output phi0;
-    output locked;
-
-    wire clk576_phi0,clk1052_fphi0,clk576_phi1;
-    wire clk576_phi0_b,clk1052_fphi0_b,clk576_phi1_b;
-
-
-   //produces 57.6MHz
-    clockDiv try0(.CLKIN1_IN(clk27), .RST_IN(RST), .CLK0_OUT(clk576_phi0),.CLK2X_OUT(), .LOCKED_OUT(locked));
-
-    clockoneX #(.width(div+1)) phi0make(clk576_phi0,clk576_phi0_b);
-
-/*
-    clockone32 phi0make(clk576_phi0,clk576_phi0_b);
-    clockone32 fphi0make(clk1052_fphi0,clk1052_fphi0_b);
-    clockone32 phi1make(clk576_phi1,clk576_phi1_b); 
-*/
-
-    BUFG phi0out(phi0,clk576_phi0_b);
  
 endmodule
 
 
-module hackishClock(RST,clkin,clkout_A,clkout_B);
+module hackishClock(RST,clkin,latchClk);
     input RST,clkin;
-    output clkout_A,clkout_B; //each with 1/28.64Mhz delay (~37ns)
+    output latchClk;
+
+    reg latchClk = 1'b0;
+	 
+    reg [3:0] counter = 4'd0;
+    always @ (negedge clkin) begin
+      if (RST) counter <= 4'd0;
+      else begin  
+        counter <= counter + 4'd1;
+      end
+    end
     
-    //produced clock is divided by 8.
     
-    reg clkout_A,clkout_B = 1'b0;
-    //reg clkout_B = 1'b0;
     
-    reg [18:0] counter=0; 
     always @ (posedge clkin) begin
-        if (RST) counter <= 0;
-        else counter <= counter + 1;
-    end    
-    
-    wire A,B;
-    assign A = (counter == 2);
-    assign B = (counter == 4);
- 
-    
-    always @ (posedge A) begin
-        if (RST) clkout_A <= 1'b0;
-        else clkout_A <= ~clkout_A;
+		if (RST) begin
+			latchClk <= 1'b0;
+		
+		end
+	 
+	 
+		 else begin
+		 
+			if (counter == 3) latchClk <= 1'b0;
+			if (counter == 12) latchClk <= 1'b1;
+
+			
+		 end
     end
-
-    always @ (posedge B) begin
-        if (RST) clkout_B <= 1'b0;
-        else clkout_B <= ~clkout_B;
-    end
-    
 endmodule
-
-module clockGen50(CLK100,out);
-    input CLK100;
-    output out;
-endmodule
-
 
 /*
 module clockHalf(inClk,outClk);
