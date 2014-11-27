@@ -267,7 +267,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
     wire [7:0] AUDF1, AUDC1, AUDF2, AUDC2, AUDF3, AUDC3, AUDF4, AUDC4, AUDCTL;
     wire [7:0] SKCTL, IRQEN, IRQST_BUS, POT0_BUS, POT1_BUS, POT2_BUS, POT3_BUS, 
                ALLPOT_BUS, KBCODE_BUS, SKSTAT_BUS, TRIG0_BUS, TRIG1_BUS, TRIG2_BUS,
-               TRIG3_BUS, RANDOM_BUS, CONSPK;
+               TRIG3_BUS, RANDOM_BUS;
 	  wire POTGO_strobe, STIMER_strobe;
     wire audio1, audio2, audio3, audio4;
     wire [3:0] vol1, vol2, vol3, vol4;
@@ -380,7 +380,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
                   .PMBASE(PMBASE), .CHBASE(CHBASE), .WSYNC(WSYNC), .NMIEN(NMIEN), 
                   .COLPM3(COLPM3), .COLPF0(COLPF0), .COLPF1(COLPF1), .COLPF2(COLPF2),
                   .COLPF3(COLPF3), .COLBK(COLBK), .PRIOR(PRIOR), .VDELAY(VDELAY), 
-                  .GRACTL(GRACTL), .HITCLR(HITCLR), .CONSPK(CONSPK));
+                  .GRACTL(GRACTL), .HITCLR(HITCLR));
 
     /*-------------------------------------------------------------*/
     // CPU

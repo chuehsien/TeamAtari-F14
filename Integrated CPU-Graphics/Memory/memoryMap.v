@@ -31,7 +31,7 @@ module memoryMap(
                  COLPF3, COLBK, PRIOR, VDELAY, GRACTL, HITCLR,
 
                  AUDF1, AUDC1, AUDF2, AUDC2, AUDF3, AUDC3, AUDF4, AUDC4, AUDCTL, 
-                 SKREST, SEROUT, SERIN, IRQEN, SKCTL,CONSPK,
+                 SKREST, SEROUT, SERIN, IRQEN, SKCTL,
 
                  POTGO_strobe, STIMER_strobe
                  );
@@ -86,7 +86,7 @@ module memoryMap(
   output [7:0] NMIEN;
   
   //outputs to POKEY
-  output [7:0] AUDF1, AUDC1, AUDF2, AUDC2, AUDF3, AUDC3, AUDF4, AUDC4, AUDCTL, SKREST, SEROUT, SERIN, IRQEN , SKCTL,CONSPK_CONSOL;
+  output [7:0] AUDF1, AUDC1, AUDF2, AUDC2, AUDF3, AUDC3, AUDF4, AUDC4, AUDCTL, SKREST, SEROUT, SERIN, IRQEN , SKCTL;
 
   //STROBE SIGNALS
   output POTGO_strobe, STIMER_strobe;

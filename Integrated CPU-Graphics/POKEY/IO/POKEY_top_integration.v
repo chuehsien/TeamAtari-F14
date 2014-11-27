@@ -69,8 +69,8 @@ output kr1_L;
    
     
     wire TRIG0,TRIG1;
-    trig_latch trigControl0(.buttonIn(~control_input_side_but[2]), .enLatch(GRACTL[2]), .trigOut(TRIG0));
-    trig_latch trigControl1(.buttonIn(~control_input_side_but[0]), .enLatch(GRACTL[2]), .trigOut(TRIG1));
+    trig_latch trigControl0(.buttonIn(~control_input_side_but[2]), .enLatch(GRACTL[2]), .rst(~GRACTL[2]), .out(TRIG0));
+    trig_latch trigControl1(.buttonIn(~control_input_side_but[0]), .enLatch(GRACTL[2]), .rst(~GRACTL[2]), .out(TRIG1));
     assign TRIG0_bus = {7'd0,~TRIG0};
     assign TRIG1_bus = {7'd0,~TRIG1};
     assign TRIG2_bus = 8'd0;
@@ -87,26 +87,24 @@ output kr1_L;
 
     wire brkNow;
     //debounce direct trigger, so we dont get an IRQ spam.
-    DeBounce #(4) trigdebounce(clk179,1'b1,topTrigIn,brkNow);
+    DeBounce #(11) trigdebounce(clk179,1'b1,topTrigIn,brkNow);
 
 
 
     wire IRQ_ST7,IRQ_ST6,IRQ_ST5,IRQ_ST4,IRQ_ST2,IRQ_ST1,IRQ_ST0;
-    FDCPE #(.INIT(1'b1)) latch7(.Q(IRQ_ST7), .C(brkNow),    .CE(1'b1), .CLR(1'b0), .D(1'b0), .PRE(~IRQEN[7]));
-    FDCPE #(.INIT(1'b1)) latch6(.Q(IRQ_ST6), .C(kbcodePending), .CE(1'b1), .CLR(1'b0), .D(1'b0), .PRE(~IRQEN[6]));
-    FDCPE #(.INIT(1'b1)) latch5(.Q(IRQ_ST5), .C(serInPending),  .CE(1'b1), .CLR(1'b0), .D(1'b0), .PRE(~IRQEN[5]));
-    FDCPE #(.INIT(1'b1)) latch4(.Q(IRQ_ST4), .C(serOutPending), .CE(1'b1), .CLR(1'b0), .D(1'b0), .PRE(~IRQEN[4]));
-    FDCPE #(.INIT(1'b1)) latch2(.Q(IRQ_ST2), .C(timer4Pending),  .CE(1'b1), .CLR(1'b0), .D(1'b0), .PRE(~IRQEN[2]));
-    FDCPE #(.INIT(1'b1)) latch1(.Q(IRQ_ST1), .C(timer2Pending), .CE(1'b1), .CLR(1'b0), .D(1'b0), .PRE(~IRQEN[1]));
-    FDCPE #(.INIT(1'b1)) latch0(.Q(IRQ_ST0), .C(timer1Pending), .CE(1'b1), .CLR(1'b0), .D(1'b0), .PRE(~IRQEN[0]));
-    
+	 irqLatch latch7(.irq(brkNow),.clr(~IRQEN[7]),.out(IRQ_ST7));
+	 irqLatch latch6(.irq(kbcodePending),.clr(~IRQEN[6]),.out(IRQ_ST6));
+	 irqLatch latch5(.irq(serInPending),.clr(~IRQEN[5]),.out(IRQ_ST5));
+	 irqLatch latch4(.irq(serOutPending),.clr(~IRQEN[4]),.out(IRQ_ST4));
+	 irqLatch latch2(.irq(timer4Pending),.clr(~IRQEN[2]),.out(IRQ_ST2));
+	 irqLatch latch1(.irq(timer2Pending),.clr(~IRQEN[1]),.out(IRQ_ST1));
+	 irqLatch latch0(.irq(timer1Pending),.clr(~IRQEN[0]),.out(IRQ_ST0));
+	 
     assign IRQ_ST = {IRQ_ST7,IRQ_ST6,IRQ_ST5,IRQ_ST4,1'b1,IRQ_ST2,IRQ_ST1,IRQ_ST0};
     assign IRQ_L = ~(IRQ_ST!=8'hff);
     
-    //FDCPE #(.INIT(1'b1)) latch8(.Q(brkPending), .C(top0|top1),.CE(1'b1),.CLR(~IRQEN[7]), .D(1'b1));
-    //assign brkPending = top;
     reg [3:0] storedKBcode = 4'd0;
-    always @ (posedge clk179) begin
+    always @ (posedge clk64) begin
         if ((KBCODE_bus[4:1] != 4'd0) & (KBCODE_bus[4:1] != storedKBcode)) begin
             storedKBcode <= KBCODE_bus[4:1];
             kbcodePending <= 1'b1;
@@ -138,28 +136,41 @@ output kr1_L;
 
 endmodule
 
+module irqLatch (irq,clr,out);
+	input irq,clr;
+	output out;
+	
+	reg out = 1'b1;
+	always @ (posedge irq or posedge clr) begin
+		if (clr) begin
+			out <= 1'b1;
+		end
+		else begin
+			out <= 1'b0;
+		end
+		
+	end
+	
+endmodule
 //button is active high
-module trig_latch (buttonIn, enLatch, trigOut);
+module trig_latch (buttonIn, enLatch,rst, out);
 
     input buttonIn;
-    input enLatch;
-    output trigOut;
+    input enLatch,rst;
+	 output out;
+	 
+    reg trigOut = 1'b0;
 
-    wire trigLatch;
+	always @ (posedge buttonIn or posedge rst) begin
+		if (rst) trigOut <= 1'b0;
+		else begin
+			if (enLatch) trigOut <= buttonIn;
+			else trigOut <= 1'b0;
+		end
+		
+	end
 
-   FDCE #(
-      .INIT(1'b0) // Initial value of register (1'b0 or 1'b1)
-   ) FDCE_inst (
-      .Q(trigLatch),      // 1-bit Data output
-      .C(buttonIn),      // 1-bit Clock input
-      .CE(enLatch),    // 1-bit Clock enable input
-      .CLR(~enLatch),  // 1-bit Asynchronous clear input
-      .D(1'b1)       // 1-bit Data input
-   );
-  
-    
-
-    assign trigOut = enLatch ? trigLatch : buttonIn;
+    assign out = (enLatch) ? trigOut : buttonIn;
 
 endmodule
 
