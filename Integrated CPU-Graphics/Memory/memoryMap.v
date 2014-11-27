@@ -452,10 +452,10 @@ module memoryMap(
                         (CPU_addr == 16'hC00D) ? P1PL : 
                         (CPU_addr == 16'hC00E) ? P2PL : 
                         (CPU_addr == 16'hC00F) ? P3PL : 
-                        (CPU_addr == 16'hC010) ? TRIG0 : 
-                        (CPU_addr == 16'hC011) ? TRIG1 : 
-                        (CPU_addr == 16'hC012) ? TRIG2 : 
-                        (CPU_addr == 16'hC013) ? TRIG3 : 
+                        (CPU_addr == 16'hC010) ? TRIG0_BUS : 
+                        (CPU_addr == 16'hC011) ? TRIG1_BUS : 
+                        (CPU_addr == 16'hC012) ? TRIG2_BUS : 
+                        (CPU_addr == 16'hC013) ? TRIG3_BUS : 
                         (CPU_addr == 16'hC014) ? PAL : 
                         (CPU_addr == 16'hC015) ? COLPM3 : 
                         (CPU_addr == 16'hC016) ? COLPF0 : 
