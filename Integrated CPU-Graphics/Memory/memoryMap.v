@@ -18,8 +18,7 @@ module memoryMap(
                  data_CART_out,
 
                  M0PF, M1PF, M2PF, M3PF, P0PF, P1PF, P2PF, P3PF, M0PL, M1PL, 
-                 M2PL, M3PL, P0PL, P1PL, P2PL, P3PL, TRIG0, TRIG1, TRIG2, TRIG3, 
-                 PAL, CONSOL,
+                 M2PL, M3PL, P0PL, P1PL, P2PL, P3PL, PAL, CONSOL,
 
                  CPU_data, NMIRES_NMIST_bus, DLISTL_bus, DLISTH_bus, 
                  
@@ -61,8 +60,7 @@ module memoryMap(
   
   // GTIA inputs
   input [7:0] M0PF, M1PF, M2PF, M3PF, P0PF, P1PF, P2PF, P3PF, M0PL, M1PL, 
-              M2PL, M3PL, P0PL, P1PL, P2PL, P3PL, TRIG0, TRIG1, TRIG2, TRIG3, 
-              PAL, CONSOL;
+              M2PL, M3PL, P0PL, P1PL, P2PL, P3PL, PAL, CONSOL;
   
   // ANTIC inouts
   inout [7:0] CPU_data;

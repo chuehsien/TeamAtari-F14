@@ -159,8 +159,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
                HPOSM2, HPOSM3, SIZEP0, SIZEP1, SIZEP2, SIZEP3, SIZEM, GRAFP0,
                GRAFP1, GRAFP2, GRAFP3, GRAFM, COLPM0, COLPM1, COLPM2, CONSPK,
                M0PF, M1PF, M2PF, M3PF, P0PF, P1PF, P2PF, P3PF, M0PL, M1PL, 
-               M2PL, M3PL, P0PL, P1PL, P2PL, P3PL, TRIG0, TRIG1, TRIG2, TRIG3, 
-               PAL, CONSOL;
+               M2PL, M3PL, P0PL, P1PL, P2PL, P3PL, PAL, CONSOL;
     
     // ANTIC to memory map wires
     wire [7:0] DMACTL, CHACTL, HSCROL, VSCROL, PMBASE, CHBASE, WSYNC, NMIEN, 
@@ -176,6 +175,8 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
     wire [1:0] numLines;
     wire [8:0] width;
     wire [7:0] height;
+    wire [63:0] GRAFP0_char, GRAFP1_char, GRAFP2_char, GRAFP3_char, GRAFM_char;
+    wire charSprites;
     
     // TEMP
     wire [7:0] IR;
@@ -218,7 +219,9 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
                 .loadDLIST(), .DLISTend(DLISTend), .idle(idle), .loadMSRstate(loadMSRstate), 
                 .addressOut(addressOut), .haltANTIC(haltANTIC), .rdyANTIC(rdyANTIC),
                 .colorSel4(colorSel4), .ANTIC_writeNMI(ANTIC_writeNMI), .GRAFP0(GRAFP0), 
-                .GRAFP1(GRAFP1), .GRAFP2(GRAFP2), .GRAFP3(GRAFP3), .GRAFM(GRAFM));
+                .GRAFP1(GRAFP1), .GRAFP2(GRAFP2), .GRAFP3(GRAFP3), .GRAFM(GRAFM),
+                .GRAFP0_char(GRAFP0_char), .GRAFP1_char(GRAFP1_char), .GRAFP2_char(GRAFP2_char), 
+                .GRAFP3_char(GRAFP3_char), .GRAFM_char(GRAFM_char), .charSprites(charSprites));
     
     GTIA gtia(.address(), .AN(AN), .CS(), .DEL(), .OSC(), .RW(), .trigger(), 
               .Fphi0(Fphi0), .rst(rst), .charMode(charMode), .DLISTend(DLISTend), 
@@ -231,11 +234,13 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
               .SIZEP1(SIZEP1), .SIZEP2(SIZEP2), .SIZEP3(SIZEP3), .SIZEM(SIZEM), 
               .GRAFP0(GRAFP0), .GRAFP1(GRAFP1), .GRAFP2(GRAFP2), .GRAFP3(GRAFP3), 
               .GRAFM(GRAFM), .COLPM0(COLPM0), .COLPM1(COLPM1), .COLPM2(COLPM2), 
-              .CONSPK(CONSPK), .DB(extDB), .switch(), .M0PF(M0PF), .M1PF(M1PF), 
+              .CONSPK(CONSPK), .GRAFP0_char(GRAFP0_char), .GRAFP1_char(GRAFP1_char), 
+              .GRAFP2_char(GRAFP2_char), .GRAFP3_char(GRAFP3_char), 
+              .GRAFM_char(GRAFM_char), .charSprites(charSprites),
+              .DB(extDB), .switch(), .M0PF(M0PF), .M1PF(M1PF), 
               .M2PF(M2PF), .M3PF(M3PF), .P0PF(P0PF), .P1PF(P1PF), .P2PF(P2PF), 
               .P3PF(P3PF), .M0PL(M0PL), .M1PL(M1PL), .M2PL(M2PL), .M3PL(M3PL),
-              .P0PL(P0PL), .P1PL(P1PL), .P2PL(P2PL), .P3PL(P3PL), .TRIG0(TRIG0), 
-              .TRIG1(TRIG1), .TRIG2(TRIG2), .TRIG3(TRIG3), .PAL(PAL), .CONSOL(CONSOL),
+              .P0PL(P0PL), .P1PL(P1PL), .P2PL(P2PL), .P3PL(P3PL), .PAL(PAL), .CONSOL(CONSOL),
               .COL(), .CSYNC(), .HALT(), .L(), .dBuf_data(dBuf_data), .dBuf_addr(dBuf_addr), 
               .dBuf_writeEn(dBuf_writeEn), .vblank(vblank), .hblank(hblank), .x(x), .y(y),
               .colorData(colorData), .RGB(RGB));
@@ -373,8 +378,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
                   .CONSPK(CONSPK), .M0PF(M0PF), .M1PF(M1PF), .M2PF(M2PF), .M3PF(M3PF), 
                   .P0PF(P0PF), .P1PF(P1PF), .P2PF(P2PF), .P3PF(P3PF), .M0PL(M0PL), 
                   .M1PL(M1PL), .M2PL(M2PL), .M3PL(M3PL), .P0PL(P0PL), .P1PL(P1PL), 
-                  .P2PL(P2PL), .P3PL(P3PL), .TRIG0(TRIG0), .TRIG1(TRIG1),
-                  .TRIG2(TRIG2), .TRIG3(TRIG3), .PAL(PAL), .CONSOL(CONSOL),
+                  .P2PL(P2PL), .P3PL(P3PL), .PAL(PAL), .CONSOL(CONSOL),
                   
                   .DMACTL(DMACTL), .CHACTL(CHACTL), .HSCROL(HSCROL), .VSCROL(VSCROL),
                   .PMBASE(PMBASE), .CHBASE(CHBASE), .WSYNC(WSYNC), .NMIEN(NMIEN), 
@@ -437,7 +441,7 @@ module Atari5200(CLK_27MHZ_FPGA, USER_CLK,
       Xreg,
       SR_contents,
       OP,
-      latchClk,
+      8'd0, //latchClk,
       DBforSR);
 
     // Graphics ILA

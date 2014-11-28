@@ -18,7 +18,9 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
              IR_rdy, mode, numBytes, MSRdata, DLISTL, addressIn, loadMSRdata, 
              charData, newDLISTptr, loadDLIST, DLISTend, idle, loadMSRstate,
              addressOut, haltANTIC, rdyANTIC, colorSel4, ANTIC_writeNMI, incrY, saveY,
-             GRAFP0, GRAFP1, GRAFP2, GRAFP3, GRAFM);
+             GRAFP0, GRAFP1, GRAFP2, GRAFP3, GRAFM, 
+             GRAFP0_char, GRAFP1_char, GRAFP2_char, GRAFP3_char, GRAFM_char,
+             charSprites);
 
       input Fphi0;
       input LP_L;
@@ -98,6 +100,13 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
       output reg [7:0] GRAFP3 = 8'd0;
       output reg [7:0] GRAFM = 8'd0;
       
+      output reg [63:0] GRAFP0_char = 64'd0;
+      output reg [63:0] GRAFP1_char = 64'd0;
+      output reg [63:0] GRAFP2_char = 64'd0;
+      output reg [63:0] GRAFP3_char = 64'd0;
+      output reg [63:0] GRAFM_char = 64'd0;
+      output charSprites;
+      
       assign haltANTIC = halt;
       assign rdyANTIC = RDY;
       
@@ -160,6 +169,8 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
       wire saveMSR, resetMSR;
       wire loadM, loadP0, loadP1, loadP2, loadP3;
       wire [7:0] sprite_addr;
+      wire clearGRAF;
+      wire [3:0] spriteNum;
       
       // * Temp:
       assign printDLIST = {DLISTH_bus, DLISTL_bus};
@@ -171,7 +182,7 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
       
       assign address = (DMA & RDY) ? addressOut : 16'hzzzz;
       assign colorSel = MSRdata[7:6];
-      assign sprite_addr = (VCOUNT + 8'h20) ;
+      assign sprite_addr = charSprites ? (VCOUNT + 8'h18) : (VCOUNT + 8'h20);
 
       // Module instantiations
       AddressBusRegANTIC addr(.clk(Fphi0), .load(loadAddr), .incr(incrDLIST), .addressIn(addressIn), .addressOut(addressOut));
@@ -187,7 +198,8 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
                        .idle(idle), .loadMSRstate(loadMSRstate), .DLISTend(DLISTend), .charSingleColor(charSingleColor),
                        .colorSel4(colorSel4), .update_WSYNC(update_WSYNC), .VCOUNT(VCOUNT), .blankScreen(blankScreen),
                        .saveMSR(saveMSR), .resetMSR(resetMSR), .incrY(incrY), .saveY(saveY),
-                       .loadM(loadM), .loadP0(loadP0), .loadP1(loadP1), .loadP2(loadP2), .loadP3(loadP3));
+                       .loadM(loadM), .loadP0(loadP0), .loadP1(loadP1), .loadP2(loadP2), .loadP3(loadP3),
+                       .clearGRAF(clearGRAF), .spriteNum(spriteNum), .charSprites(charSprites));
       
       // Update DLISTPTR (JUMP instruction)
       assign DLISTL_bus = loadDLIST ? newDLISTptr[7:0] : (incrDLIST ? DLISTL : 8'hzz);
@@ -386,6 +398,14 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
                 newDLISTptr[7:0] <= IR;
               else if (loadDLISTH)
                 newDLISTptr[15:8] <= IR;
+              
+              if (clearGRAF) begin
+                GRAFP0 <= 8'd0;
+                GRAFP1 <= 8'd0;
+                GRAFP2 <= 8'd0;
+                GRAFP3 <= 8'd0;
+                GRAFM <= 8'd0;
+              end
             
               case (currState)
                 `FSMinit:
@@ -448,31 +468,91 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
                     end
                     
                     else if (loadM_hold) begin
-                      GRAFM <= DB;
+                      case (spriteNum)
+                        4'd0: GRAFM_char[7:0] <= DB;
+                        4'd1: GRAFM_char[15:8] <= DB;
+                        4'd2: GRAFM_char[23:16] <= DB;
+                        4'd3: GRAFM_char[31:24] <= DB;
+                        4'd4: GRAFM_char[39:32] <= DB;
+                        4'd5: GRAFM_char[47:40] <= DB;
+                        4'd6: GRAFM_char[55:48] <= DB;
+                        4'd7: begin
+                          GRAFM <= DB;
+                          GRAFM_char[63:56] <= DB;
+                        end
+                      endcase
                       loadM_hold <= 1'b0;
                       IR_rdy <= 1'b1;
                     end
                     
                     else if (loadP0_hold) begin
-                      GRAFP0 <= DB;
+                      case (spriteNum)
+                        4'd0: GRAFP0_char[7:0] <= DB;
+                        4'd1: GRAFP0_char[15:8] <= DB;
+                        4'd2: GRAFP0_char[23:16] <= DB;
+                        4'd3: GRAFP0_char[31:24] <= DB;
+                        4'd4: GRAFP0_char[39:32] <= DB;
+                        4'd5: GRAFP0_char[47:40] <= DB;
+                        4'd6: GRAFP0_char[55:48] <= DB;
+                        4'd7: begin
+                          GRAFP0 <= DB;
+                          GRAFP0_char[63:56] <= DB;
+                        end
+                      endcase
                       loadP0_hold <= 1'b0;
                       IR_rdy <= 1'b1;
                     end
                     
                     else if (loadP1_hold) begin
-                      GRAFP1 <= DB;
+                      case (spriteNum)
+                        4'd0: GRAFP1_char[7:0] <= DB;
+                        4'd1: GRAFP1_char[15:8] <= DB;
+                        4'd2: GRAFP1_char[23:16] <= DB;
+                        4'd3: GRAFP1_char[31:24] <= DB;
+                        4'd4: GRAFP1_char[39:32] <= DB;
+                        4'd5: GRAFP1_char[47:40] <= DB;
+                        4'd6: GRAFP1_char[55:48] <= DB;
+                        4'd7: begin
+                          GRAFP1 <= DB;
+                          GRAFP1_char[63:56] <= DB;
+                        end
+                      endcase
                       loadP1_hold <= 1'b0;
                       IR_rdy <= 1'b1;
                     end
                     
                     else if (loadP2_hold) begin
-                      GRAFP2 <= DB;
+                      case (spriteNum)
+                        4'd0: GRAFP2_char[7:0] <= DB;
+                        4'd1: GRAFP2_char[15:8] <= DB;
+                        4'd2: GRAFP2_char[23:16] <= DB;
+                        4'd3: GRAFP2_char[31:24] <= DB;
+                        4'd4: GRAFP2_char[39:32] <= DB;
+                        4'd5: GRAFP2_char[47:40] <= DB;
+                        4'd6: GRAFP2_char[55:48] <= DB;
+                        4'd7: begin
+                          GRAFP2 <= DB;
+                          GRAFP2_char[63:56] <= DB;
+                        end
+                      endcase
                       loadP2_hold <= 1'b0;
                       IR_rdy <= 1'b1;
                     end
                     
                     else if (loadP3_hold) begin
-                      GRAFP3 <= DB;
+                      case (spriteNum)
+                        4'd0: GRAFP3_char[7:0] <= DB;
+                        4'd1: GRAFP3_char[15:8] <= DB;
+                        4'd2: GRAFP3_char[23:16] <= DB;
+                        4'd3: GRAFP3_char[31:24] <= DB;
+                        4'd4: GRAFP3_char[39:32] <= DB;
+                        4'd5: GRAFP3_char[47:40] <= DB;
+                        4'd6: GRAFP3_char[55:48] <= DB;
+                        4'd7: begin
+                          GRAFP3 <= DB;
+                          GRAFP3_char[63:56] <= DB;
+                        end
+                      endcase
                       loadP3_hold <= 1'b0;
                       IR_rdy <= 1'b1;
                     end
@@ -548,7 +628,8 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
                     else if (loadM) begin
                       nextState <= `FSMload1;
                       DMA <= `DMA_on;
-                      addressIn <= {PMBASE + 8'h03, sprite_addr};
+                      addressIn <= charSprites ? {PMBASE + 8'h03, sprite_addr + spriteNum}
+                                               : {PMBASE + 8'h03, sprite_addr};
                       loadAddr <= 1'b1;
                       loadM_hold <= 1'b1;
                     end
@@ -556,7 +637,8 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
                     else if (loadP0) begin
                       nextState <= `FSMload1;
                       DMA <= `DMA_on;
-                      addressIn <= {PMBASE + 8'h04, sprite_addr};
+                      addressIn <= charSprites ? {PMBASE + 8'h04, sprite_addr + spriteNum}
+                                               : {PMBASE + 8'h04, sprite_addr};
                       loadAddr <= 1'b1;
                       loadP0_hold <= 1'b1;
                     end
@@ -564,7 +646,8 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
                     else if (loadP1) begin
                       nextState <= `FSMload1;
                       DMA <= `DMA_on;
-                      addressIn <= {PMBASE + 8'h05, sprite_addr};
+                      addressIn <= charSprites ? {PMBASE + 8'h05, sprite_addr + spriteNum}
+                                               : {PMBASE + 8'h05, sprite_addr};
                       loadAddr <= 1'b1;
                       loadP1_hold <= 1'b1;
                     end
@@ -572,7 +655,8 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
                     else if (loadP2) begin
                       nextState <= `FSMload1;
                       DMA <= `DMA_on;
-                      addressIn <= {PMBASE + 8'h06, sprite_addr};
+                      addressIn <= charSprites ? {PMBASE + 8'h06, sprite_addr + spriteNum}
+                                               : {PMBASE + 8'h06, sprite_addr};
                       loadAddr <= 1'b1;
                       loadP2_hold <= 1'b1;
                     end
@@ -580,7 +664,8 @@ module ANTIC(Fphi0, LP_L, RW, rst, vblank, hblank, RDY, DMACTL, CHACTL, HSCROL, 
                     else if (loadP3) begin
                       nextState <= `FSMload1;
                       DMA <= `DMA_on;
-                      addressIn <= {PMBASE + 8'h07, sprite_addr};
+                      addressIn <= charSprites ? {PMBASE + 8'h07, sprite_addr + spriteNum}
+                                               : {PMBASE + 8'h07, sprite_addr};
                       loadAddr <= 1'b1;
                       loadP3_hold <= 1'b1;
                     end

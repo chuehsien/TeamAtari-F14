@@ -40,7 +40,8 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                      ANTIC_writeDLIST, numLines, width, height, ANTIC_writeDLI, ANTIC_writeVBI,
                      ANTIC_writeNMI,
                      idle, loadMSRstate, DLISTend, charSingleColor, colorSel4, update_WSYNC, VCOUNT,
-                     blankScreen, saveMSR, resetMSR, incrY, saveY, loadM, loadP0, loadP1, loadP2, loadP3);
+                     blankScreen, saveMSR, resetMSR, incrY, saveY, loadM, loadP0, loadP1, loadP2, loadP3,
+                     clearGRAF, spriteNum, charSprites);
   
   input [7:0] IR;
   input IR_rdy;
@@ -95,6 +96,9 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
   output reg loadP1 = 1'b0;
   output reg loadP2 = 1'b0;
   output reg loadP3 = 1'b0;
+  output reg clearGRAF = 1'b0;
+  output [3:0] spriteNum;
+  output reg charSprites = 1'b0;
   
   reg idle = 1'b1;
   reg [3:0] mode = 4'd0;
@@ -124,11 +128,15 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
   reg sentTwice = 1'b0;
   reg loadSpritesDone = 1'b0;
   reg [2:0] loadSpriteState = 3'd0;
+  reg [3:0] spriteRepeat = 4'd0;
   
   wire DLIST_DMA_en = DMACTL[5];
   wire [1:0] playfieldWidth = DMACTL[1:0];
   wire [1:0] colorSel4 = {MSRdata_reverse[2*numPixel], MSRdata_reverse[(2*numPixel)+1]};
   wire colorSel8 = MSRdata_reverse[numPixel];
+  wire fifthColor = MSRdata_reverse[0];
+  
+  assign spriteNum = 4'd7 - spriteRepeat;
   
   // 1. Retrieve data from RAM via DMA
   // 2. Evaluate retrieved data
@@ -196,6 +204,9 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
       loadP1 <= 1'b0;
       loadP2 <= 1'b0;
       loadP3 <= 1'b0;
+      clearGRAF <= 1'b0;
+      spriteRepeat <= 4'd0;
+      charSprites <= 1'b0;
     end
     
     else begin
@@ -224,12 +235,14 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
           AN <= `noTransmission;
           ANTIC_writeDLI <= 1'b0;
           
+          /*
           if (DLI_hold) begin
             DLI_hold <= 1'b0;
             ANTIC_writeDLI <= 1'b1;
             ANTIC_writeNMI <= 1'b0;
           end
-          else if (VBI_hold) begin
+          else */
+          if (VBI_hold) begin
             VBI_hold <= 1'b0;
             ANTIC_writeVBI <= 1'b1;
             ANTIC_writeNMI <= 1'b0;
@@ -244,20 +257,38 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
             loadIR <= 1'b0;
             update_WSYNC <= 1'b0;
             loadSpritesDone <= 1'b0;
+            charSprites <= 1'b0;
             
+            /*
             if (DLI) begin
               DLI <= 1'b0;
               DLI_hold <= 1'b1;
               ANTIC_writeNMI <= 1'b1;
             end
+            */
             
             // Load new mode if currently idle (no instructions running)
             if (IR_rdy) begin
               idle <= 1'b0;
               mode <= IR[3:0];
               DLI <= IR[7];
+              if (IR[3:0] == 4'd4) begin
+                spriteRepeat <= 4'd7;
+                charSprites <= 1'b1;
+              end
             end
               
+          end
+          
+          else if (DLI) begin
+            DLI <= 1'b0;
+            DLI_hold <= 1'b1;
+            ANTIC_writeNMI <= 1'b1;
+          end
+          else if (DLI_hold) begin
+            DLI_hold <= 1'b0;
+            ANTIC_writeDLI <= 1'b1;
+            ANTIC_writeNMI <= 1'b0;
           end
           
           else if (idle&waitvblank) begin
@@ -282,7 +313,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
             end
             */
             
-            if (VBI&&(vblankcount == 13'd2506)) begin
+            if (VBI&&(vblankcount == 13'd1000)) begin
               VBI <= 1'b0;
               VBI_hold <= 1'b1;
               ANTIC_writeNMI <= 1'b1;
@@ -291,7 +322,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
           
             vblankcount <= vblankcount + 13'd1;
             
-            if (vblankcount == 13'd5012) begin
+            if (vblankcount == 13'd2000) begin
               waitvblank <= 1'b0;
               vblankcount <= 13'd0;
               loadIR <= 1'b1; // Trigger jump to new pointer location
@@ -304,42 +335,6 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
 
             // Mode 0: Blank Lines
             //  - Used to create 1-8 blank lines on the display in background color
-            
-            /*
-            if (mode == 4'h0) begin
-              loadIR <= 1'b1;
-              idle <= 1'b1;
-            end
-            */
-            /*
-            if (mode == 4'h0) begin
-              charMode <= 3'd0;
-              
-              // Start of blank lines instruction:
-              // blankCount contains number of blank lines minus one (for first sent line)
-              if (newBlank) begin
-                blankCount <= IR[6:4];
-                newBlank <= 1'b0;
-                loadIR <= 1'b0;
-                incrY <= 1'b1; // Send first blank line
-              end
-              
-              else begin
-                
-                if (blankCount != 4'd0) begin
-                  blankCount <= blankCount - 3'd1;
-                  incrY <= 1'b1;
-                end
-                else begin
-                  incrY <= 1'b0;
-                  newBlank <= 1'b1;
-                  loadIR <= 1'b1;
-                  idle <= 1'b1;
-                end
-                
-              end
-            end
-            */
             if (mode == 4'h0) begin
               charMode <= 3'd0;
               width <= `width;
@@ -354,9 +349,12 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                 AN <= `modeNorm_bgColor;  // Send first blank pixel
                 newBlank <= 1'b0;
                 loadIR <= 1'b0;
+                clearGRAF <= 1'b1;
               end
               
               else if (newBlank == 1'b0) begin
+                
+                clearGRAF <= 1'b0;
                 
                 // Normal operation, send blank pixel to GTIA and decrement blankCount
                 AN <= `modeNorm_bgColor;
@@ -536,8 +534,11 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                     begin
                       loadP3 <= 1'b0;
                       if (IR_rdy) begin
-                        loadSpriteState <= `sprite1;                      
-                        loadSpritesDone <= 1'b1;
+                        loadSpriteState <= `sprite1;
+                        if (spriteRepeat == 4'd0)
+                          loadSpritesDone <= 1'b1;
+                        else
+                          spriteRepeat <= spriteRepeat - 4'd1;
                       end
                     end
                 endcase
@@ -583,7 +584,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                         incrMSR <= 1'b1;
                         width <= `width;
                         height <= `height;
-                        charSingleColor <= 1'b1;
+                        charSingleColor <= 1'b0;
                       end
                       
                       else begin
@@ -648,14 +649,98 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                   // Mode 3: Character, 32/40/48 bytes per mode line, 10 TV scan lines per mode line, 1.5 color
                   4'h3:
                     begin
-                    
+
                     end
                     
                   // Mode 4: Character, 32/40/48 bytes per mode line, 8 TV scan lines per mode line, 5 color      
                   4'h4:
                     begin
-                      loadIR <= 1'b1;
-                      idle <= 1'b1;
+                      
+                      // Set the byte-width of the mode line
+                      if (~loadedNumBytes) begin
+                        loadedNumBytes <= 1'b1;
+                        if (playfieldWidth == `narrowPlayfield)
+                          numBytes <= 7'd32;
+                        else if (playfieldWidth == `standardPlayfield)
+                          numBytes <= 7'd40;
+                        else if (playfieldWidth == `widePlayfield)
+                          numBytes <= 7'd48;
+                        else
+                          numBytes <= 7'd0;
+                        loadMSRdata <= 1'b1;
+                        incrMSR <= 1'b1;
+                        width <= `width;
+                        height <= `height;
+                        charSingleColor <= 1'b0;
+                        sentTwice <= 1'b0;
+                      end
+                      
+                      else begin
+                        loadMSRdata <= 1'b0;
+                        incrMSR <= 1'b0;
+                        saveY <= 1'b0;
+                        if (MSRdata_rdy) begin
+                          // Informs GTIA that display is sent in 8x8 char blocks
+                          charMode <= 3'd3;
+                          loadChar <= 1'b1;
+                          saveY <= 1'b1;
+                        end
+                        
+                        else if (charLoaded|charLoadHold) begin
+                        
+                          if (charLoaded) begin
+                            loadChar <= 1'b0;
+                            charLoadHold <= 1'b1;
+                          end
+                        
+                          // Repeat for the number of bytes in the mode line
+                          if (numBytes != 7'd0) begin
+                            if (charBit == 7'd64) begin
+                              numBytes <= numBytes - 7'd1;
+                              charBit <= 7'd0;
+                              if (numBytes != 7'd1) begin
+                                loadIR <= 1'b0;
+                                loadChar <= 1'b1;
+                                charLoadHold <= 1'b0;
+                                loadMSRdata <= 1'b1;
+                                incrMSR <= 1'b1;
+                              end
+                            end
+                            
+                            else begin
+                              if (fifthColor)
+                                AN <= `modeNorm_playfield3;
+                              else begin
+                                case ({charData[charBit],charData[charBit+1]})
+                                  2'd0: AN <= `modeNorm_bgColor;
+                                  2'd1: AN <= `modeNorm_playfield0;
+                                  2'd2: AN <= `modeNorm_playfield1;
+                                  2'd3: AN <= `modeNorm_playfield2;
+                                endcase
+                              end
+                              if (sentTwice) begin
+                                charBit <= charBit + 7'd2;
+                                sentTwice <= 1'b0;
+                              end
+                              else
+                                sentTwice <= 1'b1;
+                            end
+                          end
+                          
+                          // Mode line complete
+                          else begin
+                            loadIR <= 1'b1;
+                            charLoadHold <= 1'b0;
+                            loadMSRdone <= 1'b0;
+                            holdMode <= 1'b0;
+                            loadedNumBytes <= 1'b0;
+                            idle <= 1'b1;
+                            update_WSYNC <= 1'b1;
+                            VCOUNT <= VCOUNT + 8'd8;
+                          end
+                        end
+                        
+                      end
                     end
                   
                   // Mode 5: Character, 32/40/48 bytes per mode line, 16 TV scan lines per mode line, 5 color
@@ -785,7 +870,6 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                         incrMSR <= 1'b0;
                         saveY <= 1'b0;
                         if (MSRdata_rdy) begin
-                          // Informs GTIA that display is sent in 8x8 char blocks
                           saveY <= 1'b1;
                           charMode <= 3'd2;
                           loadChar <= 1'b1;
