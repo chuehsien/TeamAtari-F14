@@ -72,7 +72,7 @@ module potScanFSM(clk,rst,pot_in,POTGO,POTOUT,pot_rdy,pot_state,timer);
         
         `pot_SCAN: begin
             
-            if ((timer > 8'd4) & (pot_in | (timer > 8'd227))) begin
+            if ((timer > `DELAY) & (pot_in | (timer > 8'd227))) begin
                 next_pot_state = `pot_IDLE;
                 run_timer = 1'b0;
                 rst_timer = 1'b1;
