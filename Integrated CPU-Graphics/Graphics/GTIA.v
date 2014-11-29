@@ -10,9 +10,11 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
             HPOSP0, HPOSP1, HPOSP2, HPOSP3, HPOSM0, HPOSM1, HPOSM2, HPOSM3,
             SIZEP0, SIZEP1, SIZEP2, SIZEP3, SIZEM, GRAFP0, GRAFP1, GRAFP2,
             GRAFP3, GRAFM, COLPM0, COLPM1, COLPM2, CONSPK,
+            GRAFP0_char, GRAFP1_char, GRAFP2_char, GRAFP3_char, GRAFM_char,
+            charSprites,
             DB, switch,
             M0PF, M1PF, M2PF, M3PF, P0PF, P1PF, P2PF, P3PF, M0PL, M1PL, 
-            M2PL, M3PL, P0PL, P1PL, P2PL, P3PL, TRIG0, TRIG1, TRIG2, TRIG3, 
+            M2PL, M3PL, P0PL, P1PL, P2PL, P3PL,
             PAL, CONSOL,
             COL, CSYNC, HALT, L,
             dBuf_data, dBuf_addr, dBuf_writeEn,
@@ -51,31 +53,16 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
       input [7:0] HPOSP0, HPOSP1, HPOSP2, HPOSP3, HPOSM0, HPOSM1, HPOSM2, HPOSM3,
                   SIZEP0, SIZEP1, SIZEP2, SIZEP3, SIZEM, GRAFP0, GRAFP1, GRAFP2,
                   GRAFP3, GRAFM, COLPM0, COLPM1, COLPM2, CONSPK;
+                  
+      input [63:0] GRAFP0_char, GRAFP1_char, GRAFP2_char, GRAFP3_char, GRAFM_char;
+      input charSprites;
       
       // Control inouts
       inout [7:0] DB;
       inout [3:0] switch;
       
-      output reg [7:0] M0PF = 8'h00;
-      output reg [7:0] M1PF = 8'h00;
-      output reg [7:0] M2PF = 8'h00;
-      output reg [7:0] M3PF = 8'h00;
-      output reg [7:0] P0PF = 8'h00;
-      output reg [7:0] P1PF = 8'h00;
-      output reg [7:0] P2PF = 8'h00;
-      output reg [7:0] P3PF = 8'h00;
-      output reg [7:0] M0PL = 8'h00;
-      output reg [7:0] M1PL = 8'h00;
-      output reg [7:0] M2PL = 8'h00;
-      output reg [7:0] M3PL = 8'h00;
-      output reg [7:0] P0PL = 8'h00;
-      output reg [7:0] P1PL = 8'h00;
-      output reg [7:0] P2PL = 8'h00;
-      output reg [7:0] P3PL = 8'h00;
-      output reg [7:0] TRIG0 = 8'h00;
-      output reg [7:0] TRIG1 = 8'h00;
-      output reg [7:0] TRIG2 = 8'h00;
-      output reg [7:0] TRIG3 = 8'h00;
+      output M0PF, M1PF, M2PF, M3PF, P0PF, P1PF, P2PF, P3PF, M0PL, M1PL, 
+             M2PL, M3PL, P0PL, P1PL, P2PL, P3PL;
       output reg [7:0] PAL = 8'h00;
       output reg [7:0] CONSOL = 8'h00;
       
@@ -120,9 +107,13 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
       colorTable ct(.colorData(colorData), .RGB(RGB));
       prioritySel pr(PRIOR[5:0], baseColor, COLPM0, COLPM1, COLPM2, COLPM3, baseType,
                      P0set, P1set, P2set, P3set, M0set, M1set, M2set, M3set, colorData);
-      spriteDisplay sd(x, HPOSP0, HPOSP1, HPOSP2, HPOSP3, HPOSM0, HPOSM1, HPOSM2, HPOSM3,
-                       GRAFP0, GRAFP1, GRAFP2, GRAFP3, GRAFM, P0set, P1set, P2set, P3set,
-                       M0set, M1set, M2set, M3set);
+      spriteDisplay sd(x, y, HPOSP0, HPOSP1, HPOSP2, HPOSP3, HPOSM0, HPOSM1, HPOSM2, HPOSM3,
+                       GRAFP0, GRAFP1, GRAFP2, GRAFP3, GRAFM, GRAFP0_char, GRAFP1_char, 
+                       GRAFP2_char, GRAFP3_char, GRAFM_char, charSprites,
+                       P0set, P1set, P2set, P3set, M0set, M1set, M2set, M3set);
+      collisionCheck colchk(P0set, P1set, P2set, P3set, M0set, M1set, M2set, M3set, baseType,
+                            HITCLR, M0PF, M1PF, M2PF, M3PF, P0PF, P1PF, P2PF, P3PF, M0PL, M1PL, 
+                            M2PL, M3PL, P0PL, P1PL, P2PL, P3PL);
       
       always @(posedge Fphi0 or posedge rst) begin
       
@@ -551,26 +542,60 @@ module prioritySel(PRIOR, baseColor, PM0color, PM1color, PM2color, PM3color, bas
 endmodule
 
 
-module spriteDisplay(x, HPOSP0, HPOSP1, HPOSP2, HPOSP3, HPOSM0, HPOSM1, HPOSM2, HPOSM3,
-                     GRAFP0, GRAFP1, GRAFP2, GRAFP3, GRAFM, P0set, P1set, P2set, P3set,
-                     M0set, M1set, M2set, M3set);
+module spriteDisplay(x, y, HPOSP0, HPOSP1, HPOSP2, HPOSP3, HPOSM0, HPOSM1, HPOSM2, HPOSM3,
+                     GRAFP0, GRAFP1, GRAFP2, GRAFP3, GRAFM, GRAFP0_char, GRAFP1_char, 
+                     GRAFP2_char, GRAFP3_char, GRAFM_char, charSprites, P0set, P1set, 
+                     P2set, P3set, M0set, M1set, M2set, M3set);
 
   input [8:0] x;
+  input [7:0] y;
   input [7:0] HPOSP0, HPOSP1, HPOSP2, HPOSP3;
   input [7:0] HPOSM0, HPOSM1, HPOSM2, HPOSM3;
   input [7:0] GRAFP0, GRAFP1, GRAFP2, GRAFP3, GRAFM;
+  input [63:0] GRAFP0_char, GRAFP1_char, GRAFP2_char, GRAFP3_char, GRAFM_char;
+  input charSprites;
   output P0set, P1set, P2set, P3set, M0set, M1set, M2set, M3set;
   
   wire [7:0] HPOS = x[8:1] + 8'h30;
+  wire [7:0] graphicP0, graphicP1, graphicP2, graphicP3, graphicM,
+             charGrafP0, charGrafP1, charGrafP2, charGrafP3, charGrafM;
   
-  playerInRange  p0(HPOS, HPOSP0, GRAFP0, P0set);
-  playerInRange  p1(HPOS, HPOSP1, GRAFP1, P1set);
-  playerInRange  p2(HPOS, HPOSP2, GRAFP2, P2set);
-  playerInRange  p3(HPOS, HPOSP3, GRAFP3, P3set);
-  missileInRange m0(HPOS, HPOSM0, GRAFM[1:0], M0set);
-  missileInRange m1(HPOS, HPOSM1, GRAFM[3:2], M1set);
-  missileInRange m2(HPOS, HPOSM2, GRAFM[5:4], M2set);
-  missileInRange m3(HPOS, HPOSM3, GRAFM[7:6], M3set);
+  graphicSelect gsp0(GRAFP0_char, y, charGrafP0);
+  graphicSelect gsp1(GRAFP1_char, y, charGrafP1);
+  graphicSelect gsp2(GRAFP2_char, y, charGrafP2);
+  graphicSelect gsp3(GRAFP3_char, y, charGrafP3);
+  graphicSelect gsm (GRAFM_char, y, charGrafM);
+  
+  assign graphicP0 = charSprites ? charGrafP0 : GRAFP0;
+  assign graphicP1 = charSprites ? charGrafP1 : GRAFP1;
+  assign graphicP2 = charSprites ? charGrafP2 : GRAFP2;
+  assign graphicP3 = charSprites ? charGrafP3 : GRAFP3;
+  assign graphicM  = charSprites ? charGrafM : GRAFM;
+  
+  playerInRange  p0(HPOS, HPOSP0, graphicP0, P0set);
+  playerInRange  p1(HPOS, HPOSP1, graphicP1, P1set);
+  playerInRange  p2(HPOS, HPOSP2, graphicP2, P2set);
+  playerInRange  p3(HPOS, HPOSP3, graphicP3, P3set);
+  missileInRange m0(HPOS, HPOSM0, graphicM[1:0], M0set);
+  missileInRange m1(HPOS, HPOSM1, graphicM[3:2], M1set);
+  missileInRange m2(HPOS, HPOSM2, graphicM[5:4], M2set);
+  missileInRange m3(HPOS, HPOSM3, graphicM[7:6], M3set);
+
+endmodule
+
+
+module graphicSelect(charGraphic, y, graphic);
+
+  input [63:0] charGraphic;
+  input [7:0] y;
+  output [7:0] graphic;
+  
+  wire [7:0] sel;
+  
+  assign sel = (y % 8) * 8;
+  
+  assign graphic = {charGraphic[sel+7], charGraphic[sel+6], charGraphic[sel+5], charGraphic[sel+4],
+                    charGraphic[sel+3], charGraphic[sel+2], charGraphic[sel+1], charGraphic[sel]};
 
 endmodule
 
@@ -603,6 +628,111 @@ module missileInRange(HPOS, HPOSX, GRAF, bitSet);
       bitSet <= GRAF[1-(HPOS-HPOSX)];
     else
       bitSet <= 1'b0;
+  end
+  
+endmodule
+
+
+module collisionCheck(P0set, P1set, P2set, P3set, M0set, M1set, M2set, M3set, baseType,
+                      HITCLR, M0PF, M1PF, M2PF, M3PF, P0PF, P1PF, P2PF, P3PF, M0PL, M1PL, 
+                      M2PL, M3PL, P0PL, P1PL, P2PL, P3PL);
+
+  input P0set, P1set, P2set, P3set, M0set, M1set, M2set, M3set;
+  input baseType;
+  input [7:0] HITCLR;
+  output reg [7:0] M0PF = 8'h00;
+  output reg [7:0] M1PF = 8'h00;
+  output reg [7:0] M2PF = 8'h00;
+  output reg [7:0] M3PF = 8'h00;
+  output reg [7:0] P0PF = 8'h00;
+  output reg [7:0] P1PF = 8'h00;
+  output reg [7:0] P2PF = 8'h00;
+  output reg [7:0] P3PF = 8'h00;
+  output reg [7:0] M0PL = 8'h00;
+  output reg [7:0] M1PL = 8'h00;
+  output reg [7:0] M2PL = 8'h00;
+  output reg [7:0] M3PL = 8'h00;
+  output reg [7:0] P0PL = 8'h00;
+  output reg [7:0] P1PL = 8'h00;
+  output reg [7:0] P2PL = 8'h00;
+  output reg [7:0] P3PL = 8'h00;
+  
+  reg [7:0] HITCLR_hold = 8'h00;
+  
+  always @(*) begin
+
+    if (HITCLR != HITCLR_hold) begin
+      HITCLR_hold <= HITCLR;
+      M0PF <= 8'h00;
+      M1PF <= 8'h00;
+      M2PF <= 8'h00;
+      M3PF <= 8'h00;
+      P0PF <= 8'h00;
+      P1PF <= 8'h00;
+      P2PF <= 8'h00;
+      P3PF <= 8'h00;
+      M0PL <= 8'h00;
+      M1PL <= 8'h00;
+      M2PL <= 8'h00;
+      M3PL <= 8'h00;
+      P0PL <= 8'h00;
+      P1PL <= 8'h00;
+      P2PL <= 8'h00;
+      P3PL <= 8'h00;
+    end
+    
+    else begin
+      M0PF <= (M0PF != 8'h00) ? M0PF : {4'h0, (M0set&(baseType==`modeNorm_playfield3)),
+                                        (M0set&(baseType==`modeNorm_playfield2)),
+                                        (M0set&(baseType==`modeNorm_playfield1)),
+                                        (M0set&(baseType==`modeNorm_playfield0))};
+      M1PF <= (M1PF != 8'h00) ? M1PF : {4'h0, (M1set&(baseType==`modeNorm_playfield3)),
+                                        (M1set&(baseType==`modeNorm_playfield2)),
+                                        (M1set&(baseType==`modeNorm_playfield1)),
+                                        (M1set&(baseType==`modeNorm_playfield0))};
+      M2PF <= (M2PF != 8'h00) ? M2PF : {4'h0, (M2set&(baseType==`modeNorm_playfield3)),
+                                        (M2set&(baseType==`modeNorm_playfield2)),
+                                        (M2set&(baseType==`modeNorm_playfield1)),
+                                        (M2set&(baseType==`modeNorm_playfield0))};
+      M3PF <= (M3PF != 8'h00) ? M3PF : {4'h0, (M3set&(baseType==`modeNorm_playfield3)),
+                                        (M3set&(baseType==`modeNorm_playfield2)),
+                                        (M3set&(baseType==`modeNorm_playfield1)),
+                                        (M3set&(baseType==`modeNorm_playfield0))};
+      P0PF <= (P0PF != 8'h00) ? P0PF : {4'h0, (P0set&(baseType==`modeNorm_playfield3)),
+                                        (P0set&(baseType==`modeNorm_playfield2)),
+                                        (P0set&(baseType==`modeNorm_playfield1)),
+                                        (P0set&(baseType==`modeNorm_playfield0))};
+      P1PF <= (P1PF != 8'h00) ? P1PF : {4'h0, (P1set&(baseType==`modeNorm_playfield3)),
+                                        (P1set&(baseType==`modeNorm_playfield2)),
+                                        (P1set&(baseType==`modeNorm_playfield1)),
+                                        (P1set&(baseType==`modeNorm_playfield0))};
+      P2PF <= (P2PF != 8'h00) ? P2PF : {4'h0, (P2set&(baseType==`modeNorm_playfield3)),
+                                        (P2set&(baseType==`modeNorm_playfield2)),
+                                        (P2set&(baseType==`modeNorm_playfield1)),
+                                        (P2set&(baseType==`modeNorm_playfield0))};
+      P3PF <= (P3PF != 8'h00) ? P3PF : {4'h0, (P3set&(baseType==`modeNorm_playfield3)),
+                                        (P3set&(baseType==`modeNorm_playfield2)),
+                                        (P3set&(baseType==`modeNorm_playfield1)),
+                                        (P3set&(baseType==`modeNorm_playfield0))};
+      M0PL <= (M0PL != 8'h00) ? M0PL : {4'h0, (M0set&P3set), (M0set&P2set),
+                                        (M0set&P1set), (M0set&P0set)};
+      M1PL <= (M1PL != 8'h00) ? M1PL : {4'h0, (M1set&P3set), (M1set&P2set),
+                                        (M1set&P1set), (M1set&P0set)};
+      M2PL <= (M2PL != 8'h00) ? M2PL : {4'h0, (M2set&P3set), (M2set&P2set),
+                                        (M2set&P1set), (M2set&P0set)};
+      M3PL <= (M3PL != 8'h00) ? M3PL : {4'h0, (M3set&P3set), (M3set&P2set),
+                                        (M3set&P1set), (M3set&P0set)};
+      P0PL <= (P0PL != 8'h00) ? P0PL : {4'h0, (P0set&P3set), (P0set&P2set),
+                                        (P0set&P1set), 1'b0};
+      P1PL <= (P1PL != 8'h00) ? P1PL : {4'h0, (P1set&P3set), (P1set&P2set),
+                                        1'b0, (P1set&P0set)};
+      P2PL <= (P2PL != 8'h00) ? P2PL : {4'h0, (P2set&P3set), 1'b0,
+                                        (P2set&P1set), (P2set&P0set)};
+      P3PL <= (P3PL != 8'h00) ? P3PL : {4'h0, 1'b0, (P3set&P2set),
+                                        (P3set&P1set), (P3set&P0set)};
+    
+    end
+  
   end
   
 endmodule
