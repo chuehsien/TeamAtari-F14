@@ -177,14 +177,27 @@ module IOControl (rst_latch,state,rst,clk15,clk179,clk64, SKCTL, POTGO_strobe, k
     FDCE #(.INIT(1'b0)) strobepot2(.Q(potEn2), .C(POTGO_strobe),.CE(1'b1), .CLR(POTGO_ACK), .D(1'b1));
     FDCE #(.INIT(1'b0)) strobepot3(.Q(potEn3), .C(POTGO_strobe),.CE(1'b1), .CLR(POTGO_ACK), .D(1'b1));
 
+/*
+    reg [1:0] counter = 2'd0;
+    always @ (posedge POTGO_strobe) begin
+        //only handle 1 out of 4 POTGO_strobes
+        counter <= counter + 1;
+    end
 
-    wire potstate;
+    wire filteredstrobe;
+    assign filteredstrobe = (counter == 0);
+    FDCE #(.INIT(1'b0)) strobepot0(.Q(potEn0), .C(filteredstrobe),.CE(1'b1), .CLR(POTGO_ACK), .D(1'b1));
+    FDCE #(.INIT(1'b0)) strobepot1(.Q(potEn1), .C(filteredstrobe),.CE(1'b1), .CLR(POTGO_ACK), .D(1'b1));
+    FDCE #(.INIT(1'b0)) strobepot2(.Q(potEn2), .C(filteredstrobe),.CE(1'b1), .CLR(POTGO_ACK), .D(1'b1));
+    FDCE #(.INIT(1'b0)) strobepot3(.Q(potEn3), .C(filteredstrobe),.CE(1'b1), .CLR(POTGO_ACK), .D(1'b1));
+*/
+    wire [2:0] potstate;
     wire pot_rdy0,pot_rdy1,pot_rdy2,pot_rdy3;
 
-    potScanFSM  pot0(potClock,rst,pot_scan_in[0],potEn0,POT0,pot_rdy0,potstate,);
-    potScanFSM  pot1(potClock,rst,pot_scan_in[1],potEn1,POT1,pot_rdy1,,);
-    potScanFSM  pot2(potClock,rst,pot_scan_in[2],potEn2,POT2,pot_rdy2,,);
-    potScanFSM  pot3(potClock,rst,pot_scan_in[3],potEn3,POT3,pot_rdy3,,);  
+    potScanFSM  pot0(.clk(potClock),.rst(rst),.pot_in(pot_scan_in[0]),.POTGO(potEn0),.POTOUT(POT0),.pot_rdy(pot_rdy0),.pot_state(potstate),.rel_pots(pot_rel));
+    potScanFSM  pot1(.clk(potClock),.rst(rst),.pot_in(pot_scan_in[1]),.POTGO(potEn1),.POTOUT(POT1),.pot_rdy(pot_rdy1));
+    potScanFSM  pot2(.clk(potClock),.rst(rst),.pot_in(pot_scan_in[2]),.POTGO(potEn2),.POTOUT(POT2),.pot_rdy(pot_rdy2));
+    potScanFSM  pot3(.clk(potClock),.rst(rst),.pot_in(pot_scan_in[3]),.POTGO(potEn3),.POTOUT(POT3),.pot_rdy(pot_rdy3));  
 
     wire [3:0] nALLPOT;
    
@@ -194,8 +207,7 @@ module IOControl (rst_latch,state,rst,clk15,clk179,clk64, SKCTL, POTGO_strobe, k
     FDCE #(.INIT(1'b0)) pot2rdy(.Q(nALLPOT[2]), .C(pot_rdy2),.CE(1'b1), .CLR(POTGO_strobe), .D(1'b1)); 
     FDCE #(.INIT(1'b0)) pot3rdy(.Q(nALLPOT[3]), .C(pot_rdy3),.CE(1'b1), .CLR(POTGO_strobe), .D(1'b1)); 
     assign ALLPOT = ~nALLPOT;
-    assign pot_rel = (potstate == 1'd0);
-    assign POTGO_ACK = (potstate == 1'd1);
+    assign POTGO_ACK = (potstate == 3'd3);
 
 /*
 
