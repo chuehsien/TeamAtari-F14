@@ -1,7 +1,5 @@
 // top module for the 6502C cpu.
 // last updated: 09/30/2014 2140H
-`define syn
-
 
 `include "CPU/Control/controlDef.v"
 `include "CPU/Control/opcodeDef.v"
@@ -50,24 +48,16 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             wire phi1_out, SYNC, phi2_out, RW;
             
             
-            //internal variables
-            
-            //bus lines
-`ifdef syn				
-			wire [7:0]  DB, ADL, ADH, SB; 
-`else
-            trireg [7:0]  DB, ADL, ADH, SB;
-`endif            
+
+
+            wire [7:0]  DB, ADL, ADH, SB; 
+
             //control sigs
             wire [66:0] controlSigs;
             wire rstAll;
             
             wire [2:0] adhDrivers,sbDrivers,dbDrivers;
-            /*assign adlDrivers = controlSigs[`ADD_ADL]+
-                                controlSigs[`S_ADL] +
-                                controlSigs[`PCL_ADL] +
-                                controlSigs[`DL_ADL]+
-                                (controlSigs[`O_ADL0]|controlSigs[`O_ADL1]|controlSigs[`O_ADL2]);*/
+            // keep track of # of drivers on each bus. This is used by transbuf module.
             assign adhDrivers = controlSigs[`DL_ADH] +
                                 controlSigs[`PCH_ADH] +
                                 controlSigs[`SB_ADH]+
@@ -86,8 +76,8 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
                                controlSigs[`SB_DB] +
                                controlSigs[`AC_DB] +
                                controlSigs[`P_DB];
-            wire ALUZ;
-                        //clock
+
+
             wire phi1,phi2;
             wire haltAll,stop;
             clockGen clock(.HALT(HALT),.phi0_in(phi0_in),.fclk(fastClk),.stop(stop),.haltAll(haltAll),.RDY(RDY),
@@ -99,7 +89,7 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
           
 
             wire phi1_1,phi1_7;
-             wire DBZ_latch;
+             wire DBZ_latch,ALUZ;
             // internal signal latcher - used to latch signals across the phi1 uptick transition.
             wire nADH_ABH, nADL_ABL, DB_P, FLAG_DBZ, FLAG_ALU, FLAG_DB, P_DB, SET_C, CLR_C, SET_I, CLR_I, CLR_V, SET_D, CLR_D;
             assign holdAB = {nADH_ABH,FLAG_ALU,ALUZ,1'd0,1'd0,FLAG_DB,DBZ_latch,nADL_ABL};
@@ -118,9 +108,8 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             sigLatchWclk l12(.haltAll(stop),.refclk(~phi1),.clk(latchClk),.in(controlSigs[`CLR_V]),.out(CLR_V));
             sigLatchWclk l13(.haltAll(stop),.refclk(~phi1),.clk(latchClk),.in(controlSigs[`SET_D]),.out(SET_D));
             sigLatchWclk l14(.haltAll(stop),.refclk(~phi1),.clk(latchClk),.in(controlSigs[`CLR_D]),.out(CLR_D));
-            
-            //phi2 uptick latcher:
-            //nRW,STORE_DB, SB_X, SB_Y, SB_AC, SB_S
+
+            wire nRW,STORE_DB, SB_X, SB_Y, SB_AC, SB_S;
             sigLatchWclk l15(.haltAll(stop),.refclk(phi1),.clk(latchClk),.in(controlSigs[`nRW]),.out(nRW));
             sigLatchWclk l16(.haltAll(stop),.refclk(phi1),.clk(latchClk),.in(controlSigs[`STORE_DB]),.out(STORE_DB));
             sigLatchWclk l17(.haltAll(stop),.refclk(phi1),.clk(latchClk),.in(controlSigs[`SB_X]),.out(SB_X));
@@ -128,9 +117,8 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             sigLatchWclk l19(.haltAll(stop),.refclk(phi1),.clk(latchClk),.in(controlSigs[`SB_AC]),.out(SB_AC));
             sigLatchWclk l20(.haltAll(stop),.refclk(phi1),.clk(latchClk),.in(controlSigs[`SB_S]),.out(SB_S));
             
-            //last ones
+
             wire O_ADL0, O_ADL1, O_ADL2, O_ADH0, O_ADH1to7;
-            
             sigLatchWclk l21(.haltAll(stop),.refclk(~phi1),.clk(latchClk),.in(controlSigs[`O_ADL0]),.out(O_ADL0));
             sigLatchWclk l22(.haltAll(stop),.refclk(~phi1),.clk(latchClk),.in(controlSigs[`O_ADL1]),.out(O_ADL1));
             sigLatchWclk l23(.haltAll(stop),.refclk(~phi1),.clk(latchClk),.in(controlSigs[`O_ADL2]),.out(O_ADL2));
@@ -146,23 +134,17 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             sigLatchWclk l30(.haltAll(stop),.refclk(~phi1),.clk(latchClk),.in(controlSigs[`DL_ADL]),.out(DL_ADL));
             sigLatchWclk l31(.haltAll(stop),.refclk(~phi1),.clk(latchClk),.in(controlSigs[`DL_ADH]),.out(DL_ADH));
 
-            wire DBZ;
-				wire [7:0] DBforDOR,ADLforABL,ADHforABH,DBforSR,opcode,OPforSR,eDBforLatch;
+
+				    wire [7:0] DBforDOR,ADLforABL,ADHforABH,DBforSR,opcode,OPforSR,eDBforLatch;
 				
             sigLatchWclk8_2 db4dor(.refclk(phi1),.clk(latchClk),.in(DB),.out(DBforDOR)); 
-		    sigLatchWclk8_2 adl4abl(.refclk(~phi1),.clk(latchClk),.in(ADL),.out(ADLforABL)); 
-		    sigLatchWclk8_2 adh4abh(.refclk(~phi1),.clk(latchClk),.in(ADH),.out(ADHforABH)); 
+            sigLatchWclk8_2 adl4abl(.refclk(~phi1),.clk(latchClk),.in(ADL),.out(ADLforABL)); 
+            sigLatchWclk8_2 adh4abh(.refclk(~phi1),.clk(latchClk),.in(ADH),.out(ADHforABH)); 
             sigLatchWclk8_2 db4sr1(.refclk(~phi1),.clk(latchClk),.in(DB),.out(DBforSR)); 
-                       sigLatchWclk8_2 op4sr(.refclk(~phi1),.clk(latchClk),.in(opcode),.out(OPforSR)); 
-            
+            sigLatchWclk8_2 op4sr(.refclk(~phi1),.clk(latchClk),.in(opcode),.out(OPforSR)); 
 				    sigLatchWclk8_2 edblatch(.refclk(phi1),.clk(latchClk),.in(extDB),.out(eDBforLatch)); 
             
-				
-
-
-                            
             wire  I_ADDC,SUMS,ANDS,EORS,ORS,SRS;
-            //sigLatchWclk l32(phi1,latchClk,.in(controlSigs[`nDAA],.out(nDAA));    
             sigLatchWclk l33(.haltAll(stop),.refclk(phi1),.clk(latchClk),.in(controlSigs[`I_ADDC]),.out(I_ADDC)); 
             sigLatchWclk l34(.haltAll(stop),.refclk(phi1),.clk(latchClk),.in(controlSigs[`SUMS]),.out(SUMS)); 
             sigLatchWclk l35(.haltAll(stop),.refclk(phi1),.clk(latchClk),.in(controlSigs[`ANDS]),.out(ANDS)); 
@@ -278,8 +260,7 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
                         .AVR(tempAVR), .ACR(tempACR), .HC(tempHC),.relDirection(tempRel));
         
             //registers
-            wire [7:0]  ADL_b3,SB_b3;           //triState sp_b0[7:0](ADL,ADL_b3,controlSigs[`S_ADL]);
-            //triState sp_b1[7:0](SB,SB_b3,controlSigs[`S_SB]);
+            wire [7:0]  ADL_b3,SB_b3; 
             SPreg   sp(.haltAll(haltAll),.rstAll(rstAll),.phi2(phi2),.S_S(S_S), .SB_S(SB_S), .S_ADL(S_ADL), 
                         .S_SB(S_SB), .SBin(SB), .ADL(ADL), .SB(SB));
                         
@@ -292,9 +273,6 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             wire alu_nDSA,alu_nDAA,aluAVR,aluACR,aluHC,aluRel;
             wire nDSA_latch,nDAA_latch,AVR,ACR,HC,dir;
             wire [7:0] ADL_b4,SB_b4;
-            //triState addhold_b0[7:0](ADL,ADL_b4,controlSigs[`ADD_ADL]);
-            //triState addhold_b1[6:0](SB[6:0],SB_b4[6:0],controlSigs[`ADD_SB0to6]);
-            //triState addhold_b2(SB[7],SB_b4[7],controlSigs[`ADD_SB7]);
             AdderHoldReg addHold(.haltAll(haltAll),.phi2(phi2), .ADD_ADL(ADD_ADL), .ADD_SB0to6(ADD_SB0to6), .ADD_SB7(ADD_SB7), 
                                 .addRes(ALU_out), .temp_nDSA(nDSA), .temp_nDAA(nDAA), .tempAVR(tempAVR), 
                                 .tempACR(tempACR), .tempHC(tempHC),.tempRel(tempRel),
@@ -305,24 +283,10 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
                                               .inAVR(aluAVR),.inACR(aluACR),.inHC(aluHC),.inDir(aluRel),
                                                        .nDSA(nDSA_latch),.nDAA(nDAA_latch),.AVR(AVR),.ACR(ACR),.HC(HC),.dir(dir));
             wire [7:0] inFromDecAdder;
-           
-            /*
-            wire DAAmode, DSAmode;
-            assign DAAmode = SR_contents[`status_D] & 
-                                (opcode == `ADC_imm ||
-                                opcode == `ADC_zp ||
-                                opcode == `ADC_zpx ||
-                                opcode == `ADC_ ||
-                                opcode == `ADC_imm ||
-                                opcode == `ADC_imm ||
-                                opcode == `ADC_imm ||
-                                
-            opcode*/
+
             
             decimalAdjust   decAdj(.haltAll(haltAll),.SBin(SB), .DSA(~nDSA_latch), .DAA(~nDAA_latch), .ACR(ACR), .HC(HC), .data(inFromDecAdder));
             wire [7:0] DB_b5,SB_b5;
-           // triState accum_b0[7:0](DB,DB_b5,controlSigs[`AC_DB]);
-           // triState accum_b1[7:0](SB,SB_b5,controlSigs[`AC_SB]);
             accum           a(.haltAll(haltAll),.accumVal(accumVal),.rstAll(rstAll),.phi2(phi2),.inFromDecAdder(inFromDecAdder), 
                                     .SB_AC(SB_AC), .AC_DB(AC_DB), .AC_SB(AC_SB), .DB(DB), .SB(SB));
             assign Accum = accumVal;           
@@ -330,11 +294,8 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             //addressbusreg loads by default every phi1. only disable if controlSig is asserted.
             wire [7:0] extAB_b0,extAB_b1;
             
-            //triState ABR_b0[7:0](extABH,extAB_b0,~controlSigs[`nADH_ABH]);
-            //triState ABR_b1[7:0](extABL,extAB_b1,~controlSigs[`nADL_ABL]);
             triState ABR_b0[7:0](extABH,extAB_b0,~RDY);
             triState ABR_b1[7:0](extABL,extAB_b1,~RDY);
-
             AddressBusReg   add_hi(.haltAll(haltAll),.phi1(phi1),.hold(nADH_ABH), .dataIn(ADHforABH), .dataOut(extAB_b0));
             AddressBusReg   add_lo(.haltAll(haltAll),.phi1(phi1),.hold(nADL_ABL), .dataIn(ADLforABL), .dataOut(extAB_b1));
                 
@@ -347,29 +308,20 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             
          
             wire BRKins;
-
-            assign BRKins = (OPforSR == `BRK || OPforSR == `PHP);
             //need to assert B in SR when performing BRK/PHP.
-            wire [7:0] SR_contents;
+            assign BRKins = (OPforSR == `BRK || OPforSR == `PHP);
             
-       
-
+            // set up signals for status register function
             //store db/alu status during phi2, and update SR in phi1. applicable for TAY,TYA etc. only.
             reg [7:0] storedDB;
-//            FlipFlop8   store_db(phi2,DB,(STORE_DB&~haltAll),storedDB);
             always @ (posedge phi2) begin
                 if (haltAll) storedDB <= storedDB;
                 else if (STORE_DB) storedDB <= DB;
                 else storedDB <= storedDB;
             end
             
-            assign DBZ  = ~(|DB);
-            assign ALUZ = ~(|ALUhold_out);
             
-            
-            wire [7:0] DB_b8;
-
-            
+            wire [7:0] SR_contents;
            statusReg SR(.haltAll(haltAll),.rstAll(rstAll),.phi1(phi1),.DB_P(DB_P),
            .loadDBZ(FLAG_DBZ),.flagsALU(FLAG_ALU),.flagsDB(FLAG_DB),
                         .P_DB(P_DB), .ACR(aluACR), .AVR(aluAVR), .B(BRKins),
@@ -386,10 +338,9 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             wire [7:0] extDB_b0;
             triState8 dor_b(extDB,extDB_b0,(~RDY) & (controlSigs[`nRW]));
             
-            //dataOutReg          dor(haltAll,phi2,nRW,PCLforDOR,jsrHi,jsrLo, DB, extDB_b0);
             dataOutReg            dor(.haltAll(haltAll),.phi2(phi2),.en(nRW),.dataIn(DBforDOR),.dataOut(extDB_b0));
                     
-            //moving on to left side...
+
             wire [7:0] predecodeOut, opcodeToIR;
             wire interrupt;
             
@@ -401,14 +352,7 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             assign brkNow = (predecodeOut == `BRK || interrupt);
             wire loadOpcode,loadOpcodeBuf,T1now;
             
-/*
-            and andgate(loadOpcodeBuf,phi2,T1now);
-`ifdef syn
-            buf bufbuf(loadOpcode,loadOpcodeBuf);
-`else
-            buf #2 bufbuf(loadOpcode,loadOpcodeBuf);
-`endif    
-*/
+
             wire [7:0] prevOpcode;
             
             wire en;
@@ -425,15 +369,11 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
                                   .currT(currT),.opcode(opcode),.prevOpcode(prevOpcode),.phi1(phi1),.phi2(phi2),
                                   .activeInt(activeInt),.aluRel(aluRel),.tempCarry(aluACR),.dir(dir),.carry(ACR),.statusReg(SR_contents),
                                     .nextT(newT),.nextControlSigs(controlSigs));    
-/* 
-          logicControl(updateOthers,currT,opcode,prevOpcode,phi1,phi2,activeInt,aluRel,tempCarry,ovf,carry,statusReg,
-                                    nextT,nextControlSigs);      */
-                                    
           
             wire outNMI_L,outIRQ_L,outRES_L;
             wire nmiPending,irqPending,resPending,nmiDone,intHandled;
             wire [1:0] currState;
-            //wire RDYout; //this is the one which affects the FSM.
+            
             wire IRQ_Lfiltered;
             assign IRQ_Lfiltered = IRQ_L | SR_contents[`status_I];
             interruptLatch   iHandlerLatch(.haltAll(haltAll),.phi1(phi1),.NMI_L(NMI_L),.IRQ_Lfiltered(IRQ_Lfiltered),.RES_L(RES_L),
@@ -446,10 +386,8 @@ module top_6502C(DBforSR,prevOpcode,extAB_b1,SR_contents,holdAB,SRflags,opcode,o
             PLAinterruptControl  plaInt(.haltAll(haltAll),.phi1(phi1),.nmiPending(nmiPending),.resPending(resPending),.irqPending(irqPending),
                                                     .intHandled(intHandled),.activeInt(activeInt),.nmi(FSMnmi),.irq(FSMirq),.res(FSMres));
                                         
-            plaFSM      fsm(.haltAll(haltAll),.currState(currState),.phi1(phi1),.phi2(phi2),.RDY(1'b1),.nextT(newT), .rst(FSMres),
+            plaFSM      fsm(.haltAll(haltAll),.currState(currState),.phi1(phi1),.nextT(newT), .rst(FSMres),
                                    .brkNow(brkNow),.currT(currT),.intHandled(intHandled), .rstAll(rstAll));          
-            
-            
             
             assign second_first_int = {FSMnmi,FSMirq,FSMres,intHandled,1'd0,nmiPending,irqPending,resPending};
 endmodule

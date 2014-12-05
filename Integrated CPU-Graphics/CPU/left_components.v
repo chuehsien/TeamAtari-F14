@@ -1,6 +1,18 @@
-// this module contains all contains that are driven by clocks and the left side of the block diagram
+/****************************************************
+ * Project: Atari 5200                              *
+ *                                                  *
+ * Top Module: 6502C CPU                            *
+ * Sub-module: Right-side of diagram      *
+ *                                                  *
+ * Team Atari                                       *
+ *    Alvin Goh     (chuehsig)                   *
+ *    Benjamin Hong (bhong)                         *
+ *    Jonathan Ong  (jonathao)            
+ *
+ ****************************************************/
+
 `include "CPU/Control/Tcontrol.v"
-`include "CPU/Control/Logiccontrol2.v"
+`include "CPU/Control/Logiccontrol.v"
 
 module clockGen(HALT,phi0_in,fclk,
                 stop,haltAll,RDY,phi1_out,phi2_out,phi1_extout,phi2_extout);
@@ -9,9 +21,7 @@ module clockGen(HALT,phi0_in,fclk,
     output reg stop,haltAll, RDY = 1'b0;
     
      (* clock_signal = "yes" *) output phi1_out,phi2_out,phi1_extout,phi2_extout;
-    
 
-    
     //latch on phi1 ticks
     always @ (negedge phi0_in) begin
         stop <= HALT;
@@ -166,23 +176,6 @@ module PLAinterruptControl(haltAll,phi1, nmiPending,resPending,irqPending,intHan
 
 endmodule
 
-
-
-
-                                    /*
-module logicControl(updateOthers,currT,opcode,opcodeToIR,prevOpcode,phi1,phi2,activeInt,aluRel,tempOvf,tempCarry,ovf,carry,statusReg,
-                                    nextT,nextControlSigs);                                  
-                                    
-        output updateOthers;              
-        input [6:0] currT;
-        input [7:0] opcode,opcodeToIR,prevOpcode;
-        input phi1,phi2;
-        input [2:0] activeInt;
-        input aluRel,tempOvf,tempCarry,ovf,carry;
-        input [7:0] statusReg;
-        output [6:0] nextT;
-        output [65:0] nextControlSigs;
-        */
 module logicControl(updateOthers,currT,opcode,prevOpcode,phi1,phi2,activeInt,aluRel,tempCarry,dir,carry,statusReg,
                                     nextT,nextControlSigs);                                  
                                     
@@ -199,28 +192,22 @@ module logicControl(updateOthers,currT,opcode,prevOpcode,phi1,phi2,activeInt,alu
         
         wire relOpcode; //opcode which do rel jumps. (branch)
         assign relOpcode = (opcode == `BPL_rel ||opcode == `BMI_rel ||opcode == `BVC_rel ||opcode == `BVS_rel ||opcode == `BCC_rel ||
-		opcode == `BCS_rel ||opcode == `BNE_rel ||opcode == `BEQ_rel);
+        opcode == `BCS_rel ||opcode == `BNE_rel ||opcode == `BEQ_rel);
+        
+        /* ------------ next t logic ---------- */
         //next T depends on immediate ACR.
-        wire effCarry;
         //page cross occur when jumping forward and C = 1, OR jumping backward, and c=0.
+        wire effCarry;
         assign effCarry = relOpcode ? ((tempCarry & aluRel) | (~tempCarry & ~aluRel)) : tempCarry;
         
-        
         Tcontrol    tCon(currT,opcode,effCarry,statusReg,nextT);
+        
+        
+        /* ------------- control signals (combinational) ----------------- */
         wire updateOthers;
         // the logic depends on the ticked in ACR in the ACRlatch, and AVR in the AVRlatch
-        randomLogic2     randomLog(updateOthers,currT,opcode,prevOpcode,phi1,phi2,activeInt,dir,carry,statusReg[`status_C],statusReg[`status_D],nextControlSigs);
-     /*
-        randomLogicPredict   randLog(.T(currT),.nextT(nextT),.currOP(opcode),.nextOP(opcodeToIR),
-                                    .phi1(phi1),.phi2(phi2),.activeInt(activeInt),
-                                    .latchedAVR(ovf),.latchedACR(carry),
-                                    .aluholdAVR(tempOvf),.aluholdACR(tempCarry),
-                                    .statusC(statusReg[`status_C]),.statusD(statusReg[`status_D]),
-                                    .control(nextControlSigs)); 
-        //if phi1: use opcode,currT,phi2,AVR,ACR (both latched)to make decisions, 
-        // phi1 need to consider prevOpcode too. in this case uses opcode&(nextT == t2).
-       */ 
-        //if phi2: use opcodeToIR, nextT,phi1,aluAVR,aluACR to make decisions
+        randomLogic     randomLog(updateOthers,currT,opcode,prevOpcode,phi1,phi2,activeInt,dir,carry,statusReg[`status_C],statusReg[`status_D],nextControlSigs);
+
 endmodule
 
 
@@ -240,7 +227,7 @@ module instructionRegister(haltAll,rstAll,currT,phi1,phi2,OPin,OPout,prevOP);
                         currT == `T1BranchNoCross || currT == `T1BranchCross) & ~phi1;
     buf tickB(en,readyForNext);
   
-    //wait for (currT==`Tone & phi2) to enable.
+    //wait for (currT==`Tone & phi1 low) to enable.
     always @ (posedge phi1) begin
             if (haltAll) begin
                 OPout <= OPout;

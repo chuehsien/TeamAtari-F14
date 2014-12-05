@@ -9,12 +9,6 @@
  *    Jonathan Ong  (jonathao)                      *
  ****************************************************/
  
-/* Changelog:
-	15 Sep 2014,  0033hrs: added memory module (chue)
-  29 Sep 2014,  1948hrs: modified memory module to become linear (ben)
-  30 Sep 2014,  1927hrs: amended memory module to be writable (ben)
-*/
-
 module triState(out,in,en);
     inout out;
     input in;
@@ -58,7 +52,7 @@ module transBuf(en, leftDriver, rightDriver, left, right);
     
     bufif1 LtoR[7:0](right, left, (en & enLeft));
     bufif1 RtoL[7:0](left, right, (en & enRight));
-    //bufif1 LtoR[7:0](right, left, en);
+
 endmodule
 
 

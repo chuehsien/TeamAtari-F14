@@ -1,10 +1,10 @@
 
 
-module plaFSM(haltAll,currState,phi1,phi2,RDY,nextT, rst,brkNow,
+module plaFSM(haltAll,currState,phi1,nextT, rst,brkNow,
                 currT,intHandled, rstAll);
                 
     output [1:0] currState;
-    input haltAll,phi1,phi2,RDY,rst,brkNow;
+    input haltAll,phi1,rst,brkNow;
     input [6:0] nextT;
     
     output reg[6:0] currT = `emptyT;
@@ -28,13 +28,12 @@ module plaFSM(haltAll,currState,phi1,phi2,RDY,nextT, rst,brkNow,
                 else begin 
                     nextState = currState;
                 end
-                
-                //rstAll = (currT != `Ttwo) ? 1'b0:1'b1;
+
             end
             
             `FSMfetch: begin
                 nextIntHandled = 1'b0;
-                if (brkNow) begin //timing issues. new opcode havent clock in.
+                if (brkNow) begin
                     nextState = `FSMexecBrk;
                 end
                 else nextState = `FSMexecNorm;
@@ -50,9 +49,7 @@ module plaFSM(haltAll,currState,phi1,phi2,RDY,nextT, rst,brkNow,
                     nextState = `FSMfetch;
                     
                 else nextState = currState;
-                
-                
-                //rstAll = 1'b0;
+                     
             end
             
             `FSMexecBrk: begin
@@ -72,10 +69,7 @@ module plaFSM(haltAll,currState,phi1,phi2,RDY,nextT, rst,brkNow,
                     nextState = `FSMinit;
                     nextIntHandled = 1'b0;
             end
-                
-                
-                //rstAll = 1'b0;
-            
+
         endcase
 
     end
@@ -105,11 +99,7 @@ module plaFSM(haltAll,currState,phi1,phi2,RDY,nextT, rst,brkNow,
         
     
     end
-    
-    /* not needed since fsmstate and Tstate doesnt change on phi2 ticks.
-        always @ (posedge phi2) begin
-        end
-    */
+
 endmodule
 
     

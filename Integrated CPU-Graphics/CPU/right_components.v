@@ -2,7 +2,7 @@
  * Project: Atari 5200                              *
  *                                                  *
  * Top Module: 6502C CPU                            *
- * Sub-module: Right-side of diagram (re-org?)      *
+ * Sub-module: Right-side of diagram      *
  *                                                  *
  * Team Atari                                       *
  *    Alvin Goh     (chuehsig)                   *
@@ -10,11 +10,6 @@
  *    Jonathan Ong  (jonathao)            
  *
  ****************************************************/
- 
-/* Changelog:
-
-*/
-
 
 module sigLatchWclk8_2(refclk,clk,in,out);
   input refclk,clk;
@@ -284,46 +279,6 @@ module Breg(DB_L_ADD, DB_ADD, ADL_ADD, dataIn, INVdataIn, ADL,
                             (ADL_ADD ? ADL : 8'h00));
     
 endmodule
-
-
-/* -------------------- */
-/*
-
-// latched on phi1, driven onto data pins in phi2(if write is done).
-module dataOutReg(haltAll,phi2,en,PC_lo,jsrHi,jsrLo,dataIn,
-                dataOut);
-                
-    input haltAll,phi2,en;
-    input [7:0] PC_lo;
-    input jsrHi, jsrLo;
-    input [7:0] dataIn;
-    output reg [7:0] dataOut;
-
-    wire nHaltAll;
-    not make(nHaltAll,haltAll);
-    
-    reg [7:0] dataIn_b;
-    always @ (dataIn or PC_lo or jsrHi or jsrLo) begin
-        if (jsrHi) begin
-            dataIn_b = dataIn + (PC_lo == 8'hff);
-        end
-        else if (jsrLo) begin
-            dataIn_b = dataIn + 8'd1;
-        end
-     
-     else dataIn_b = dataIn;
-    
-        dataIn_b = dataIn;
-    end
-    
-    always @ (posedge phi2) begin
-        if (nHaltAll & en) dataOut <= dataIn_b;
-        else dataOut <= dataOut;
-    
-    end
-    
-endmodule
-*/
 
 module dataOutReg(haltAll,phi2, en, dataIn,
                     dataOut);
@@ -615,21 +570,9 @@ module AddressBusReg(haltAll,phi1,hold, dataIn,
     input hold;
     input [7:0] dataIn;
     output [7:0] dataOut;
-    
-    //wire ce;
-    //nor findce(ce,hold,haltAll);
-    FlipFlop8 test(phi1,dataIn,~(hold|haltAll),dataOut);
-    /*
-    reg [7:0] dataOut = 8'd0;
-    always @ (posedge phi1) begin
-        if (hold|haltAll) dataOut <= dataOut;
-        else dataOut <= dataIn;
-        
-        //dataOut <= (ld) ? dataIn : dataOut;
-    end
-    
-    assign dataABH = (haltAll) ? 8'bzzzzzzzz : dataOut;
-*/
+
+    FlipFlop8 ff(phi1,dataIn,~(hold|haltAll),dataOut);
+
 endmodule
 
 //used for x and y registers
@@ -799,138 +742,4 @@ module statusReg(haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
 
 
 endmodule
-
-/*
-//backup
-//this needs to push out B bit when its a BRK.
-//the x_set and x_clr are edge triggered.
-//everything else is ticked in when 'update' is asserted.
-module statusReg(haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
-                        P_DB, DBZ, ALUZ, ACR, AVR, B,
-                        C_set, C_clr,
-                        I_set,I_clr, 
-                        V_clr,
-                        D_set,D_clr,
-                        DB,ALU,storedDB,opcode,DBout,
-                        status);
-    output phi1_1,phi1_7;
-    input haltAll,rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
-                        P_DB, DBZ,ALUZ, ACR, AVR,B,
-                        C_set, C_clr,
-                        I_set,I_clr, 
-                        V_clr,
-                        D_set,D_clr; 
-                        
-    input [7:0] DB,ALU,storedDB,opcode;
-    inout [7:0] DBout;
-    output [7:0] status; //used by the FSM
-    
-    wire rstAll,phi1,DB_P,loadDBZ,flagsALU,flagsDB,
-                    P_DB, DBZ,ALUZ,ACR, AVR,B,
-                    C_set, C_clr,
-                    I_set,I_clr, 
-                    V_clr,
-                    D_set,D_clr; 
-
-    wire [7:0] DB,ALU,opcode;
-    wire [7:0] DBout;
-    wire [7:0] status;
-    
-
-    reg currVal7,currVal6,currVal3,currVal2,currVal1,currVal0;
-    assign DBout = (P_DB) ? status : 8'bzzzzzzzz;
-    assign status = {currVal7,currVal6,1'b1,B,currVal3,currVal2,currVal1,currVal0};
-
-    //Negative
-    wire phi1_7,phi1_6,phi1_3,phi1_2,phi1_1,phi1_0;
- 
-    always @ (posedge phi1) begin
-		
-		if (haltAll) begin
-		      currVal7 <= currVal7;
-            currVal6 <= currVal6;
-            currVal3 <= currVal3;
-            currVal2 <= currVal2;
-            currVal1 <= currVal1;
-            currVal0 <= currVal0;
-		end
-       else begin
-            currVal7 <= phi1_7;
-            currVal6 <= phi1_6;
-            currVal3 <= phi1_3;
-            currVal2 <= phi1_2;
-            currVal1 <= phi1_1;
-            currVal0 <= phi1_0;
-        end
-    end
-
-    
-    wire class1,class2,class3,class4,class5; //diff classes of opcodes affect diff status bits.
-    assign class1 = (opcode == `ADC_abs || opcode == `ADC_abx || opcode == `ADC_aby || opcode == `ADC_imm || 
-                 opcode == `ADC_izx || opcode == `ADC_izy || opcode == `ADC_zp  || opcode == `ADC_zpx ||
-                 opcode == `SBC_abs || opcode == `SBC_abx || opcode == `SBC_aby || opcode == `SBC_imm || 
-                 opcode == `SBC_izx || opcode == `SBC_izy || opcode == `SBC_zp  || opcode == `SBC_zpx );
-                 
-    assign class2 =  (opcode == `ORA_izx ||opcode == `ORA_izy ||opcode == `ORA_aby ||opcode == `ORA_abx ||
-                        opcode == `ORA_abs ||opcode == `ORA_imm ||opcode == `ORA_zp || opcode == `ORA_zpx||
-                        opcode == `AND_izx ||opcode == `AND_izy ||opcode == `AND_aby ||opcode == `AND_abx ||
-                        opcode == `AND_abs ||opcode == `AND_imm ||opcode == `AND_zp || opcode == `AND_zpx||
-                        opcode == `EOR_izx ||opcode == `EOR_izy ||opcode == `EOR_aby ||opcode == `EOR_abx ||
-                        opcode == `EOR_abs ||opcode == `EOR_imm ||opcode == `EOR_zp || opcode == `EOR_zpx) ;  
-     
-    assign class3 = (opcode == `BIT_zp || opcode == `BIT_abs);
-    assign class4 = (opcode == `TAX || opcode == `TAY ||  
-            opcode == `TXA ||  opcode == `TYA || opcode == `TSX);             
-    
-    assign class5 = (opcode == `CMP_izx ||opcode == `CMP_izy ||opcode == `CMP_aby ||opcode == `CMP_abx ||
-                        opcode == `CMP_abs ||opcode == `CMP_imm ||opcode == `CMP_zp || opcode == `CMP_zpx);
-                        
-    //N bit
-    wire special_7;
-    assign special_7 = storedDB[7];
-    assign phi1_7 = loadDBZ ? currVal7 :
-                    ((flagsALU) ? ALU[7] :
-                    ((flagsDB&class4) ? special_7 :
-                     (flagsDB ? DB[7] : 
-                     (DB_P ? DB[7] : currVal7))));
-    
-    //V bit
-    assign phi1_6 = loadDBZ ? currVal6 :
-                    (flagsALU ? ((class1|class3) ? AVR : currVal6) :
-                    (flagsDB ? (class3 ? DB[6] : currVal6) :
-                    (DB_P ? DB[6] :  (V_clr ? 1'b0 : currVal6))));
-    
-
-    //D bit
-    assign phi1_3 = loadDBZ ? currVal3 : 
-                    (flagsALU  ? currVal3 : 
-                    (flagsDB ? currVal3 :
-                    (DB_P ? DB[3] : (D_set ? 1'b1 : (D_clr ? 1'b0 : currVal3)))));
-                    
-
-    //I bit
-    assign phi1_2 = DB_P ? DB[2] : (I_set ? 1'b1 : (I_clr ? 1'b0 : currVal2));           
-
-    
-    //Z bit
-    wire special_1;
-    assign special_1 = ~(|storedDB);
-    assign phi1_1 = loadDBZ ? DBZ :
-                    ((flagsDB&class3) ? currVal1 :
-                    ((flagsDB&class4) ? special_1 :
-                    (flagsDB ? DBZ :
-                    (flagsALU ? ALUZ :
-                    (DB_P ? DB[1] : currVal1)))));
-
-    //C bit
-    assign phi1_0 = loadDBZ ? currVal0 :
-                    (flagsALU ?  (class1 ? ACR : (class2 ? currVal0 : ACR)) :
-                    (flagsDB ? currVal0 :
-                    (DB_P ? DB[0] :
-                    (C_set ? 1'b1 : (C_clr ? 1'b0 : currVal0)))));
-
-
-endmodule
-
-*/
 
