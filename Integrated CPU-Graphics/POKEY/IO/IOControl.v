@@ -11,8 +11,7 @@
 
 module IOControl (rst_latch,state,rst,clk15,clk179,clk64, SKCTL, POTGO_strobe, kr1_L, pot_scan_in,
                     key_scan_L,keycode_latch,POT0, POT1, POT2, POT3, ALLPOT,pot_rel);
-//output potEn0,potClock;
-//output [7:0] timer;  
+
 		output rst_latch;
 	  output [1:0] state;
     input rst;
@@ -126,13 +125,7 @@ module IOControl (rst_latch,state,rst,clk15,clk179,clk64, SKCTL, POTGO_strobe, k
         
       
       `state_CONFIRM: begin
-   /*     if (~SKCTL[1]) begin
-          next_state = `state_IDLE;
-          rst_latch = 1'b1;
-          load_latch = 1'b0;
-          confirm_latch = 1'b0;
-        end
-  */
+
         if (kr1_L & key_scan_ctr == compare_latch) begin
           // key let go
           next_state = `state_IDLE;
@@ -177,20 +170,6 @@ module IOControl (rst_latch,state,rst,clk15,clk179,clk64, SKCTL, POTGO_strobe, k
     FDCE #(.INIT(1'b0)) strobepot2(.Q(potEn2), .C(POTGO_strobe),.CE(1'b1), .CLR(POTGO_ACK), .D(1'b1));
     FDCE #(.INIT(1'b0)) strobepot3(.Q(potEn3), .C(POTGO_strobe),.CE(1'b1), .CLR(POTGO_ACK), .D(1'b1));
 
-/*
-    reg [1:0] counter = 2'd0;
-    always @ (posedge POTGO_strobe) begin
-        //only handle 1 out of 4 POTGO_strobes
-        counter <= counter + 1;
-    end
-
-    wire filteredstrobe;
-    assign filteredstrobe = (counter == 0);
-    FDCE #(.INIT(1'b0)) strobepot0(.Q(potEn0), .C(filteredstrobe),.CE(1'b1), .CLR(POTGO_ACK), .D(1'b1));
-    FDCE #(.INIT(1'b0)) strobepot1(.Q(potEn1), .C(filteredstrobe),.CE(1'b1), .CLR(POTGO_ACK), .D(1'b1));
-    FDCE #(.INIT(1'b0)) strobepot2(.Q(potEn2), .C(filteredstrobe),.CE(1'b1), .CLR(POTGO_ACK), .D(1'b1));
-    FDCE #(.INIT(1'b0)) strobepot3(.Q(potEn3), .C(filteredstrobe),.CE(1'b1), .CLR(POTGO_ACK), .D(1'b1));
-*/
     wire [2:0] potstate;
     wire pot_rdy0,pot_rdy1,pot_rdy2,pot_rdy3;
 
@@ -209,100 +188,6 @@ module IOControl (rst_latch,state,rst,clk15,clk179,clk64, SKCTL, POTGO_strobe, k
     assign ALLPOT = ~nALLPOT;
     assign POTGO_ACK = (potstate == 3'd3);
 
-/*
-
-
-	always @ (posedge clk15) begin
-	    
-
-        pot_scan_reg <= pot_scan_in; //may need to put this value in ALLPOT also
-			
-        
-        if (~POTGO) begin //we need to start over again
-   
-            ctr_pot <= 8'd0;
-            POT0 <= 8'd0;
-            POT1 <= 8'd0;
-            potDone <= 1'b0;
-            pot_scan_reg <= 8'd0; //clear the "lines"
-			pot_rel <= 1'd0; //turn off transistor0
-				
-        end
-        else if (ctr_pot < 8'd228) begin
-            //we are still in the cycle
-				ctr_pot <= ctr_pot + 1;
-            potDone <= 1'b0;
-            if ((pot_scan_in[0] == 1) && (POT0 == 8'd0)) begin 
-                POT0 <= ctr_pot;
-                ALLPOT[0] <= 0;
-            end
-            if ((pot_scan_in[1] == 1) && (POT1 == 8'd0)) begin 
-                POT1 <= ctr_pot;
-                ALLPOT[1] <= 0;
-            end
-         
-        end 
-        else begin //this means our counter went past 228
-            potDone <= 1'b1;
-            ctr_pot <= 8'd0;
-            pot_scan_reg <= 8'd0; //clear the "lines"
-            pot_rel <= 1'd1; //turn on transistor0 to clear the cap
-				
-        end
-        
-     end
-    
-
-
-	*/
-
-	
-	
-	
-	/*
-    always @ (posedge clk15) begin  
-     
-
-        if (~POTGO | delay < `DELAY) begin //we need to start over again
-				delay <= delay + 1;
-            potDone <= 1'b0;
-            POT0 <= 8'd0;
-            POT1 <= 8'd0;
-            POT2 <= 8'd0;
-            POT3 <= 8'd0;
-            ALLPOT <= 8'hff;
-				pot_rel <= 1'd1; //dump transistors
-            
-            selfRst <= 1'b0;
-        end
-        else begin
-            pot_rel <= 1'b0;    
-				delay <= 4'd0;
-                if ((pot_scan_in[0] == 1 | (ctr_pot == 8'd228)) & (POT0 == 8'd0)) begin 
-                    POT0 <= ctr_pot;
-                    ALLPOT[0] <= 0;
-                end
-                if ((pot_scan_in[1] == 1 | (ctr_pot == 8'd228)) & (POT1 == 8'd0)) begin 
-                    POT1 <= ctr_pot;
-                    ALLPOT[1] <= 0;
-                end
-                if ((pot_scan_in[2] == 1 | (ctr_pot == 8'd228)) & (POT2 == 8'd0)) begin 
-                    POT2 <= ctr_pot;
-                    ALLPOT[2] <= 0;
-                end
-                if ((pot_scan_in[3] == 1 | (ctr_pot == 8'd228)) & (POT3 == 8'd0)) begin 
-                    POT3 <= ctr_pot;
-                    ALLPOT[3] <= 0;
-                end
-                
-                if ((ctr_pot == 8'd228) | (ALLPOT[3:0] == 4'h0)) potDone <= 1'b1;
-
-        end
-    
-     end
-    
-    
-*/
 
 endmodule
 

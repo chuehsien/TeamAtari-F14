@@ -40,11 +40,7 @@ module pokeyaudio (init_L,clk179,clk64,clk16,STIMER_strobe,AUDF1,AUDF2,AUDF3,AUD
     //move all channels to correct frequency first!
     wire chn1baseA,chn1baseB,chn1base,chn2base,chn3base,chn4base;
     
-    
-    //wire chn1baseT;
-    //clockDivider #(213) out213(mainClock,chn1baseT);
     wire int1_A,int1_B,int1,int2_A,int2_B,int2,int4_A,int4_B,int4;
-
     wire chn1base_unfiltered,chn1base_filtered;
     divideByN chn1divideA(STIMER_strobe,AUDF1,mainClock,1'b0,chn1baseA,int1_A);
     divideByN chn1divideB(STIMER_strobe,AUDF1,clk179,1'b0,chn1baseB,int1_B);
@@ -88,7 +84,7 @@ module pokeyaudio (init_L,clk179,clk64,clk16,STIMER_strobe,AUDF1,AUDF2,AUDF3,AUD
                      
     distortChn chn4d(.chnIn(chn4base),.poly4(poly4out),.poly5(poly5out),.poly17_9(poly17_9out),
                      .distort(distort4),.chnOut_distort(chn4out));                 
-   //need to add vol only mode
+
    assign audio1 = ~(volOnly1 | chn1out);
    assign audio2 = ~(volOnly2 | chn2out);
    assign audio3 = ~(volOnly3 | chn3out);

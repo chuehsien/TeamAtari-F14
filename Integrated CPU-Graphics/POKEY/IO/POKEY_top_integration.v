@@ -61,12 +61,6 @@ output kr1_L;
     assign KBCODE_bus = {KBCODE_7_6, 1'd0, KBCODE_4_1, 1'd0};
 	assign KBCODE_7_6 = control_input_side_but[3] ? 2'b00 : 2'b11;
     assign SKSTAT_bus = control_input_side_but[3] ? 8'h09 : 8'h01;
-	 
-
-    //wire top;
-   // assign top0 = ~control_input_side_but[3];
-    //assign top1 = ~control_input_side_but[1];
-   
     
     wire TRIG0,TRIG1;
     trig_latch trigControl0(.buttonIn(~control_input_side_but[2]), .enLatch(GRACTL[2]), .rst(~GRACTL[2]), .out(TRIG0));
