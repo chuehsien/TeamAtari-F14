@@ -9,12 +9,10 @@
 `define modeNorm_playfield2   4'b0110
 `define modeNorm_playfield3   4'b0111
 
-
 `define mode_normal           2'b00
 `define mode_1_col_16_lum     2'b01
 `define mode_9_col_lum        2'b10
 `define mode_16_col_1_lum     2'b11
-
 
 `define one   2'b00
 `define two   2'b01

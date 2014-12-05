@@ -129,6 +129,9 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
   reg loadSpritesDone = 1'b0;
   reg [2:0] loadSpriteState = 3'd0;
   reg [3:0] spriteRepeat = 4'd0;
+  //reg [5:0] hblankcount = 6'd0;
+  //reg waithblank = 1'b0;
+  //reg [15:0] idle_DLI = 16'd0;
   
   wire DLIST_DMA_en = DMACTL[5];
   wire [1:0] playfieldWidth = DMACTL[1:0];
@@ -207,6 +210,9 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
       clearGRAF <= 1'b0;
       spriteRepeat <= 4'd0;
       charSprites <= 1'b0;
+      //hblankcount <= 6'd0;
+      //waithblank <= 1'b0;
+      //idle_DLI <= 16'd0;
     end
     
     else begin
@@ -235,14 +241,12 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
           AN <= `noTransmission;
           ANTIC_writeDLI <= 1'b0;
           
-          /*
           if (DLI_hold) begin
             DLI_hold <= 1'b0;
             ANTIC_writeDLI <= 1'b1;
             ANTIC_writeNMI <= 1'b0;
           end
-          else */
-          if (VBI_hold) begin
+          else if (VBI_hold) begin
             VBI_hold <= 1'b0;
             ANTIC_writeVBI <= 1'b1;
             ANTIC_writeNMI <= 1'b0;
@@ -259,13 +263,11 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
             loadSpritesDone <= 1'b0;
             charSprites <= 1'b0;
             
-            /*
             if (DLI) begin
               DLI <= 1'b0;
               DLI_hold <= 1'b1;
               ANTIC_writeNMI <= 1'b1;
             end
-            */
             
             // Load new mode if currently idle (no instructions running)
             if (IR_rdy) begin
@@ -280,6 +282,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
               
           end
           
+          /*
           else if (DLI) begin
             DLI <= 1'b0;
             DLI_hold <= 1'b1;
@@ -290,6 +293,43 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
             ANTIC_writeDLI <= 1'b1;
             ANTIC_writeNMI <= 1'b0;
           end
+          */
+          /*
+          else if (idle&DLI) begin
+            
+            update_WSYNC <= 1'b0;
+            
+            if (idle_DLI == 16'd0) begin
+              DLI_hold <= 1'b1;
+              ANTIC_writeNMI <= 1'b1;
+              idle_DLI <= idle_DLI + 16'd1;
+            end
+            if (idle_DLI == 16'd8000) begin
+              DLI <= 1'b0;
+              idle_DLI <= 16'd0;
+              //if (~waithblank)
+              loadIR <= 1'b1;
+            end
+            else
+              idle_DLI <= idle_DLI + 12'd1;
+            
+          end
+          */
+          /*
+          else if (idle&waithblank&(~DLI)) begin
+            
+            update_WSYNC <= 1'b0;
+            
+            if (hblankcount == 6'd50) begin
+              waithblank <= 1'b0;
+              hblankcount <= 6'd0;
+              loadIR <= 1'b1;
+            end
+            else
+              hblankcount <= hblankcount + 6'd1;
+          
+          end
+          */
           
           else if (idle&waitvblank) begin
             
@@ -313,7 +353,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
             end
             */
             
-            if (VBI&&(vblankcount == 13'd1000)) begin
+            if (VBI&&(vblankcount == 13'd2006)) begin
               VBI <= 1'b0;
               VBI_hold <= 1'b1;
               ANTIC_writeNMI <= 1'b1;
@@ -322,7 +362,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
           
             vblankcount <= vblankcount + 13'd1;
             
-            if (vblankcount == 13'd2000) begin
+            if (vblankcount == 13'd5012) begin
               waitvblank <= 1'b0;
               vblankcount <= 13'd0;
               loadIR <= 1'b1; // Trigger jump to new pointer location
@@ -637,6 +677,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                             holdMode <= 1'b0;
                             loadedNumBytes <= 1'b0;
                             idle <= 1'b1;
+                            //waithblank <= 1'b1;
                             update_WSYNC <= 1'b1;
                             VCOUNT <= VCOUNT + 8'd8;
                           end
@@ -673,6 +714,11 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                         height <= `height;
                         charSingleColor <= 1'b0;
                         sentTwice <= 1'b0;
+                        if (DLI) begin
+                          DLI <= 1'b0;
+                          DLI_hold <= 1'b1;
+                          ANTIC_writeNMI <= 1'b1;
+                        end
                       end
                       
                       else begin
@@ -708,7 +754,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                             end
                             
                             else begin
-                              if (fifthColor)
+                              if (fifthColor&&({charData[charBit],charData[charBit+1]}!=2'd0))
                                 AN <= `modeNorm_playfield3;
                               else begin
                                 case ({charData[charBit],charData[charBit+1]})
@@ -735,6 +781,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                             holdMode <= 1'b0;
                             loadedNumBytes <= 1'b0;
                             idle <= 1'b1;
+                            //waithblank <= 1'b1;
                             update_WSYNC <= 1'b1;
                             VCOUNT <= VCOUNT + 8'd8;
                           end
@@ -770,6 +817,11 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                         height <= `height;
                         numRepeat <= 3'd1;
                         charSingleColor <= 1'b1;
+                        if (DLI) begin
+                          DLI <= 1'b0;
+                          DLI_hold <= 1'b1;
+                          ANTIC_writeNMI <= 1'b1;
+                        end
                       end
                       
                       else begin
@@ -835,6 +887,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                             loadedNumBytes <= 1'b0;
                             charSingleColor <= 1'b0;
                             idle <= 1'b1;
+                            //waithblank <= 1'b1;
                             update_WSYNC <= 1'b1;
                             VCOUNT <= VCOUNT + 8'd16;
                           end
@@ -927,6 +980,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                             loadedNumBytes <= 1'b0;
                             charSingleColor <= 1'b0;
                             idle <= 1'b1;
+                            //waithblank <= 1'b1;
                             update_WSYNC <= 1'b1;
                             VCOUNT <= VCOUNT + 8'd16;
                           end
@@ -1039,6 +1093,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                           holdMode <= 1'b0;
                           loadedNumBytes <= 1'b0;
                           idle <= 1'b1;
+                          //waithblank <= 1'b1;
                           update_WSYNC <= 1'b1;
                           VCOUNT <= VCOUNT + 8'd1;
                         end
@@ -1139,6 +1194,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                           holdMode <= 1'b0;
                           loadedNumBytes <= 1'b0;
                           idle <= 1'b1;
+                          //waithblank <= 1'b1;
                           update_WSYNC <= 1'b1;
                           VCOUNT <= VCOUNT + 8'd1;
                         end
@@ -1221,6 +1277,7 @@ module dataTranslate(IR, IR_rdy, Fphi0, rst, vblank, DMACTL, MSRdata_rdy, charDa
                           holdMode <= 1'b0;
                           loadedNumBytes <= 1'b0;
                           idle <= 1'b1;
+                          //waithblank <= 1'b1;
                           update_WSYNC <= 1'b1;
                           VCOUNT <= VCOUNT + 8'd1;
                         end

@@ -11,7 +11,7 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
             SIZEP0, SIZEP1, SIZEP2, SIZEP3, SIZEM, GRAFP0, GRAFP1, GRAFP2,
             GRAFP3, GRAFM, COLPM0, COLPM1, COLPM2, CONSPK,
             GRAFP0_char, GRAFP1_char, GRAFP2_char, GRAFP3_char, GRAFM_char,
-            charSprites,
+            charSprites,HITCLR_strobe,
             DB, switch,
             M0PF, M1PF, M2PF, M3PF, P0PF, P1PF, P2PF, P3PF, M0PL, M1PL, 
             M2PL, M3PL, P0PL, P1PL, P2PL, P3PL,
@@ -56,13 +56,13 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
                   
       input [63:0] GRAFP0_char, GRAFP1_char, GRAFP2_char, GRAFP3_char, GRAFM_char;
       input charSprites;
-      
+      input HITCLR_strobe;
       // Control inouts
       inout [7:0] DB;
       inout [3:0] switch;
       
-      output M0PF, M1PF, M2PF, M3PF, P0PF, P1PF, P2PF, P3PF, M0PL, M1PL, 
-             M2PL, M3PL, P0PL, P1PL, P2PL, P3PL;
+      output [7:0] M0PF, M1PF, M2PF, M3PF, P0PF, P1PF, P2PF, P3PF, M0PL, M1PL, 
+                   M2PL, M3PL, P0PL, P1PL, P2PL, P3PL;
       output reg [7:0] PAL = 8'h00;
       output reg [7:0] CONSOL = 8'h00;
       
@@ -105,14 +105,14 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
       
 			// Module instantiations here
       colorTable ct(.colorData(colorData), .RGB(RGB));
-      prioritySel pr(PRIOR[5:0], baseColor, COLPM0, COLPM1, COLPM2, COLPM3, baseType,
+      prioritySel pr(PRIOR[5:0], COLPF3, baseColor, COLPM0, COLPM1, COLPM2, COLPM3, baseType,
                      P0set, P1set, P2set, P3set, M0set, M1set, M2set, M3set, colorData);
       spriteDisplay sd(x, y, HPOSP0, HPOSP1, HPOSP2, HPOSP3, HPOSM0, HPOSM1, HPOSM2, HPOSM3,
                        GRAFP0, GRAFP1, GRAFP2, GRAFP3, GRAFM, GRAFP0_char, GRAFP1_char, 
                        GRAFP2_char, GRAFP3_char, GRAFM_char, charSprites,
                        P0set, P1set, P2set, P3set, M0set, M1set, M2set, M3set);
       collisionCheck colchk(P0set, P1set, P2set, P3set, M0set, M1set, M2set, M3set, baseType,
-                            HITCLR, M0PF, M1PF, M2PF, M3PF, P0PF, P1PF, P2PF, P3PF, M0PL, M1PL, 
+                            HITCLR_strobe, M0PF, M1PF, M2PF, M3PF, P0PF, P1PF, P2PF, P3PF, M0PL, M1PL, 
                             M2PL, M3PL, P0PL, P1PL, P2PL, P3PL);
       
       always @(posedge Fphi0 or posedge rst) begin
@@ -474,10 +474,11 @@ module GTIA(address, AN, CS, DEL, OSC, RW, trigger, Fphi0, rst, charMode, DLISTe
 endmodule
 
 
-module prioritySel(PRIOR, baseColor, PM0color, PM1color, PM2color, PM3color, baseType,
+module prioritySel(PRIOR, COLPF3, baseColor, PM0color, PM1color, PM2color, PM3color, baseType,
                    P0set, P1set, P2set, P3set, M0set, M1set, M2set, M3set, colorData);
   
   input [5:0] PRIOR;
+  input [7:0] COLPF3;
   input [7:0] baseColor;
   input [7:0] PM0color, PM1color, PM2color, PM3color;
   input [3:0] baseType;
@@ -485,6 +486,7 @@ module prioritySel(PRIOR, baseColor, PM0color, PM1color, PM2color, PM3color, bas
   output reg [7:0] colorData;
   
   wire [3:0] priority = PRIOR[3:0];
+  wire fifthPlayer = PRIOR[4];
   
   always @(*) begin
     
@@ -495,12 +497,16 @@ module prioritySel(PRIOR, baseColor, PM0color, PM1color, PM2color, PM3color, bas
           if (P0set|M0set) begin
             if (P0set&&((baseType == `modeNorm_playfield0)||(baseType == `modeNorm_playfield1)))
               colorData <= PM0color|baseColor;
+            else if (M0set&fifthPlayer)
+              colorData <= COLPF3;
             else
               colorData <= PM0color;
           end
           else if (P1set|M1set) begin
             if (P1set&&((baseType == `modeNorm_playfield0)||(baseType == `modeNorm_playfield1)))
               colorData <= PM1color|baseColor;
+            else if (M1set&fifthPlayer)
+              colorData <= COLPF3;
             else
               colorData <= PM1color;
           end
@@ -509,12 +515,16 @@ module prioritySel(PRIOR, baseColor, PM0color, PM1color, PM2color, PM3color, bas
           else if (P2set|M2set) begin
             if (P2set&&((baseType == `modeNorm_playfield2)||(baseType == `modeNorm_playfield3)))
               colorData <= PM2color|baseColor;
+            else if (M2set&fifthPlayer)
+              colorData <= COLPF3;
             else
               colorData <= PM2color;
           end
           else if (P3set|M3set) begin
             if (P3set&&((baseType == `modeNorm_playfield2)||(baseType == `modeNorm_playfield3)))
               colorData <= PM3color|baseColor;
+            else if (M3set&fifthPlayer)
+              colorData <= COLPF3;
             else
               colorData <= PM3color;
           end
@@ -525,13 +535,25 @@ module prioritySel(PRIOR, baseColor, PM0color, PM1color, PM2color, PM3color, bas
       4'd1:
         begin
           if (P0set|M0set)
-            colorData <= PM0color;
+            if (M0set&fifthPlayer)
+              colorData <= COLPF3;
+            else
+              colorData <= PM0color;
           else if (P1set|M1set)
-            colorData <= PM1color;
+            if (M1set&fifthPlayer)
+              colorData <= COLPF3;
+            else
+              colorData <= PM1color;
           else if (P2set|M2set)
-            colorData <= PM2color;
+            if (M2set&fifthPlayer)
+              colorData <= COLPF3;
+            else
+              colorData <= PM2color;
           else if (P3set|M3set)
-            colorData <= PM3color;
+            if (M3set&fifthPlayer)
+              colorData <= COLPF3;
+            else
+              colorData <= PM3color;
           else
             colorData <= baseColor;
         end
@@ -634,12 +656,12 @@ endmodule
 
 
 module collisionCheck(P0set, P1set, P2set, P3set, M0set, M1set, M2set, M3set, baseType,
-                      HITCLR, M0PF, M1PF, M2PF, M3PF, P0PF, P1PF, P2PF, P3PF, M0PL, M1PL, 
+                      HITCLR_strobe, M0PF, M1PF, M2PF, M3PF, P0PF, P1PF, P2PF, P3PF, M0PL, M1PL, 
                       M2PL, M3PL, P0PL, P1PL, P2PL, P3PL);
 
   input P0set, P1set, P2set, P3set, M0set, M1set, M2set, M3set;
   input baseType;
-  input [7:0] HITCLR;
+  input HITCLR_strobe;
   output reg [7:0] M0PF = 8'h00;
   output reg [7:0] M1PF = 8'h00;
   output reg [7:0] M2PF = 8'h00;
@@ -657,12 +679,9 @@ module collisionCheck(P0set, P1set, P2set, P3set, M0set, M1set, M2set, M3set, ba
   output reg [7:0] P2PL = 8'h00;
   output reg [7:0] P3PL = 8'h00;
   
-  reg [7:0] HITCLR_hold = 8'h00;
-  
   always @(*) begin
 
-    if (HITCLR != HITCLR_hold) begin
-      HITCLR_hold <= HITCLR;
+    if (HITCLR_strobe) begin
       M0PF <= 8'h00;
       M1PF <= 8'h00;
       M2PF <= 8'h00;
